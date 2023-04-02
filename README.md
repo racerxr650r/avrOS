@@ -90,3 +90,64 @@ developer can select precisely the features and drivers required by their
 implementation. For instance, a debug version of application may include the
 CLI and Logger functions. But, the release version of the same application may
 not include either of these functions.
+
+## Development Environment
+
+avrOS is developed on a Linux workstation using the avr-gcc compiler, gnu make,
+and avrdude w/Atmel Ice jtag programmer. To recreate this development 
+environment on a debian based Linux distribution follow the instructions here:
+
+1. Install Gnu make
+
+```console    
+sudo apt install make
+```
+
+2. Install avr-gcc Gnu C compiler and tools
+
+```console
+sudo apt install binutils gcc-avr avr-libc flex byacc bison
+```
+
+3. Download the Microchip Device Family Pack for the Atmel-Dx series from the [Microchip site](http://packs.download.atmel.com/)
+
+4. Extract the Atmel.AVR-Dx_DFP.2.2.253.atpack file locally and copy it to the `/usr/lib/gcc/avr/5.4.0` directory
+From the directory you extracted the DFP use the following command to copy it:
+
+```console
+sudo cp -R Atmel.AVR-Dx_DFP.2.2.253/ /usr/lib/gcc/avr/5.4.0
+```
+If your file manager does not recognize it as a compressed file, add a .zip extension to the filename   
+If you extracted it elsewhere, you will need to update the DFP variable to the path to the base directory you just extracted
+
+5. Install AVRDUDE from sources on github
+Go to this [AVRDUDE github page](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
+for instructions to clone, build, and install it from the latest source
+
+I recomend this version because the version in the Debian/Ubuntu package
+repository does not include support for the Atmel Ice and it's UPDI programming
+interface.
+
+6. Clone avrOS from github
+
+```console
+git clone https://github.com/racerxr650r/avrOS.git
+```
+
+7. Build avrOS example application
+Goto the application directory and make the .hex image
+
+```console
+cd avrOS/app/avrOS_example
+make
+```
+
+8. Program the .hex image into the MCU flash [^1] [^2]
+
+```console
+make flash
+```
+
+[^1]: The make flash target will build and program the application into flash
+[^2]: If you are using a different programmer that is supported by AVRDUDE, 
+change PRG in the makefile to the string AVRDUDE uses for your programmer

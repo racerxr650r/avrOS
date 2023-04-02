@@ -107,4 +107,4 @@ $(PRJ).elf: $(OBJ)
 $(PRJ).hex: $(PRJ).elf
 	rm -f $(PRJ).hex
 	$(OBJCOPY) -O ihex -R .eeprom -R .fuse -R .lock -R .signature -R .user_signatures $(PRJ).elf $(PRJ).hex
-#	$(SIZE) $(PRJ).elf
+	
