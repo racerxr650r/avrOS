@@ -117,16 +117,18 @@ From the directory you extracted the DFP use the following command to copy it:
 ```console
 sudo cp -R Atmel.AVR-Dx_DFP.2.2.253/ /usr/lib/gcc/avr/5.4.0
 ```
-If your file manager does not recognize it as a compressed file, add a .zip extension to the filename   
-If you extracted it elsewhere, you will need to update the DFP variable to the path to the base directory you just extracted
+
+    If your file manager does not recognize it as a compressed file, add a .zip extension to the filename   
+    If you extracted it elsewhere, you will need to update the DFP variable to the path to the base directory you just extracted
 
 5. Install AVRDUDE from sources on github
-Go to this [AVRDUDE github page](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
-for instructions to clone, build, and install it from the latest source
 
-I recomend this version because the version in the Debian/Ubuntu package
-repository does not include support for the Atmel Ice and it's UPDI programming
-interface.
+    Go to this [AVRDUDE github page](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
+    for instructions to clone, build, and install it from the latest source
+
+    I recomend this version because the version in the Debian/Ubuntu package
+    repository does not include support for the Atmel Ice and it's UPDI programming
+    interface.
 
 6. Clone avrOS from github
 
@@ -135,7 +137,8 @@ git clone https://github.com/racerxr650r/avrOS.git
 ```
 
 7. Build avrOS example application
-Goto the application directory and make the .hex image
+
+    Goto the application directory and make the .hex image
 
 ```console
 cd avrOS/app/avrOS_example
