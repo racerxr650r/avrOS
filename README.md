@@ -109,7 +109,9 @@ environment on a debian based Linux distribution follow the instructions here:
     sudo apt install binutils gcc-avr avr-libc flex byacc bison
     ```
 
-3. Download the Microchip Device Family Pack for the Atmel-Dx series from the [Microchip site](http://packs.download.atmel.com/)
+3. Download the Microchip Device Family Pack for the Atmel-Dx series from the [Microchip Packs Repository](http://packs.download.atmel.com/)
+
+    Download the [Atmel AVR-Dx Series Device Support (2.2.253)](http://packs.download.atmel.com/#collapse-Atmel-AVR-Dx-DFP-pdsc) DFP
 
 4. Extract the `Atmel.AVR-Dx_DFP.2.2.253.atpack` file locally and copy it to the `/usr/lib/gcc/avr/5.4.0` directory
 From the directory you extracted the DFP use the following command to copy it:
@@ -118,7 +120,8 @@ From the directory you extracted the DFP use the following command to copy it:
     sudo cp -R Atmel.AVR-Dx_DFP.2.2.253/ /usr/lib/gcc/avr/5.4.0
     ```
 
-    If your file manager does not recognize it as a compressed file, add a .zip extension to the filename   
+    If your file manager does not recognize it as a compressed file, add a .zip extension to the filename
+
     If you extracted/copied it elsewhere, you will need to update DFP to the path of the base directory you just extracted
 
 5. Install AVRDUDE from sources on github
