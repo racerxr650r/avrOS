@@ -20,7 +20,7 @@ In addition, it also includes the following AVR DA device drivers:
 * DAC
 * Internal CPU Oscillator API
 
-Lastly, it also includes a Linux command line 'wav2c' utility to convert
+Lastly, it also includes a Linux command line `wav2c` utility to convert
 a number of sound and video file formats to a C file that can be linked
 with your application and played with the PCM sound player API.
 
