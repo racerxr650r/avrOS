@@ -30,9 +30,8 @@ features and drivers coming.
 ## Microcontroller Resources
 
 RAM is a precious commodity on microcontrollers. Especially for 8 bit 
-microcontrollers like the AVR. The AVR DA family has the largest RAM of the AVR
-family of processors. But it only has 16K. Therefore, avrOS was designed to use
-as little RAM as possible.
+microcontrollers like the AVR. The AVR DA family only has 16K of RAM. 
+Therefore, avrOS is designed to use as little RAM as possible.
 
 Classic realtime operating systems use threaded multitasking. The OS has a 
 scheduler that controls which thread is currently running. The scheduler uses a
@@ -69,10 +68,12 @@ avrOS is able to use a single stack for all the system threads and interrupt
 contexts.
 
 In addition, the avrOS scheduler uses a finite state machine paradigm. The user
-application and system services register a state machine and a set of states.
-The scheduler uses a table of state machines and states to determine which
-to call next. The constant data in these tables is stored in FLASH. Only the 
-dynamic state information is stored in RAM. 
+application and system services register state machines and a set of states.
+The finite state machine manager (fsm) provides an API for the developer to
+control the state progression of the state machine. The scheduler uses a table
+of state machines and states to determine which to call next. The constant data
+in these tables is stored in FLASH. Only the dynamic state information is
+stored in RAM. 
 
 These tables are built at compile time and the linker determines that there is
 enough FLASH and RAM to store them. Therefore, there is no need for user code
@@ -85,7 +86,7 @@ These macros allocate instances of state machines, states, queues, flags,
 timers, CLI commands, alarms, etc. at compile time.
 
 Lastly, avrOS is highly scalable. Using the avrOSConfig.h file, an application
-developer can select precisely the features and drivers required by their 
+developer can select precisely the features and drivers required by their
 implementation. For instance, a debug version of application may include the
 CLI and Logger functions. But, the release version of the same application may
 not include either of these functions.
