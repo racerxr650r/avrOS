@@ -111,10 +111,11 @@ environment on a debian based Linux distribution follow the instructions here:
 
 3. Download the Microchip Device Family Pack for the Atmel-Dx series from the [Microchip Packs Repository](http://packs.download.atmel.com/)
 
-    Download the [Atmel AVR-Dx Series Device Support (2.2.253)](http://packs.download.atmel.com/#collapse-Atmel-AVR-Dx-DFP-pdsc) DFP
+    Download the lastest [Atmel AVR-Dx Series Device Support](http://packs.download.atmel.com/#collapse-Atmel-AVR-Dx-DFP-pdsc) DFP
 
 4. Extract the `Atmel.AVR-Dx_DFP.2.2.253.atpack` file locally and copy it to the `/usr/lib/gcc/avr/5.4.0` directory
-From the directory you extracted the DFP use the following command to copy it:
+
+    From the directory you extracted the DFP use the following command to copy it:
 
     ```console
     sudo cp -R Atmel.AVR-Dx_DFP.2.2.253/ /usr/lib/gcc/avr/5.4.0
@@ -153,6 +154,8 @@ From the directory you extracted the DFP use the following command to copy it:
     ```console
     make flash
     ```
+These instructions are similar for Fedora and MacOS. You'll need to use the
+appropiate package manager
 
 [^1]: The make flash target will build and program the application into flash
 [^2]: If you are using a different programmer that is supported by AVRDUDE, 
