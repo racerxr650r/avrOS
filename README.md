@@ -97,10 +97,10 @@ avrOS is developed on a Linux workstation using the avr-gcc compiler, gnu make,
 and avrdude w/Atmel Ice jtag programmer. To recreate this development 
 environment on a debian based Linux distribution follow the instructions here:
 
-1. Install Gnu make
+1. Install Gnu make and git
 
     ```console    
-    sudo apt install make
+    sudo apt install make git
     ```
 
 2. Install avr-gcc Gnu C compiler and tools
