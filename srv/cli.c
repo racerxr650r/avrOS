@@ -102,25 +102,25 @@ int cliClear(int argC, char *argV[])
 // Create instance of the cli state machine
 ADD_STATE_MACHINE(cliStateMachine, cliNewCmd, false);
 // Create initial state of the cli state machine
-ADD_STATE(cliStateMachine, cliNewCmd, cliNewCmdFunc);
+ADD_STATE(cliStateMachine, cliNewCmd);
 // Create get key state of the cli state machine
-ADD_STATE(cliStateMachine, cliGetKey, cliGetKeyFunc);
+ADD_STATE(cliStateMachine, cliGetKey);
 // Create escape key state of the cli state machine
-ADD_STATE(cliStateMachine, cliEscKey, cliEscKeyFunc);
+ADD_STATE(cliStateMachine, cliEscKey);
 // Create escape sequence state of the cli state machine
-ADD_STATE(cliStateMachine, cliEscSequence, cliEscSequenceFunc);
+ADD_STATE(cliStateMachine, cliEscSequence);
 // Create keystroke state of the cli state machine
-ADD_STATE(cliStateMachine, cliConsumeKey, cliConsumeKeyFunc);
+ADD_STATE(cliStateMachine, cliConsumeKey);
 // Create call command state of the cli state machine
-ADD_STATE(cliStateMachine, cliCallCommand, cliCallCommandFunc,cliCallCommandName);
+ADD_STATE(cliStateMachine, cliCallCommand,cliCallCommandName);
 // Create wait Tx queue state of the cli state machine
-ADD_STATE(cliStateMachine, cliClearScreen, cliClearScreenFunc);
+ADD_STATE(cliStateMachine, cliClearScreen);
 // Create wait Tx queue state of the cli state machine
-ADD_STATE(cliStateMachine, cliWaitTxQueue, cliWaitTxQueueFunc);
+ADD_STATE(cliStateMachine, cliWaitTxQueue);
 // Create repeat command state of the cli state machine
-ADD_STATE(cliStateMachine, cliRepeatCommand, cliRepeatCommandFunc);
+ADD_STATE(cliStateMachine, cliRepeatCommand);
 // Create repeat command state of the cli state machine
-ADD_STATE(cliStateMachine, cliDisplayEscape, cliDisplayEscapeFunc);
+ADD_STATE(cliStateMachine, cliDisplayEscape);
 
 int cliNewCmdFunc(fsmStateMachine_t *stateMachine)
 {
