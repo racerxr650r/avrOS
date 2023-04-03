@@ -68,8 +68,8 @@ typedef struct ADD_STATE_MACHINE_DESCR_TYPE
 															fsmStateMachine_t stateMachineName = {.prevState = NULL, .currState = NULL, .nextState = (fsmState_t *)&initStateName, .stateMachineDescr = &CONCAT(stateMachineName,_descr) }; \
 															const static fsmStateMachineDescr_t SECTION(FSM_TABLES) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = &stateMachineName, .visible = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,true)};
 // Adds a new state to an existing state machine handled by the FSM manager
-#define ADD_STATE(stateMachineName, stateName, stateFunction, ...)	int stateFunction(fsmStateMachine_t *state); \
-																const static fsmState_t SECTION(FSM_STATES) stateName = { .stateMachine = &stateMachineName, .name = #stateName, .funcPtr = &stateFunction, .stateNameFuncPtr = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
+#define ADD_STATE(stateMachineName, stateName, ...)	int CONCAT(stateName,Func)(fsmStateMachine_t *state); \
+																const static fsmState_t SECTION(FSM_STATES) stateName = { .stateMachine = &stateMachineName, .name = #stateName, .funcPtr = &CONCAT(stateName,Func), .stateNameFuncPtr = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
 
 // Exported Functions ---------------------------------------------------------                                                          
 uint32_t	fsmGetScanCycle(void);

@@ -35,13 +35,13 @@ ADD_TIMER(pcmTimer);
 // Create instance of the pcm state machine
 ADD_STATE_MACHINE(pcmStateMachine, pcmInit, false);
 // Create initial state of the pcm state machine
-ADD_STATE(pcmStateMachine, pcmInit, pcmInitFunc);
+ADD_STATE(pcmStateMachine, pcmInit);
 // Create idle state of the pcm state machine
-ADD_STATE(pcmStateMachine, pcmIdle, pcmIdleFunc);
+ADD_STATE(pcmStateMachine, pcmIdle);
 // Create update state of the pcm state machine
-ADD_STATE(pcmStateMachine, pcmUpdate, pcmUpdateFunc);
+ADD_STATE(pcmStateMachine, pcmUpdate);
 // Create wait state of the pcm state machine
-ADD_STATE(pcmStateMachine, pcmWait, pcmWaitFunc);
+ADD_STATE(pcmStateMachine, pcmWait);
 
 int pcmInitFunc(fsmStateMachine_t *stateMachine)
 {
