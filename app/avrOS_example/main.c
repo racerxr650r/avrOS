@@ -28,30 +28,7 @@
 int main(void)
 {
 	// Initialize the system -----------------------------------------------------
-	// Setup the internal CPU clock source
-	cpuSetOSCHF(CPU_SPEED,false,0);
-
-#ifdef MEM_STATS	
-	// Fill the stack area with pattern to detect max stack size
-	memStackFill();
-#endif	
-
-#if LOG_FORMAT>0 && LOG_LEVEL>0
-	logInit();
-#endif
-
-	// Initialize the system tick counter
-	sysInitTick();
-	
-	// Initialize the CLI and the interface associated with it
-#ifdef CLI_SERVICE
-	// Initialize the CLI and hook stdout so printf and other stdout function
-	// output to the CLI interface
-	cliInit();
-#endif
-	
-	// Enable global interrupts
-	sei();
+	sysInit();
 	
 	INFO("Starting state machine dispatch loop");
 	// Loop forever --------------------------------------------------------------
