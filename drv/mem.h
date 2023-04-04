@@ -16,6 +16,8 @@ extern uint16_t __data_start,__data_end,__heap_start, *__brkval;
 extern uint16_t _etext,__start_text_window,__stop_text_window,__stop_rodata;
 
 // External Functions ---------------------------------------------------------
+int percentWhole(uint32_t den, uint32_t div);
+int percentPlaces(uint32_t den, uint32_t div);
 void memStackFill();
 uint16_t memStackSizeMax();
 void memRomStatus(FILE *file);

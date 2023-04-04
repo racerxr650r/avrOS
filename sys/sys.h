@@ -1,7 +1,7 @@
 /*
  * sys.h
  *
- * Header for system functions, including system counter/tick
+ * Header for system functions, including system initialize and counter/tick
  *
  * Created: 4/17/2021 9:12:55 PM
  * Author: john anderson
@@ -37,6 +37,7 @@
 #define TICK_TOP		60000
 
 // External Functions ---------------------------------------------------------
+bool sysInit();
 void sysInitTick();
 uint32_t sysGetTick();
 

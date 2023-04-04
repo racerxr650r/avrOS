@@ -33,7 +33,7 @@ SRC = $(PRJ).c
 DFP = /usr/lib/gcc/avr/5.4.0/Atmel.AVR-Dx_DFP.2.2.253
 # where to look for external libraries (consisting of .c/.cpp files and .h files)
 # e.g. EXT = ../../EyeToSee ../../YouSART
-EXT = ../.. ../../drv ../../srv
+EXT = ../.. ../../sys ../../drv ../../srv
 
 
 #################################################################################################
@@ -86,7 +86,7 @@ disasm: $(PRJ).elf
 
 # remove compiled files
 clean:
-	rm -f *.hex *.elf *.o
+	rm -f *.hex *.elf *.d *.o
 	$(foreach dir, $(EXT), rm -f $(dir)/*.o;)
 	$(foreach dir, $(EXT), rm -f $(dir)/*.d;)
 
@@ -107,4 +107,3 @@ $(PRJ).elf: $(OBJ)
 $(PRJ).hex: $(PRJ).elf
 	rm -f $(PRJ).hex
 	$(OBJCOPY) -O ihex -R .eeprom -R .fuse -R .lock -R .signature -R .user_signatures $(PRJ).elf $(PRJ).hex
-	
