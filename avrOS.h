@@ -45,16 +45,18 @@
 
 // avrOS System Header Files ************************************************
 #include "avrOSConfig.h"
-#include "srv/queue.h"
+#include "sys/sys.h"
+#include "sys/fsm.h"
+#include "sys/queue.h"
+#include "sys/tmr.h"
+
 #include "drv/cpu.h"
-#include "drv/sys.h"
+#include "drv/mem.h"
 #include "drv/uart.h"
 #include "drv/dac.h"
-#include "srv/fsm.h"
+
 #include "srv/cli.h"
-#include "srv/tmr.h"
 #include "srv/log.h"
-#include "srv/mem.h"
 //#include "crtDrv.h"
 //#include "delaySrv.h"
 //#include "spiDrv.h"
