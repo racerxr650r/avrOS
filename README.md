@@ -97,6 +97,22 @@ implementation. For instance, a debug version of application may include the
 CLI and Logger functions. But, the release version of the same application may
 not include either of these functions.
 
+## Organization and Building
+
+avrOS is organized into 5 directories counting the root directory; ./sys,
+./drv, ./srv, and ./app/avrOS_example. The root directory contains the
+avrOS.h header file. The ./sys directory contains the source files that
+implement system initialization, the finite state machine manager, and the OS
+bjects (flags and queues). The ./drv directory contains the device drivers.
+The ./srv contains the system services such as the CLI manager and Logging.
+And, the ./app/avrOS_example directory contains the makefile, avrOSConfig.h,
+main.c, and avrOS.x files. The avrOSConfig.h file selects the components to
+be included in the build. The avrOS.x file is a linker script. The main.c
+file contains the main() entry point and the user application state machine
+and system objects.
+
+An application is built from the ./app/<app name> directory.
+
 ## Development Environment
 
 avrOS is developed on a Linux workstation using the avr-gcc compiler, gnu make,
