@@ -98,6 +98,8 @@ bool sysInit()
 	
 	// Enable global interrupts
 	sei();
+
+	return(true);
 }
 
 void sysInitTick()
