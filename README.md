@@ -103,7 +103,7 @@ avrOS is organized into 5 directories counting the root directory; ./sys,
 ./drv, ./srv, and ./app/avrOS_example. The root directory contains the
 avrOS.h header file. The ./sys directory contains the source files that
 implement system initialization, the finite state machine manager, and the OS
-bjects (flags and queues). The ./drv directory contains the device drivers.
+objects (flags and queues). The ./drv directory contains the device drivers.
 The ./srv contains the system services such as the CLI manager and Logging.
 And, the ./app/avrOS_example directory contains the makefile, avrOSConfig.h,
 main.c, and avrOS.x files. The avrOSConfig.h file selects the components to
@@ -111,7 +111,36 @@ be included in the build. The avrOS.x file is a linker script. The main.c
 file contains the main() entry point and the user application state machine
 and system objects.
 
-An application is built from the ./app/<app name> directory.
+An application is built from the ./app/application_name directory. avrOS
+comes with a ./app/avrOS_example directory and application code examle.
+To create your own application, make a new directory in ./app directory.
+Copy the makefile, avrOS.x, avrConfig.h, and main.c files from the 
+./app/avrOS_example to your new directory. 
+
+The makefile will build your without any changes. If you choose to rename
+main.c, you will have to modify the PRJ variable in the makefile to the same
+name of your renamed main.c file excluding the .c file extension.
+
+The avrOS.x file is the linker script for your application. avrOS is dependent
+on this linker file. Do not replace it with a standard linker script without
+updating it to include the required sections and symbols. For more
+information regarding this, see the *avrOS Linker Script* page in the avrOS
+wiki.
+
+The avrConfig.h file configures the system, driver, and service files to be
+included with your application. It's self documenting with a signficant
+number of comments included in the file.
+
+The main.c soure file is the entry point for your application. It contains
+main(). Main calls sysInit() to perform the runtime initialization of avrOS.
+It then enters an endless while loop calling fsmDispatch() and sysSleep().
+This function implements the finite state machine scheduler. This scheduler
+walks the state machine and state tables to determine which state to run.
+The scheduler will continue to call states until the "ready" queue is empty.
+At that time, it will return. The loop in main() then calls sysSleep(). This
+function puts the processor into a sleep state and stops execution.
+Execution will resume and sysSleep() will return once an external interrupt
+is triggered. The loop then repeats.
 
 ## Development Environment
 
