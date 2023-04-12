@@ -5,12 +5,14 @@ including drivers for the AVR DA family of microcontrollers. It uses the Gnu
 linker to build the system tables (state machines, states, drivers, services,
 CLI callbacks, Flags, Queues, and Timers) at compile time. So these tables
 reside in FLASH where possible and the system doesn't require registration and
-related fault handling code. In addition, the code to build these tables are
-a set of macros that can be distributed across several source files.
+related fault handling code. avrOS provides a set of macros to build these
+tables. So code related to the user application can be distributed across
+several source files. There is no need to edit a single source file containing
+these system tables.
 
 avrOS also comes with a makefile and instructions to setup a development
 environment and build applications on a Linux desktop PC. No need to use Atmel
-Studio and Windows.
+Studio and Windows for application development.
 
 avrOS provides the following system objects and services:
 
