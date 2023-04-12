@@ -1,8 +1,18 @@
 # avrOS
 
 avrOS - Operating Environment for AVR DA - is a scalable operating environment 
-including drivers for the AVR DA family of microcontrollers. It provides the
-following features:
+including drivers for the AVR DA family of microcontrollers. It uses the Gnu
+linker to build the system tables (state machines, states, drivers, services,
+CLI callbacks, Flags, Queues, and Timers) at compile time. So these tables
+reside in FLASH where possible and the system doesn't require registration and
+related fault handling code. In addition, the code to build these tables are
+a set of macros that can be distributed across several source files.
+
+avrOS also comes with a makefile and instructions to setup a development
+environment and build applications on a Linux desktop PC. No need to use Atmel
+Studio and Windows.
+
+avrOS provides the following system objects and services:
 
 * Finite State Machine manager (fsm)
 * Command Line Interface (cli)
@@ -42,21 +52,21 @@ functions. This same stack also stores the context for any interrupts that
 happen during the thread execution. The scheduler then points the CPU stack
 register to the scheduled thread stack to implement a context switch. With 
 multiple threads, this requires reserving enough RAM for the deepest call stack
-plus the largest interrupt context for each thread. This is not the most 
-efficient use of RAM. A more efficient approach would use a single stack for 
-all "threads".
+plus the largest interrupt context for each thread. This is not the efficient
+use of RAM. A more efficient approach would use a single stack for all 
+"threads".
 
 Another feature of classic realtime operating systems is a modular design that 
-organizes code into functional blocks. Each block is represents a black box. 
-The external software that uses these blocks interacts with the black box 
-through a defined API. To abstract the data structures that represent the 
-instance of an object a block implements, classic operating systems dynamically
-allocate memory to store these data structures. In practice, significant 
-portions of these data structures are populated with constant values. Reading 
-constant values from ROM/Flash memory to initialize an object at runtime
-requires the functional block to allocate memory from RAM. This is another
-inefficient use of RAM. It also requires additional code to test and handle the
-condition when not enough RAM is available.
+organizes code into functional blocks. Each block represents a black box. The 
+application code that uses these blocks interacts with the black box through 
+a defined API. To abstract the data structures that represent the instance of
+an object a block implements, classic operating systems dynamically allocate
+memory at runtime to store these data structures. In practice, significant
+portions of these data structures are populated with constant values. Reading
+constant data from ROM/Flash memory to initialize an object at runtime requires
+the functional block to allocate memory from RAM. This is another inefficient
+use of RAM. It also requires additional code to test and handle the condition
+when not enough RAM is available.
 
 ## avrOS Theory of Operation
 
@@ -88,14 +98,14 @@ conditions when there is not enough RAM to create a new object.
 
 To enable this feature and maintain an object oriented approach to software
 development, avrOS provides a set of macros for user code to declare objects.
-These macros allocate instances of state machines, states, queues, flags,
+These macros "allocate" instances of state machines, states, queues, flags,
 timers, CLI commands, alarms, etc. at compile time.
 
 Lastly, avrOS is highly scalable. Using the avrOSConfig.h file, an application
 developer can select precisely the features and drivers required by their
 implementation. For instance, a debug version of application may include the
-CLI and Logger functions. But, the release version of the same application may
-not include either of these functions.
+CLI and Logger services. But, the release version of the same application may
+not include either of these services.
 
 ## Organization and Building
 
