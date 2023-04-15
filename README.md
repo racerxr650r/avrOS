@@ -2,14 +2,13 @@
 ---
 
 **avrOS** - _Operating Environment for AVR DA_, is a scalable operating environment 
-including drivers for the AVR DA family of microcontrollers. It uses the Gnu
-linker to build the system tables (state machines, states, drivers, services,
-CLI callbacks, Flags, Queues, and Timers) at compile time. So these tables
-reside in FLASH where possible and the system doesn't require registration and
-related fault handling code. avrOS provides a set of macros to build these
-tables. So code related to the user application can be distributed across
-several source files. There is no need to edit a single source file containing
-these system tables.
+including drivers for the AVR DA family of microcontrollers. It uses macros, a 
+custom linker script, and the linker to build the system tables (state machines,
+states, drivers, services, CLI callbacks, Flags, Queues, and Timers) at compile 
+time. So application code defining these objects can be distributed across several
+source files. In addition, these tables reside in FLASH where possible and the
+system doesn't require run-time registration and related fault handling code.
+There is no need to edit a single source file containing all these system tables.
 
 avrOS also comes with a makefile and instructions to setup a development
 environment and build applications on a Linux desktop PC. No need to use Atmel
