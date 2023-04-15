@@ -11,8 +11,9 @@ system doesn't require run-time registration and related fault handling code.
 There is no need to edit a single source file containing all these system tables.
 
 avrOS also comes with a makefile and instructions to setup a development
-environment and build applications on a Linux desktop PC. No need to use Atmel
-Studio and Windows for application development.
+environment and build applications on a Linux desktop PC, chromebook, or even a
+Raspberry PI. There's no need to use Atmel Studio and Windows for AVR application
+development.
 
 avrOS provides the following system objects and services:
 
@@ -25,7 +26,7 @@ avrOS provides the following system objects and services:
 * Queues API (que)
 * Timers API (tmr)
 
-In addition, it also includes the following AVR DA device drivers:
+It also includes the following AVR DA device drivers:
 
 * UART
 * System Tick (16 bit Timer Type B)
@@ -36,10 +37,10 @@ Lastly, it also includes a Linux command line utility `wav2c` to convert a
 number of sound and video file formats to a C file that can be linked with
 your application and played with the PCM sound player API.
 
-avrOS is still in it's early development stage. So there are lots of new 
+avrOS is still in it's sub 1.0 development stage. So there are lots of new 
 features and drivers coming.
 
-## Microcontroller Resources
+## Scarce Microcontroller Resources
 
 RAM is a precious commodity on microcontrollers. Especially for 8 bit 
 microcontrollers like the AVR. The AVR DA family only has 16K of RAM. 
@@ -59,16 +60,17 @@ use of RAM. A more efficient approach would use a single stack for all
 "threads".
 
 Another feature of classic realtime operating systems is a modular design that 
-organizes code into functional blocks. Each block represents a black box. The 
-application code that uses these blocks interacts with the black box through 
-a defined API. To abstract the data structures that represent the instance of
-an object a block implements, classic operating systems dynamically allocate
-memory at runtime to store these data structures. In practice, significant
-portions of these data structures are populated with constant values. Reading
-constant data from ROM/Flash memory to initialize an object at runtime requires
-the functional block to allocate memory from RAM. This is another inefficient
-use of RAM. It also requires additional code to test and handle the condition
-when not enough RAM is available.
+organizes the system code into functional blocks. The application code
+interacts using an API that declares and defines the objects these functional
+blocks implement. To abstract the data structures that represent the instance
+of an object and prevent the developer from having to edit system source files
+containing arrays of these structures, classic operating systems dynamically
+allocate memory at runtime to store these arrays of data structures. In
+practice, significant portions of these data structures are populated with
+constant values. Reading constant data from ROM/Flash memory to initialize an
+object at runtime requires the functional block to allocate memory from RAM.
+This is another inefficient use of RAM. It also requires additional code to
+test and handle the condition when not enough RAM is available.
 
 ## avrOS Theory of Operation
 
@@ -99,9 +101,10 @@ to call APIs to create objects at runtime and include additional code to handle
 conditions when there is not enough RAM to create a new object.
 
 To enable this feature and maintain an object oriented approach to software
-development, avrOS provides a set of macros for user code to declare objects.
-These macros "allocate" instances of state machines, states, queues, flags,
-timers, CLI commands, alarms, etc. at compile time.
+development, avrOS provides a set of macros for user code to define system
+objects. These macros "allocate" instances of state machines, states, queues,
+flags, timers, CLI commands, alarms, etc. at compile time and stores much of
+the data in flash where it will stay at runtime.
 
 Lastly, avrOS is highly scalable. Using the avrOSConfig.h file, an application
 developer can select precisely the features and drivers required by their
