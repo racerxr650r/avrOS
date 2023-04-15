@@ -1,6 +1,7 @@
-# avrOS
+![avrOS](docs/avrOS.gif "avrOS")
+---
 
-avrOS - Operating Environment for AVR DA - is a scalable operating environment 
+**avrOS** - _Operating Environment for AVR DA_, is a scalable operating environment 
 including drivers for the AVR DA family of microcontrollers. It uses the Gnu
 linker to build the system tables (state machines, states, drivers, services,
 CLI callbacks, Flags, Queues, and Timers) at compile time. So these tables
