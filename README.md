@@ -1,4 +1,4 @@
-![avrOS](docs/avrOS.gif "avrOS")
+[![avrOS](docs/avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
 ---
 
 **avrOS** - _Operating Environment for AVR DA_, is a scalable operating environment 
