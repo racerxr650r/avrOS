@@ -1,4 +1,4 @@
-[![avrOS](docs/avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
+[![avrOS](doc/avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
 ---
 # avrOS Getting Started
 
