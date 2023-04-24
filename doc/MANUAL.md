@@ -11,78 +11,6 @@ tables. Application code defining these objects can be distributed across severa
 source files. In addition, these tables reside in FLASH where possible and the
 system does not require run-time registration and related fault handling code.
 
-## Scarce Microcontroller Resources
-
-RAM is a precious commodity on microcontrollers. Especially for 8 bit 
-microcontrollers like the AVR. The AVR DA family only has 16K of RAM. 
-Therefore, avrOS is designed to use as little RAM as possible.
-
-Classic realtime operating systems use threaded multitasking. The OS has a 
-scheduler that controls which thread is currently running. The scheduler uses a
-thread priority value to determine which thread runs next. To implement the 
-thread context, each thread has it's own stack. The stack is stored in RAM and
-is used for passing and returning values and storing local variables for 
-functions. This same stack also stores the context for any interrupts that 
-happen during the thread execution. The scheduler then points the CPU stack
-register to the scheduled thread stack to implement a context switch. With 
-multiple threads, this requires reserving enough RAM for the deepest call stack
-plus the largest interrupt context for each thread. This is not the efficient
-use of RAM. A more efficient approach would use a single stack for all 
-"threads".
-
-Another feature of classic realtime operating systems is a modular design that 
-organizes the system code into functional blocks. The application code
-interacts using an API that declares and defines the objects these functional
-blocks implement. To abstract the data structures that represent the instance
-of an object and prevent the developer from having to edit system source files
-containing arrays of these structures, classic operating systems dynamically
-allocate memory at runtime to store these arrays of data structures. In
-practice, significant portions of these data structures are populated with
-constant values. Reading constant data from ROM/Flash memory to initialize an
-object at runtime requires the functional block to allocate memory from RAM.
-This is another inefficient use of RAM. It also requires additional code to
-test and handle the condition when not enough RAM is available.
-
-## avrOS Theory of Operation
-
-To use RAM as efficiently as possible, avrOS implements a form of cooperative
-multitasking. This requires that the application code does not block or busy
-wait. Instead it will check the status of various variables or objects to 
-detemine if it should do something, do it, and then return. By doing this,
-avrOS is able to use a single stack for all the system threads and interrupt 
-contexts.
-
-avrOS does not implement threading. The AVR microcontrollers have a very rich
-set of interrupts to handle asynchronous events. Handlers for these interrupts
-are "scheduled" asynchronously by the AVR interrupt controller. avrOS objects
-such as flags and queues can be used by the handler to signal and pass data to
-the user application code.
-
-In addition, the avrOS scheduler uses a finite state machine paradigm. The user
-application and system services register state machines and a set of states.
-The finite state machine manager (fsm) provides an API for the developer to
-control the state progression of the state machine. The scheduler uses a table
-of state machines and states to determine which to call next. The constant data
-in these tables is stored in FLASH. Only the dynamic state information is
-stored in RAM. 
-
-These tables are built at compile time and the linker determines that there is
-enough FLASH and RAM to store them. Therefore, there is no need for user code
-to call APIs to create objects at runtime and include additional code to handle
-conditions when there is not enough RAM to create a new object.
-
-To enable this feature and maintain an object oriented approach to software
-development, avrOS provides a set of macros for user code to define system
-objects. These macros "allocate" instances of state machines, states, queues,
-flags, timers, CLI commands, alarms, etc. at compile time and stores much of
-the data in flash where it will stay at runtime.
-
-Lastly, avrOS is highly scalable. Using the avrOSConfig.h file, an application
-developer can select precisely the features and drivers required by their
-implementation. For instance, a debug version of application may include the
-CLI and Logger services. But, the release version of the same application may
-not include either of these services.
-
 ## avrOS File Organization
 
 avrOS is organized into 7 directories counting the root directory; ./, ./app,
@@ -253,3 +181,75 @@ avrOS provides the following AVR DA device drivers:
 avrOS includes a Linux command line utility `wav2c` to convert a 
 number of sound and video file formats to a C file that can be linked with
 your application and played with the PCM sound player API.
+
+## Scarce Microcontroller Resources
+
+RAM is a precious commodity on microcontrollers. Especially for 8 bit 
+microcontrollers like the AVR. The AVR DA family only has 16K of RAM. 
+Therefore, avrOS is designed to use as little RAM as possible.
+
+Classic realtime operating systems use threaded multitasking. The OS has a 
+scheduler that controls which thread is currently running. The scheduler uses a
+thread priority value to determine which thread runs next. To implement the 
+thread context, each thread has it's own stack. The stack is stored in RAM and
+is used for passing and returning values and storing local variables for 
+functions. This same stack also stores the context for any interrupts that 
+happen during the thread execution. The scheduler then points the CPU stack
+register to the scheduled thread stack to implement a context switch. With 
+multiple threads, this requires reserving enough RAM for the deepest call stack
+plus the largest interrupt context for each thread. This is not the efficient
+use of RAM. A more efficient approach would use a single stack for all 
+"threads".
+
+Another feature of classic realtime operating systems is a modular design that 
+organizes the system code into functional blocks. The application code
+interacts using an API that declares and defines the objects these functional
+blocks implement. To abstract the data structures that represent the instance
+of an object and prevent the developer from having to edit system source files
+containing arrays of these structures, classic operating systems dynamically
+allocate memory at runtime to store these arrays of data structures. In
+practice, significant portions of these data structures are populated with
+constant values. Reading constant data from ROM/Flash memory to initialize an
+object at runtime requires the functional block to allocate memory from RAM.
+This is another inefficient use of RAM. It also requires additional code to
+test and handle the condition when not enough RAM is available.
+
+## avrOS Theory of Operation
+
+To use RAM as efficiently as possible, avrOS implements a form of cooperative
+multitasking. This requires that the application code does not block or busy
+wait. Instead it will check the status of various variables or objects to 
+detemine if it should do something, do it, and then return. By doing this,
+avrOS is able to use a single stack for all the system threads and interrupt 
+contexts.
+
+avrOS does not implement threading. The AVR microcontrollers have a very rich
+set of interrupts to handle asynchronous events. Handlers for these interrupts
+are "scheduled" asynchronously by the AVR interrupt controller. avrOS objects
+such as flags and queues can be used by the handler to signal and pass data to
+the user application code.
+
+In addition, the avrOS scheduler uses a finite state machine paradigm. The user
+application and system services register state machines and a set of states.
+The finite state machine manager (fsm) provides an API for the developer to
+control the state progression of the state machine. The scheduler uses a table
+of state machines and states to determine which to call next. The constant data
+in these tables is stored in FLASH. Only the dynamic state information is
+stored in RAM. 
+
+These tables are built at compile time and the linker determines that there is
+enough FLASH and RAM to store them. Therefore, there is no need for user code
+to call APIs to create objects at runtime and include additional code to handle
+conditions when there is not enough RAM to create a new object.
+
+To enable this feature and maintain an object oriented approach to software
+development, avrOS provides a set of macros for user code to define system
+objects. These macros "allocate" instances of state machines, states, queues,
+flags, timers, CLI commands, alarms, etc. at compile time and stores much of
+the data in flash where it will stay at runtime.
+
+Lastly, avrOS is highly scalable. Using the avrOSConfig.h file, an application
+developer can select precisely the features and drivers required by their
+implementation. For instance, a debug version of application may include the
+CLI and Logger services. But, the release version of the same application may
+not include either of these services.
