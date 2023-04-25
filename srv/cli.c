@@ -100,7 +100,7 @@ int cliClear(int argC, char *argV[])
 // CLI State Machine ----------------------------------------------------------
 #ifdef CLI_SERVICE
 // Create instance of the cli state machine
-ADD_STATE_MACHINE(cliStateMachine, cliNewCmd, false);
+ADD_STATE_MACHINE(cliStateMachine, cliNewCmd, 0);
 // Create initial state of the cli state machine
 ADD_STATE(cliStateMachine, cliNewCmd);
 // Create get key state of the cli state machine

@@ -37,7 +37,7 @@ static int tmrCmd(int argc, char *argv[])
 		if(argc<2 || (argc==2 && !strcmp(descr->name,argv[1])))
 		{
 			bool		running = false;
-			uint32_t	scanCycle = fsmGetScanCycle();
+			uint32_t	scanCycle = fsmScanCycle();
 			
 			if(descr->timerState->lastScanCycle == scanCycle || descr->timerState->lastScanCycle == scanCycle-1)
 				running = true;
@@ -71,7 +71,7 @@ void tmrReset(timer_t *timer, bool direction)
 
 bool tmrFunc(timer_t *timer, uint32_t ticks, bool direction)
 {
-	uint32_t scanCycle = fsmGetScanCycle();
+	uint32_t scanCycle = fsmScanCycle();
 	
 	// If the timer wasn't called last scan cycle...
 	if((scanCycle-timer->lastScanCycle>1) && !(scanCycle == 0 && timer->lastScanCycle == 0xffffffff))

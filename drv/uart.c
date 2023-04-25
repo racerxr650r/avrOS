@@ -137,7 +137,7 @@ int uartCmd(int argc, char *argv[])
 	return(0);
 }
 
-// External Functions ---------------------------------------------------------
+// State Machine Functions ----------------------------------------------------
 
 // Initialize a given USART to operate as a UART with the given operating
 // parameters.
@@ -214,6 +214,7 @@ int8_t uartInit(const UART_t	*uart,
 	return(ret);
 }
 
+// External Functions ---------------------------------------------------------
 // Imlpement putchar() to support stdio buffered file I/O
 int uartPutChar(char c, FILE *stream)
 {

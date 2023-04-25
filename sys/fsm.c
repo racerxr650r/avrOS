@@ -36,7 +36,7 @@ static char initString[] = {"Init"};
 // Internal functions ---------------------------------------------------------
 //static fsmStateMachineDescr_t*	fsmGetStateMachineDescr(const char *name);
 static fsmStateMachine_t*		fsmGetStateMachine(const char *name);
-static fsmState_t*				fsmGetState(fsmStateMachine_t *stateMachine, const char *name);
+// static fsmState_t*				fsmGetState(fsmStateMachine_t *stateMachine, const char *name);
 
 // CLI Commands ---------------------------------------------------------------
 #ifdef FSM_CLI
@@ -54,23 +54,19 @@ int fsmCmd(int argc, char *argv[])
 	fsmStateMachineDescr_t *descr = (fsmStateMachineDescr_t *)&__start_FSM_TABLES;
 	for(; descr < (fsmStateMachineDescr_t *)&__stop_FSM_TABLES; ++descr)
 	{
-		// If this State Machine is marked visible...
-		if(descr->visible == true)
+		// If no State Machine given, or the specified State Machine is this one...
+		if(argc<2 || (argc==2 && !strcmp(descr->name,argv[1])))
 		{
-			// If no State Machine given, or the specified State Machine is this one...
-			if(argc<2 || (argc==2 && !strcmp(descr->name,argv[1])))
-			{
-				// Display the State Machine Name
-				printf("State Machine: %s\n\r",descr->name);
+			// Display the State Machine Name
+			printf("State Machine: %s\n\r",descr->name);
 
-				// Walk the state table for the current state machine
-				fsmState_t *state = (fsmState_t *)&__stop_FSM_STATES;
-				for(; state >= (fsmState_t *)&__start_FSM_STATES; state--)
-				{
-					// If this State is a member of the current State Machine...
-					if(state->stateMachine->stateMachineDescr == descr)
-						printf("\t%c%s\n\r",(descr->stateMachine->currState == state)?'>':' ',state->name);
-				}
+			// Walk the state table for the current state machine
+			fsmState_t *state = (fsmState_t *)&__stop_FSM_STATES;
+			for(; state >= (fsmState_t *)&__start_FSM_STATES; state--)
+			{
+				// If this State is a member of the current State Machine...
+				if(state->stateMachine->stateMachineDescr == descr)
+					printf("\t%c%s\n\r",(descr->stateMachine->currState == state)?'>':' ',state->name);
 			}
 		}
 	}
@@ -138,7 +134,7 @@ static fsmStateMachine_t *fsmGetStateMachine(const char *name)
   return(NULL);
 }
 
-static fsmState_t *fsmGetState(fsmStateMachine_t *stateMachine, const char *name)
+/*static fsmState_t *fsmGetState(fsmStateMachine_t *stateMachine, const char *name)
 {
   fsmState_t *state = (fsmState_t *)&__start_FSM_STATES;
   for(; state < (fsmState_t *)&__stop_FSM_STATES; state++)
@@ -146,11 +142,11 @@ static fsmState_t *fsmGetState(fsmStateMachine_t *stateMachine, const char *name
       return(state);
 	  
   return(NULL);
-}
+}*/
 
 // External Functions ---------------------------------------------------------
 // Get the scan cycle count
-uint32_t fsmGetScanCycle()
+uint32_t fsmScanCycle()
 {
 	return(scanCycle);
 }
@@ -184,6 +180,11 @@ const char* fsmCurrentStateMachineName()
 		ret = initString;
 	
 	return(ret);
+}
+
+void* fsmInstance(fsmStateMachine_t *stateMachine)
+{
+	return(stateMachine->stateMachineDescr->instance);
 }
 
 // Is this the first call of the state function after a state change?

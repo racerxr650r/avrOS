@@ -54,3 +54,8 @@ dkms.conf
 # VS Code configuration directories
 .vs/
 .vscode/
+
+# Lizard output files (Cyclomatic Complexity)
+./cca.csv
+./cca.html
+./cca.xml
