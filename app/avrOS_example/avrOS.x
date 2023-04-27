@@ -188,13 +188,7 @@ SECTIONS
 	*(FSM_TABLES)
 	__stop_FSM_TABLES = . ;
   } AT> text_window
-  FSM_STATES ADDR(FSM_TABLES) + SIZEOF (FSM_TABLES) :
-  {
-	__start_FSM_STATES = . ;
-	*(FSM_STATES)
-	__stop_FSM_STATES = . ;
-  } AT> text_window
-  QUE_TABLE ADDR(FSM_STATES) + SIZEOF (FSM_STATES) :
+  QUE_TABLE ADDR(FSM_TABLES) + SIZEOF (FSM_TABLES) :
   {
 	__start_QUE_TABLE = . ;
 	*(QUE_TABLE)
