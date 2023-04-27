@@ -27,7 +27,15 @@
 #include <ctype.h>
 
 // Private functions prototypes ----------------------------------------------
-static const char *cliCallCommandName();
+static int cliGetKey(fsmStateMachine_t *stateMachine);
+static int cliEscKey(fsmStateMachine_t *stateMachine);
+static int cliEscSequence(fsmStateMachine_t *stateMachine);
+static int cliConsumeKey(fsmStateMachine_t *stateMachine);
+static int cliCallCommand(fsmStateMachine_t *stateMachine);
+static int cliClearScreen(fsmStateMachine_t *stateMachine);
+static int cliWaitTxQueue(fsmStateMachine_t *stateMachine);
+static int cliRepeatCommand(fsmStateMachine_t *stateMachine);
+static int cliDisplayEscape(fsmStateMachine_t *stateMachine);
 
 // Private Globals ------------------------------------------------------------
 static FILE				cliSTDOUT = FDEV_SETUP_STREAM(uartPutChar, NULL, _FDEV_SETUP_WRITE);
@@ -101,36 +109,16 @@ int cliClear(int argC, char *argV[])
 #ifdef CLI_SERVICE
 // Create instance of the cli state machine
 ADD_STATE_MACHINE(cliStateMachine, cliNewCmd, 0);
-// Create initial state of the cli state machine
-ADD_STATE(cliStateMachine, cliNewCmd);
-// Create get key state of the cli state machine
-ADD_STATE(cliStateMachine, cliGetKey);
-// Create escape key state of the cli state machine
-ADD_STATE(cliStateMachine, cliEscKey);
-// Create escape sequence state of the cli state machine
-ADD_STATE(cliStateMachine, cliEscSequence);
-// Create keystroke state of the cli state machine
-ADD_STATE(cliStateMachine, cliConsumeKey);
-// Create call command state of the cli state machine
-ADD_STATE(cliStateMachine, cliCallCommand,cliCallCommandName);
-// Create wait Tx queue state of the cli state machine
-ADD_STATE(cliStateMachine, cliClearScreen);
-// Create wait Tx queue state of the cli state machine
-ADD_STATE(cliStateMachine, cliWaitTxQueue);
-// Create repeat command state of the cli state machine
-ADD_STATE(cliStateMachine, cliRepeatCommand);
-// Create repeat command state of the cli state machine
-ADD_STATE(cliStateMachine, cliDisplayEscape);
 
-int cliNewCmdFunc(fsmStateMachine_t *stateMachine)
+static int cliNewCmd(fsmStateMachine_t *stateMachine)
 {
 	// Display the prompt
 	printf("\n\r> ");
-	fsmNextState(stateMachine,&cliGetKey);
+	fsmNextState(stateMachine,cliGetKey);
 	return(0);
 }
 
-int cliGetKeyFunc(fsmStateMachine_t *stateMachine)
+static int cliGetKey(fsmStateMachine_t *stateMachine)
 {
 	UART_t		*uart = fdev_get_udata(stdout);
 	
@@ -139,14 +127,14 @@ int cliGetKeyFunc(fsmStateMachine_t *stateMachine)
 		uartReceive(uart,&key,1);
 		
 		if(key == '\e')
-			fsmNextState(stateMachine, &cliEscKey);
+			fsmNextState(stateMachine, cliEscKey);
 		else
-			fsmNextState(stateMachine, &cliConsumeKey);
+			fsmNextState(stateMachine, cliConsumeKey);
 	}
 	return(0);
 }
 
-int cliEscKeyFunc(fsmStateMachine_t *stateMachine)
+static int cliEscKey(fsmStateMachine_t *stateMachine)
 {
 	UART_t		*uart = fdev_get_udata(stdout);
 	
@@ -155,14 +143,14 @@ int cliEscKeyFunc(fsmStateMachine_t *stateMachine)
 		uartReceive(uart,&key,1);
 
 		if(key == '[' || key == 'O')
-			fsmNextState(stateMachine, &cliEscSequence);
+			fsmNextState(stateMachine, cliEscSequence);
 		else
-			fsmNextState(stateMachine, &cliGetKey);
+			fsmNextState(stateMachine, cliGetKey);
 	}
 	return(0);
 }
 
-int cliEscSequenceFunc(fsmStateMachine_t *stateMachine)
+static int cliEscSequence(fsmStateMachine_t *stateMachine)
 {
 	UART_t		*uart = fdev_get_udata(stdout);
 	
@@ -173,20 +161,20 @@ int cliEscSequenceFunc(fsmStateMachine_t *stateMachine)
 		if(key == 'A')
 		{
 			key = KEYCODE_UP;
-			fsmNextState(stateMachine, &cliConsumeKey);
+			fsmNextState(stateMachine, cliConsumeKey);
 		}
 		else if(key == 'D')
 		{
 			key = KEYCODE_LEFT;
-			fsmNextState(stateMachine, &cliConsumeKey);
+			fsmNextState(stateMachine, cliConsumeKey);
 		}
 		else
-		fsmNextState(stateMachine, &cliGetKey);
+		fsmNextState(stateMachine, cliGetKey);
 	}
 	return(0);
 }
 
-int cliConsumeKeyFunc(fsmStateMachine_t *stateMachine)
+static int cliConsumeKey(fsmStateMachine_t *stateMachine)
 {
 	switch(key)
 	{
@@ -199,7 +187,7 @@ int cliConsumeKeyFunc(fsmStateMachine_t *stateMachine)
 			memcpy(previousCommand,commandLine,lineCounter);
 			previousCommand[lineCounter] = '\0';
 			lineCounter = 0;
-			fsmNextState(stateMachine,&cliWaitTxQueue);
+			fsmNextState(stateMachine, cliWaitTxQueue);
 			break;
 		case KEYCODE_LEFT:
 		case '\b':
@@ -211,13 +199,13 @@ int cliConsumeKeyFunc(fsmStateMachine_t *stateMachine)
 				commandLine[lineCounter] = 0;
 				printf("\r> %s \b",commandLine);
 			}
-			fsmNextState(stateMachine,&cliGetKey);
+			fsmNextState(stateMachine, cliGetKey);
 			break;
 		case KEYCODE_UP:
 			strcpy(commandLine,previousCommand);
 			lineCounter = strlen(commandLine);
 			printf("\r> %s",commandLine);
-			fsmNextState(stateMachine,&cliGetKey);
+			fsmNextState(stateMachine, cliGetKey);
 			break;
 		default:
 			// Transmit the key back to the connected computer (ECHO OFF)
@@ -225,27 +213,27 @@ int cliConsumeKeyFunc(fsmStateMachine_t *stateMachine)
 			commandLine[lineCounter] = key;
 			if(lineCounter<MAX_CMD_LINE-1)
 			++lineCounter;
-			fsmNextState(stateMachine,&cliGetKey);
+			fsmNextState(stateMachine, cliGetKey);
 			break;
 	}
 	return(0);
 }
 
-int cliCallCommandFunc(fsmStateMachine_t *stateMachine)
+static int cliCallCommand(fsmStateMachine_t *stateMachine)
 {
 	// Attempt to call user command
 	cliCallFunction(commandLine);
 
 	// If the repeat command function pointer has been set...
 	if(cmdFuncPtr!=NULL)
-		fsmNextState(stateMachine,&cliClearScreen);
+		fsmNextState(stateMachine, cliClearScreen);
 	else
-		fsmNextState(stateMachine,&cliNewCmd);
+		fsmNextState(stateMachine, cliNewCmd);
 
 	return(0);
 }
 
-int cliClearScreenFunc(fsmStateMachine_t *stateMachine)
+static int cliClearScreen(fsmStateMachine_t *stateMachine)
 {
 	UART_t		*uart = fdev_get_udata(stdout);
 
@@ -254,21 +242,21 @@ int cliClearScreenFunc(fsmStateMachine_t *stateMachine)
 	{
 		// Clear the entire screen
 		printf("\e[2J");
-		fsmNextState(stateMachine,&cliWaitTxQueue);
+		fsmNextState(stateMachine, cliWaitTxQueue);
 	}
 	
 	return(0);
 }
 
-int cliWaitTxQueueFunc(fsmStateMachine_t *stateMachine)
+static int cliWaitTxQueue(fsmStateMachine_t *stateMachine)
 {
 	UART_t		*uart = fdev_get_udata(stdout);
 
 	// Wait until the Tx queue is empty...
 	if(uartTxEmpty(uart))
 	{
-		if(fsmPreviousState(stateMachine) == &cliConsumeKey)
-			fsmNextState(stateMachine,&cliCallCommand);
+		if(fsmPreviousState(stateMachine) == cliConsumeKey)
+			fsmNextState(stateMachine, cliCallCommand);
 		else
 		{
 			// Set the cursor to Home (upper left of screen)
@@ -276,23 +264,23 @@ int cliWaitTxQueueFunc(fsmStateMachine_t *stateMachine)
 			// Hide the cursor
 			printf("\e[?25l");
 			
-			fsmNextState(stateMachine,&cliRepeatCommand);
+			fsmNextState(stateMachine, cliRepeatCommand);
 		}
 	}
 	
 	return(0);
 }
 
-int cliRepeatCommandFunc(fsmStateMachine_t *stateMachine)
+static int cliRepeatCommand(fsmStateMachine_t *stateMachine)
 {
 	// Attempt to call user command
 	cmdFuncPtr(argC,argV);
-	fsmNextState(stateMachine,&cliDisplayEscape);
+	fsmNextState(stateMachine, cliDisplayEscape);
 	
 	return(0);
 }
 
-int cliDisplayEscapeFunc(fsmStateMachine_t *stateMachine)
+static int cliDisplayEscape(fsmStateMachine_t *stateMachine)
 {
 	UART_t		*uart = fdev_get_udata(stdout);
 
@@ -301,7 +289,7 @@ int cliDisplayEscapeFunc(fsmStateMachine_t *stateMachine)
 	{
 		// Set the cursor to Home (upper left of screen)
 		printf("\n\r<<< Press [Ctrl-C] to return to command prompt >>>");
-		fsmNextState(stateMachine,&cliWaitTxQueue);
+		fsmNextState(stateMachine, cliWaitTxQueue);
 
 		// Get the next keystroke
 		if(!uartRxEmpty(uart))
@@ -314,7 +302,7 @@ int cliDisplayEscapeFunc(fsmStateMachine_t *stateMachine)
 				cmdFuncPtr = NULL;
 				// Unhide the cursor
 				printf("\e[?25h");
-				fsmNextState(stateMachine,&cliNewCmd);
+				fsmNextState(stateMachine, cliNewCmd);
 			}
 		}
 	}
@@ -322,12 +310,6 @@ int cliDisplayEscapeFunc(fsmStateMachine_t *stateMachine)
 	return(0);
 }
 #endif  // CLI_SERVICE
-
-// Private Functions ----------------------------------------------------------
-const char* cliCallCommandName()
-{
-	return(currentCommand->commandStr);
-}
 
 // External Functions ---------------------------------------------------------
 // Initialize the CLI and the associated serial port

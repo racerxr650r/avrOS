@@ -48,19 +48,19 @@
 }while(0)
 #elif LOG_FORMAT == 2
 #define INFO(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s:%s:%s: ",sysGetTick(),"INFO",fsmCurrentStateMachineName(),fsmCurrentStateName()); \
+	fprintf(stderr,"\n\r%lu:%s: ",sysGetTick(),"INFO"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define WARN(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s:%s:%s: ",sysGetTick(),"WARN",fsmCurrentStateMachineName(),fsmCurrentStateName()); \
+	fprintf(stderr,"\n\r%lu:%s: ",sysGetTick(),"WARN"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define ERROR(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s:%s:%s: ",sysGetTick(),"ERR ",fsmCurrentStateMachineName(),fsmCurrentStateName()); \
+	fprintf(stderr,"\n\r%lu:%s: ",sysGetTick(),"ERR "); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define CRITICAL(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s:%s:%s: ",sysGetTick(),"CRIT",fsmCurrentStateMachineName(),fsmCurrentStateName()); \
+	fprintf(stderr,"\n\r%lu:%s: ",sysGetTick(),"CRIT"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 	fprintf(stderr,"\n\r+++ System Stopped +++"); \
 	while(1);\

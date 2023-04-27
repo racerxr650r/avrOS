@@ -59,15 +59,6 @@ int fsmCmd(int argc, char *argv[])
 		{
 			// Display the State Machine Name
 			printf("State Machine: %s\n\r",descr->name);
-
-			// Walk the state table for the current state machine
-			fsmState_t *state = (fsmState_t *)&__stop_FSM_STATES;
-			for(; state >= (fsmState_t *)&__start_FSM_STATES; state--)
-			{
-				// If this State is a member of the current State Machine...
-				if(state->stateMachine->stateMachineDescr == descr)
-					printf("\t%c%s\n\r",(descr->stateMachine->currState == state)?'>':' ',state->name);
-			}
 		}
 	}
 
@@ -98,13 +89,12 @@ ADD_COMMAND("fsmStart",fsmStartCmd);
 int fsmStartCmd(int argc, char *argv[])
 {
   // If command line includes a name of a state machine...
-  if((argc == 3) && (argv[1] != NULL) && (argv[2] != NULL))
+  if((argc == 2) && (argv[1] != NULL))
   {
     fsmStateMachine_t	*stateMachine = fsmGetStateMachine(argv[1]);
-	fsmState_t			*state = fsmGetState(stateMachine,argv[2]);
 	
-    if(stateMachine->currState == NULL && stateMachine != NULL && state != NULL)
-      return(fsmNextState(stateMachine,state));
+    if(stateMachine->currState == NULL && stateMachine != NULL)
+      return(fsmNextState(stateMachine,stateMachine->stateMachineDescr->initHandler));
   }
   return(-1);
 }
@@ -151,24 +141,6 @@ uint32_t fsmScanCycle()
 	return(scanCycle);
 }
 
-// Get the current state name
-const char* fsmCurrentStateName()
-{
-	const char *ret = NULL;
-	
-	if(currStateMachine!=NULL)
-	{
-		if(currStateMachine->stateMachine->currState->stateNameFuncPtr != NULL)
-			ret = currStateMachine->stateMachine->currState->stateNameFuncPtr();
-		else
-			ret = currStateMachine->stateMachine->currState->name;
-	}
-	else
-		ret = initString;
-
-	return(ret);
-}
-
 // Get the current state machine name
 const char* fsmCurrentStateMachineName()
 {
@@ -194,22 +166,22 @@ bool fsmInitialCall()
 }
 
 // Return pointer to the current state
-fsmState_t* fsmCurrentState(fsmStateMachine_t *stateMachine)
+fsmHandler_t fsmCurrentState(fsmStateMachine_t *stateMachine)
 {
 	return(stateMachine->currState);
 }
 
 // Return pointer to the previous state
-fsmState_t* fsmPreviousState(fsmStateMachine_t *stateMachine)
+fsmHandler_t fsmPreviousState(fsmStateMachine_t *stateMachine)
 {
 	return(stateMachine->prevState);
 }
 
 // Change the given state machine to the given state
-int fsmNextState(fsmStateMachine_t *stateMachine, const fsmState_t *state)
+int fsmNextState(fsmStateMachine_t *stateMachine, fsmHandler_t handler)
 {
   if(stateMachine)
-    stateMachine->nextState = (fsmState_t *)state;
+    stateMachine->nextState = handler;
   else
     return(-1);
 
@@ -239,25 +211,25 @@ void fsmDispatch(void)
 	currStateMachine = (fsmStateMachineDescr_t *)&__start_FSM_TABLES;
 	for(; currStateMachine < (fsmStateMachineDescr_t *)&__stop_FSM_TABLES; ++currStateMachine)
 	{
-		fsmStateMachine_t	*state = currStateMachine->stateMachine;
+		fsmStateMachine_t	*stateMachine = currStateMachine->stateMachine;
 	  
 		// If a next state has been set, update the current state
-		if(state->nextState != NULL)
+		if(stateMachine->nextState != NULL)
 		{
-			state->prevState = currStateMachine->stateMachine->currState;
-			state->currState = currStateMachine->stateMachine->nextState;
-			state->nextState = NULL;
-			state->initialCall = true;
+			stateMachine->prevState = currStateMachine->stateMachine->currState;
+			stateMachine->currState = currStateMachine->stateMachine->nextState;
+			stateMachine->nextState = NULL;
+			stateMachine->initialCall = true;
 		}
 
 		// If the current state is valid...
-		if(state->currState != NULL)
+		if(stateMachine->currState != NULL)
 		{
 			// If the specified state was found in the table...
-			if(state != NULL)
+			if(stateMachine != NULL)
 			{
-				state->currState->funcPtr(currStateMachine->stateMachine);
-				state->initialCall = false;
+				stateMachine->currState(currStateMachine->stateMachine);
+				stateMachine->initialCall = false;
 			}
 		}
 	}
