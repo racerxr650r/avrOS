@@ -70,8 +70,6 @@ environment on a debian based Linux distribution follow the instructions here:
 
 4. Extract the `Atmel.AVR-Dx_DFP.2.2.253.atpack` file locally and copy it to the `/usr/lib/gcc/avr/5.4.0` directory
 
-    From the directory you extracted the DFP use the following command to copy it:
-
     ```console
     mkdir ./AVR-Dx_DFP
     unzip -d AVR-Dx_DFP/ Atmel.AVR-Dx_DFP.2.2.253.atpack
@@ -79,10 +77,6 @@ environment on a debian based Linux distribution follow the instructions here:
     rm -rf AVR-Dx_DFP
     rm Atmel.AVR-Dx_DFP.2.2.253.atpack
     ```
-
-    If your file manager does not recognize it as a compressed file, add a .zip extension to the filename
-
-    If you extracted/copied it elsewhere, you will need to update DFP to the path of the base directory you just extracted
 
 5. Install AVRDUDE from sources on github
 
@@ -107,6 +101,9 @@ environment on a debian based Linux distribution follow the instructions here:
     ```console
     make flash
     ```
+    
+    The default programmer defined in the makefile is the Atmel ICE.
+    
 These instructions are similar for Fedora and MacOS. You'll need to use the
 appropiate package manager
 
