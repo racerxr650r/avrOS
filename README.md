@@ -71,10 +71,10 @@ environment on a debian based Linux distribution follow the instructions here:
 4. Extract the `Atmel.AVR-Dx_DFP.2.2.253.atpack` file locally and copy it to the `/usr/lib/gcc/avr/5.4.0` directory
 
     ```console
-    mkdir ./AVR-Dx_DFP
-    unzip -d AVR-Dx_DFP/ Atmel.AVR-Dx_DFP.2.2.253.atpack
-    sudo cp -R AVR-Dx_DFP/ /usr/lib/gcc/avr/5.4.0
-    rm -rf AVR-Dx_DFP
+    mkdir ./Atmel.AVR-Dx_DFP.2.2.253
+    unzip -d Atmel.AVR-Dx_DFP.2.2.253/ Atmel.AVR-Dx_DFP.2.2.253.atpack
+    sudo cp -R Atmel.AVR-Dx_DFP.2.2.253/ /usr/lib/gcc/avr/5.4.0
+    rm -rf Atmel.AVR-Dx_DFP.2.2.253
     rm Atmel.AVR-Dx_DFP.2.2.253.atpack
     ```
 
