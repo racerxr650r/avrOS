@@ -48,28 +48,36 @@ avrOS is developed on a Linux workstation using the avr-gcc compiler, gnu make,
 and avrdude w/Atmel Ice jtag programmer. To recreate this development 
 environment on a debian based Linux distribution follow the instructions here:
 
-1. Install Gnu make and git
-
-    ```console    
-    sudo apt install make git
-    ```
-
-2. Install avr-gcc Gnu C compiler and tools
+1. From your "Projects" directory, clone avrOS from github
 
     ```console
-    sudo apt install binutils gcc-avr avr-libc flex byacc bison
+    git clone https://github.com/racerxr650r/avrOS.git
     ```
+   
+   You will find these instructions in ./avrOS/README.md
+       
+2. Install Gnu make, git, avr-gcc Gnu C compiler, and other tools
 
+    ```console
+    sudo apt install make git binutils gcc-avr avr-libc flex byacc bison unzip
+    ```
+    
 3. Download the Microchip Device Family Pack for the Atmel-Dx series from the [Microchip Packs Repository](http://packs.download.atmel.com/)
 
-    Download the lastest [Atmel AVR-Dx Series Device Support](http://packs.download.atmel.com/#collapse-Atmel-AVR-Dx-DFP-pdsc) DFP
+   ```console
+   wget http://packs.download.atmel.com/Atmel.AVR-Dx_DFP.2.2.253.atpack
+   ```
 
 4. Extract the `Atmel.AVR-Dx_DFP.2.2.253.atpack` file locally and copy it to the `/usr/lib/gcc/avr/5.4.0` directory
 
     From the directory you extracted the DFP use the following command to copy it:
 
     ```console
-    sudo cp -R Atmel.AVR-Dx_DFP.2.2.253/ /usr/lib/gcc/avr/5.4.0
+    mkdir ./AVR-Dx_DFP
+    unzip -d AVR-Dx_DFP/ Atmel.AVR-Dx_DFP.2.2.253.atpack
+    sudo cp -R AVR-Dx_DFP/ /usr/lib/gcc/avr/5.4.0
+    rm -rf AVR-Dx_DFP
+    rm Atmel.AVR-Dx_DFP.2.2.253.atpack
     ```
 
     If your file manager does not recognize it as a compressed file, add a .zip extension to the filename
@@ -85,13 +93,7 @@ environment on a debian based Linux distribution follow the instructions here:
     repository does not include support for the Atmel Ice and it's UPDI programming
     interface.
 
-6. Clone avrOS from github
-
-    ```console
-    git clone https://github.com/racerxr650r/avrOS.git
-    ```
-
-7. Build avrOS example application
+6. Build avrOS example application
 
     Goto the application directory and make the .hex image
 
@@ -100,7 +102,7 @@ environment on a debian based Linux distribution follow the instructions here:
     make
     ```
 
-8. Program the .hex image into the MCU flash [^1] [^2]
+7. Program the .hex image into the MCU flash [^1] [^2]
 
     ```console
     make flash
