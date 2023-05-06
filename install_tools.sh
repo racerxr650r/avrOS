@@ -5,7 +5,7 @@ pushd .
 cd ..
 
 # Install make, git, gcc-avr, gcc tools, and unzip
-sudo apt install make git binutils gcc-avr avr-libc flex byacc bison unzip
+sudo apt install make binutils gcc-avr avr-libc flex byacc bison cmake libelf-dev libusb-dev libhidapi-dev libftdi1-dev libreadline-dev unzip
 
 # Get the AVR Dx DFP file for the AVR DA libs and header files
 wget http://packs.download.atmel.com/Atmel.AVR-Dx_DFP.2.2.253.atpack
