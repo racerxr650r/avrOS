@@ -54,3 +54,9 @@ dkms.conf
 # VS Code configuration directories
 .vs/
 .vscode/
+
+# Geany configuration and project files
+*.geany
+
+# GitHub Tokens
+gh_token.txt
