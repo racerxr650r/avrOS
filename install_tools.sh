@@ -1,7 +1,12 @@
 #! /bin/bash
 
+sudo apt-get update
+
 # Install make, git, gcc-avr, gcc tools, and unzip
-sudo apt-get install -y make binutils gcc-avr avr-libc flex byacc bison cmake libelf-dev libusb-dev libhidapi-dev libftdi1-dev libreadline-dev unzip minicom
+sudo apt-get install -y make binutils gcc-avr gdb-avr avr-libc flex byacc bison cmake unzip 
+
+# Install command line app tools
+sudo apt-get install -y minicom screens micro 
 
 # Install visual tools
 sudo apt-get install -y gtkterm geany geany-plugins

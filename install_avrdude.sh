@@ -1,5 +1,9 @@
 #! /bin/bash
 
+# Install required build tools and libs
+sudo apt-get update
+sudo apt-get install -y build-essential git cmake flex bison libelf-dev libusb-dev libhidapi-dev libftdi1-dev libreadline-dev
+
 # Goto the "projects" directory
 pushd .
 cd ..
