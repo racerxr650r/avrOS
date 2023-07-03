@@ -21,6 +21,18 @@
 #ifndef LOG_H_
 #define LOG_H_
 
+typedef struct
+{
+	char *name;
+	FILE *outFile;
+} logInstance_t;
+
+// Add a log instance macro
+#define ADD_LOG(logName, logFile) \
+                const static logInstance_t logName = { .name = #logName, .outFile = logFile }; \
+                ADD_STATE_MACHINE(logName ## _SM,logInit,FSM_SYS | 0x01, (void *)&logName);
+        
+
 // LOG message macros ---------------------------------------------------------
 #if LOG_FORMAT == 0
 #define INFO(...)
@@ -105,6 +117,6 @@
 #endif
 
 // External Functions----------------------------------------------------------
-void logInit(void);
+//static int logInit(fsmStateMachine_t *stateMachine);
 
 #endif /* LOG_H_ */

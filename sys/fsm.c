@@ -154,7 +154,7 @@ const char* fsmCurrentStateMachineName()
 	return(ret);
 }
 
-void* fsmInstance(fsmStateMachine_t *stateMachine)
+void* fsmGetInstance(fsmStateMachine_t *stateMachine)
 {
 	return(stateMachine->stateMachineDescr->instance);
 }

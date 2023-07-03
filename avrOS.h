@@ -61,7 +61,6 @@
 //#include "delaySrv.h"
 //#include "spiDrv.h"
 //#include "sndDrv.h"
-//#include "uart.h"
 //#include "ps2Drv.h"
 //#include "winSrv.h"
 //#include "uiMgr.h"
@@ -71,8 +70,8 @@
 // Macros *********************************************************************
 #define UNUSED(x) (void)(x)
 
-#define CONCAT_( x,y ) x##y
-#define CONCAT( x,y ) CONCAT_( x,y )
+#define CONCAT_(x,y) x ## y
+#define CONCAT(x,y) CONCAT_(x,y)
 
 #define DEFAULT_OR_ARG(z,a,val,...)		val
 

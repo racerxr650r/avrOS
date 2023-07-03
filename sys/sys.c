@@ -83,21 +83,8 @@ bool sysInit()
 	// Initialize the system tick counter
 	sysInitTick();
 
-// The following code will need to be moved to the logger and cli initialize
-// states when the intialization sequence is refactored (JMA)
-#if LOG_FORMAT>0 && LOG_LEVEL>0
-    // Initialize the logger	
-	logInit();
-#endif
-	// Initialize the CLI and the interface associated with it
-#ifdef CLI_SERVICE
-	// Initialize the CLI and hook stdout so printf and other stdout function
-	// output to the CLI interface
-	cliInit();
-#endif
-	
 	// Enable global interrupts
-	sei();
+	//sei();
 
 	return(true);
 }
@@ -173,4 +160,10 @@ uint32_t sysGetTick()
 	ret = ret + (tickOvrflw*(TICK_TOP/tickDivisor));
 	
 	return(ret);
+}
+
+// Put the system to sleep until the next interrupt
+void sysSleep()
+{
+	return;
 }

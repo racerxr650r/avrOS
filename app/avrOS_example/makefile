@@ -18,9 +18,9 @@ MCU = avr128da28
 # mcu clock frequency
 CLK = 24000000
 # avr programmer (and port if necessary)
-# e.g. PRG = usbtiny -or- PRG = arduino -P /dev/tty.usbmodem411
+# e.g. PRG = atmelice_updi -or- PRG = serialupdi -P /dev/ttyUSB0
 # The current programmer if the Atmel ICE w/UPDI interface
-PRG = atmelice_updi
+PRG = serialupdi -P /dev/ttyUSB2
 # fuse values for avr: low, high, and extended
 # these values are from an Arduino Uno (ATMega328P)
 # see http://www.engbedded.com/fusecalc/ for other MCUs and options

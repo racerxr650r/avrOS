@@ -40,7 +40,7 @@ static int pcmIdle(fsmStateMachine_t *stateMachine);
 static int pcmUpdate(fsmStateMachine_t *stateMachine);
 static int pcmWait(fsmStateMachine_t *stateMachine);
 
-static int pcmInit(fsmStateMachine_t *stateMachine)
+int pcmInit(fsmStateMachine_t *stateMachine)
 {
 	// Initialize the DAC
 	dacInit(VREF_REFSEL_VDD_gc,DAC_MID);

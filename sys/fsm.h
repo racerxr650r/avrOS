@@ -32,8 +32,8 @@
 // Type modifier for priority
 typedef enum FSM_TYPE
 {
-  FSM_SYS = 0x00,
-  FSM_DRV = 0b01000000,
+  FSM_DRV = 0b00000000,
+  FSM_SYS = 0b01000000,
   FSM_SRV = 0b10000000,
   FSM_APP = 0b11000000
 }fsmType_t;
@@ -70,14 +70,16 @@ typedef struct STATE_MACHINE_DESCR_TYPE
 } fsmStateMachineDescr_t;
 
 // Adds a new state machine to the list of state machines handled by the FSM manager
-#define ADD_STATE_MACHINE(stateMachineName, smInitHandler, smPriority, ...)	 static int smInitHandler(fsmStateMachine_t *stateMachine); \
-                          const static fsmStateMachineDescr_t CONCAT(stateMachineName,_descr); \
-													fsmStateMachine_t stateMachineName = {.prevState = NULL, .currState = NULL, .nextState = smInitHandler, .stateMachineDescr = &CONCAT(stateMachineName,_descr) }; \
-													const static fsmStateMachineDescr_t SECTION(FSM_TABLES) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = &stateMachineName, .initHandler = smInitHandler, .priority = smPriority, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
+#define ADD_STATE_MACHINE(stateMachineName, smInitHandler, smPriority, ...)	\
+                          int smInitHandler(fsmStateMachine_t *stateMachine); \
+                          const static fsmStateMachineDescr_t SECTION(FSM_TABLES) CONCAT(stateMachineName,_descr); \
+						  fsmStateMachine_t stateMachineName = {.prevState = NULL, .currState = NULL, .nextState = smInitHandler, .stateMachineDescr = &CONCAT(stateMachineName,_descr) }; \
+						  const static fsmStateMachineDescr_t SECTION(FSM_TABLES) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = &stateMachineName, .initHandler = smInitHandler, .priority = smPriority, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
 
 // Exported Functions ---------------------------------------------------------                                                          
 uint32_t	fsmScanCycle(void);
 const char* fsmCurrentStateMachineName();
+void*       fsmGetInstance(fsmStateMachine_t *stateMachine);
 bool		fsmInitialCall();
 fsmHandler_t fsmCurrentState(fsmStateMachine_t *stateMachine);
 fsmHandler_t fsmPreviousState(fsmStateMachine_t *stateMachine);

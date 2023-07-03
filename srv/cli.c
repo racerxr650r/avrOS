@@ -38,7 +38,7 @@ static int cliRepeatCommand(fsmStateMachine_t *stateMachine);
 static int cliDisplayEscape(fsmStateMachine_t *stateMachine);
 
 // Private Globals ------------------------------------------------------------
-static FILE				cliSTDOUT = FDEV_SETUP_STREAM(uartPutChar, NULL, _FDEV_SETUP_WRITE);
+//static FILE				cliSTDOUT = FDEV_SETUP_STREAM(uartPutChar, NULL, _FDEV_SETUP_WRITE);
 
 // Command line state machine globals
 #ifdef CLI_SERVICE
@@ -55,15 +55,6 @@ static cliCommand_t		*currentCommand;
 // Start and end of the linker assembled array of cliCommand_t structures
 extern void *__start_CLI_CMDS;
 extern void *__stop_CLI_CMDS;
-
-// OS Objects -----------------------------------------------------------------
-#ifdef CLI_SERVICE
-// Create the Tx and Rx queues
-ADD_QUEUE(cliRxQueue,CLI_RX_QUEUE_SIZE);
-ADD_QUEUE(cliTxQueue,CLI_TX_QUEUE_SIZE);
-// Create the Uart instance for CLI I/O
-ADD_UART(cliUart,CLI_USART,&cliTxQueue,&cliRxQueue);
-#endif
 
 // CLI Commands ---------------------------------------------------------------
 // Command Help
@@ -106,9 +97,31 @@ int cliClear(int argC, char *argV[])
 #endif // CLI_CLI
 
 // CLI State Machine ----------------------------------------------------------
-#ifdef CLI_SERVICE
-// Create instance of the cli state machine
-ADD_STATE_MACHINE(cliStateMachine, cliNewCmd, 0);
+// Forward declarations of the state handlers
+static int cliNewCmd(fsmStateMachine_t *stateMachine);
+
+// Initialize the CLI
+int cliInit(fsmStateMachine_t *stateMachine)
+{
+	cliInstance_t *cliInstance = (cliInstance_t*)fsmGetInstance(stateMachine);
+	FILE          *inFile = cliInstance->inFile, *outFile = cliInstance->outFile;
+	
+	INFO("Initializing CLI instance %s",cliInstance->name);
+	
+	// Setup stdout so stdout.h functions like printf output the CLI associated
+	stdout = outFile;
+	stdin = inFile;
+
+	// Enable global interrupts
+	sei();
+
+    // Display the system greeting
+	printf(CLI_BANNER);
+	
+	fsmNextState(stateMachine,cliNewCmd);
+
+	return(0);
+}
 
 static int cliNewCmd(fsmStateMachine_t *stateMachine)
 {
@@ -309,41 +322,8 @@ static int cliDisplayEscape(fsmStateMachine_t *stateMachine)
 	
 	return(0);
 }
-#endif  // CLI_SERVICE
 
 // External Functions ---------------------------------------------------------
-// Initialize the CLI and the associated serial port
-void cliInit()
-{
-	INFO("Init CLI using %s at %lu bps",&CLI_USART==&USART0?"USART0":&CLI_USART==&USART1?"USART1":&CLI_USART==&USART2?"USART2":"N/A",CLI_BAUDRATE);
-	
-	// Setup stdout so stdout.h functions like printf output the CLI associated
-	// uart or virtual uart
-	fdev_set_udata(&cliSTDOUT,(void *)&cliUart);
-	stdout = &cliSTDOUT;
-	// Initialize CLI UART
-	uartInit(&cliUart,CLI_BAUDRATE,CLI_PARITY,CLI_DATA_BITS,CLI_STOP_BITS);
-
-	// Enable global interrupts
-	sei();
-
-    // Display the system greeting
-	printf(CLI_BANNER);
-	
-	printf("\n\rSystem Memory --------------\n\r");
-	// Wait until the Tx queue is empty...
-	while(!uartTxEmpty(&cliUart));
-	//cliCallFunction("rom");
-	memRomStatus(stdout);
-	printf("\n\r");
-	// Wait until the Tx queue is empty...
-	while(!uartTxEmpty(&cliUart));
-	//cliCallFunction("ram");
-	memRamStatus(stdout);
-	// Wait until the Tx queue is empty...
-	while(!uartTxEmpty(&cliUart));
-}
-
 // Parse command line and call associated function
 int cliCallFunction(char *commandLine)
 {

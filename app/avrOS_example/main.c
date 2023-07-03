@@ -25,17 +25,60 @@
 
 #include "avrOS.h"
 
+// Command Line Interface Configuration ----------------------------------------
+#define CLI_RX_QUEUE_SIZE	8
+#define CLI_TX_QUEUE_SIZE	255
+#define CLI_USART     USART2
+#define CLI_BAUDRATE  115200
+#define CLI_PARITY    USART_PMODE_DISABLED_gc // USART_PMODE_DISABLED_gc = No Parity
+											  // USART_PMODE_EVEN_gc = Even Parity
+											  // USART_PMODE_ODD_gc = Odd Parity
+#define CLI_DATA_BITS USART_CHSIZE_8BIT_gc    // USART_CHSIZE_5BIT_gc = Character size: 5 bit
+											  // USART_CHSIZE_6BIT_gc = Character size: 6 bit
+											  // USART_CHSIZE_7BIT_gc = Character size: 7 bit
+										 	  // USART_CHSIZE_8BIT_gc = Character size: 8 bit
+											  // 9-bit character size is not support by the driver
+										 	  // USART_CHSIZE_9BITL_gc = Character size: 9 bit read low byte first
+											  // USART_CHSIZE_9BITH_gc = Character size: 9 bit read high byte first
+#define CLI_STOP_BITS USART_SBMODE_1BIT_gc	  // USART_SBMODE_1BIT_gc = 1 stop bit
+											  // USART_SBMODE_2BIT_gc = 2 stop bits
+
+ADD_UART_RW(cliUart2, CLI_USART, CLI_BAUDRATE, CLI_PARITY, CLI_DATA_BITS, CLI_STOP_BITS, CLI_TX_QUEUE_SIZE, CLI_RX_QUEUE_SIZE);
+ADD_CLI(cliUart2Instance,&cliUart2_file,&cliUart2_file);
+
+// Logger Configuration --------------------------------------------------------
+#define LOG_QUEUE_SIZE		255
+#define LOG_USART			USART1
+#define LOG_BAUDRATE		115200
+#define LOG_PARITY			USART_PMODE_DISABLED_gc	// USART_PMODE_DISABLED_gc = No Parity
+													// USART_PMODE_EVEN_gc = Even Parity
+													// USART_PMODE_ODD_gc = Odd Parity
+#define LOG_DATA_BITS		USART_CHSIZE_8BIT_gc	// USART_CHSIZE_5BIT_gc = Character size: 5 bit
+													// USART_CHSIZE_6BIT_gc = Character size: 6 bit
+													// USART_CHSIZE_7BIT_gc = Character size: 7 bit
+													// USART_CHSIZE_8BIT_gc = Character size: 8 bit
+													// 9-bit character size is not support by the driver
+													// USART_CHSIZE_9BITL_gc = Character size: 9 bit read low byte first
+													// USART_CHSIZE_9BITH_gc = Character size: 9 bit read high byte first
+#define LOG_STOP_BITS		USART_SBMODE_1BIT_gc	// USART_SBMODE_1BIT_gc = 1 stop bit
+													// USART_SBMODE_2BIT_gc = 2 stop bits
+
+ADD_UART_WRITE(logUart1,LOG_USART,LOG_BAUDRATE, LOG_PARITY, LOG_DATA_BITS, LOG_STOP_BITS, LOG_QUEUE_SIZE);
+ADD_LOG(logUart1Instance,&logUart1_file);
+
 int main(void)
 {
-	// Initialize the system -----------------------------------------------------
+	// Initialize the system ---------------------------------------------------
 	sysInit();
 	
 	INFO("Starting state machine dispatch loop");
-	// Loop forever --------------------------------------------------------------
+	// Loop forever ------------------------------------------------------------
     while (1) 
     {
-	    // Continuously call the main state machine dispatcher
+	    // Call the main state machine dispatcher
 		fsmDispatch();
+		// Upon return, go to sleep until the next interrupt
+		sysSleep();
     }
 }
 
