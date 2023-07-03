@@ -51,12 +51,18 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+# Geany Files
+avrOS.geany
+avrOS.tags
+
 # VS Code configuration directories
 .vs/
 .vscode/
 
-# Geany configuration and project files
-*.geany
+# Lizard output files (Cyclomatic Complexity)
+./cca.csv
+./cca.html
+./cca.xml
 
-# GitHub Tokens
+# Git token file
 gh_token.txt

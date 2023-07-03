@@ -27,14 +27,41 @@
 #include "../avrOS.h"
 
 // Types ----------------------------------------------------------------------
+typedef struct cliCommand_struct cliCommand_t;
 typedef int (*commandHandler_t)(int argc, char *argv[]);
 
 typedef struct
 {
+	char				key;
+	char				commandLine[MAX_CMD_LINE];
+	char				previousCommand[MAX_CMD_LINE];
+	int				    lineCounter;
+	char*			    argV[MAX_ARGS];
+	int				    argC;
+	commandHandler_t	cmdFuncPtr;
+	cliCommand_t		*currentCommand;	
+}cliState_t;
+
+typedef struct
+{
+	char	  *name;
+	FILE      *inFile, *outFile;
+	UART_t	  *uart;
+	cliState_t state;
+//  crtWindow *window;
+}cliInstance_t;
+
+struct cliCommand_struct
+{
     const char			*commandStr;
     commandHandler_t	funcPtr;
 	bool				repeatable;
-} cliCommand_t;
+};
+
+// This macro adds a new instance of a CLI
+#define ADD_CLI(cliName, cliInFile, cliOutFile) \
+        const static cliInstance_t cliName = { .name = #cliName, .inFile = cliInFile, .outFile = cliOutFile }; \
+        ADD_STATE_MACHINE(cliName ## _SM,cliInit,FSM_SRV | 0x4f, (void *)&cliName);
 
 // This macro adds a command string and a function to the cli table
 #define ADD_COMMAND(name,function,...)	static int function(int argc, char *argv[]); \
@@ -48,9 +75,9 @@ typedef struct
 #define KEYCODE_RIGHT       0x14
 
 // External Functions----------------------------------------------------------
-extern void cliInit();
+//extern int cliInit(fsmStateMachine_t stateMachine);
 extern int cliCallFunction(char *commandLine);
-extern int cliReceiveFunc(fsmStateMachine_t *state);
+//extern int cliReceiveFunc(fsmStateMachine_t *state);
 
 #endif /* __CLI_H */
 

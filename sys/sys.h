@@ -40,5 +40,6 @@
 bool sysInit();
 void sysInitTick();
 uint32_t sysGetTick();
+void sysSleep();
 
 #endif /* SYS_H_ */

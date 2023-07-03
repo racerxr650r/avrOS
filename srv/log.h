@@ -21,6 +21,18 @@
 #ifndef LOG_H_
 #define LOG_H_
 
+typedef struct
+{
+	char *name;
+	FILE *outFile;
+} logInstance_t;
+
+// Add a log instance macro
+#define ADD_LOG(logName, logFile) \
+                const static logInstance_t logName = { .name = #logName, .outFile = logFile }; \
+                ADD_STATE_MACHINE(logName ## _SM,logInit,FSM_SYS | 0x01, (void *)&logName);
+        
+
 // LOG message macros ---------------------------------------------------------
 #if LOG_FORMAT == 0
 #define INFO(...)
@@ -48,19 +60,19 @@
 }while(0)
 #elif LOG_FORMAT == 2
 #define INFO(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s:%s:%s: ",sysGetTick(),"INFO",fsmCurrentStateMachineName(),fsmCurrentStateName()); \
+	fprintf(stderr,"\n\r%lu:%s: ",sysGetTick(),"INFO"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define WARN(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s:%s:%s: ",sysGetTick(),"WARN",fsmCurrentStateMachineName(),fsmCurrentStateName()); \
+	fprintf(stderr,"\n\r%lu:%s: ",sysGetTick(),"WARN"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define ERROR(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s:%s:%s: ",sysGetTick(),"ERR ",fsmCurrentStateMachineName(),fsmCurrentStateName()); \
+	fprintf(stderr,"\n\r%lu:%s: ",sysGetTick(),"ERR "); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define CRITICAL(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s:%s:%s: ",sysGetTick(),"CRIT",fsmCurrentStateMachineName(),fsmCurrentStateName()); \
+	fprintf(stderr,"\n\r%lu:%s: ",sysGetTick(),"CRIT"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 	fprintf(stderr,"\n\r+++ System Stopped +++"); \
 	while(1);\
@@ -105,6 +117,6 @@
 #endif
 
 // External Functions----------------------------------------------------------
-void logInit(void);
+//static int logInit(fsmStateMachine_t *stateMachine);
 
 #endif /* LOG_H_ */

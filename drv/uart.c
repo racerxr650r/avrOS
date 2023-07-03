@@ -25,7 +25,7 @@
 extern void *__start_UART_TABLE,*__stop_UART_TABLE;
 
 // Internal Variable ----------------------------------------------------------
-static UART_t *uart0 = NULL, *uart1 = NULL, *uart2 = NULL;
+static UART_t *gsUart0 = NULL, *gsUart1 = NULL, *gsUart2 = NULL;
 
 // Internal Function Prototypes -----------------------------------------------
 static void isrUsartDRE(UART_t *uart);
@@ -35,38 +35,38 @@ static void isrUsartRXC(UART_t *uart);
 // Hook the USART0 Data Register Empty interrupt handler
 ISR(USART0_DRE_vect)
 {
-	if(uart0 != NULL)
-		isrUsartDRE(uart0);
+	if(gsUart0 != NULL)
+		isrUsartDRE(gsUart0);
 }
 // Hook the USART1 Data Register Empty interrupt handler
 ISR(USART1_DRE_vect)
 {
-	if(uart1 != NULL)
-		isrUsartDRE(uart1);
+	if(gsUart1 != NULL)
+		isrUsartDRE(gsUart1);
 }
 // Hook the USART2 Data Register Empty interrupt handler
 ISR(USART2_DRE_vect)
 {
-	if(uart2 != NULL)
-		isrUsartDRE(uart2);
+	if(gsUart2 != NULL)
+		isrUsartDRE(gsUart2);
 }
 // Hook the USART0 Receive Complete interrupt handler
 ISR(USART0_RXC_vect)
 {
-	if(uart0 != NULL)
-		isrUsartRXC(uart0);
+	if(gsUart0 != NULL)
+		isrUsartRXC(gsUart0);
 }
 // Hook the USART1 Receive Complete interrupt handler
 ISR(USART1_RXC_vect)
 {
-	if(uart1 != NULL)
-		isrUsartRXC(uart1);
+	if(gsUart1 != NULL)
+		isrUsartRXC(gsUart1);
 }
 // Hook the USART2 Receive Complete interrupt handler
 ISR(USART2_RXC_vect)
 {
-	if(uart2 != NULL)
-		isrUsartRXC(uart2);
+	if(gsUart2 != NULL)
+		isrUsartRXC(gsUart2);
 }
 
 // Interrupt Handler Functions ------------------------------------------------
@@ -78,7 +78,7 @@ static void isrUsartDRE(UART_t *uart)
 	// If there are more bytes in the transmit queue...
 	if(queGet(uart->txQueue,(char *)&txByte))
 	{
-		uart->usart->TXDATAL = txByte;
+		uart->usartRegs->TXDATAL = txByte;
 #ifdef UART_STATS
 		++uart->stats->txBytes;
 #endif
@@ -87,18 +87,18 @@ static void isrUsartDRE(UART_t *uart)
 	else
 	{
 		// Disable the tx data register empty interrupt
-		uart->usart->CTRLA &= ~USART_DREIE_bm;
+		uart->usartRegs->CTRLA &= ~USART_DREIE_bm;
 	}
 }
 
 // USART Receive Complete (Rx) interrupt handler
 static void isrUsartRXC(UART_t *uart)
 {
-	uint8_t		error = uart->usart->RXDATAH;
+	uint8_t		error = uart->usartRegs->RXDATAH;
 	
 	if(error == USART_RXCIF_bm)
 	{
-		bool queued = quePut(uart->rxQueue,uart->usart->RXDATAL);
+		bool queued = quePut(uart->rxQueue,uart->usartRegs->RXDATAL);
 #ifdef UART_STATS
 		if(queued)
 			++uart->stats->rxBytes;
@@ -125,11 +125,15 @@ int uartCmd(int argc, char *argv[])
 {
 	// Walk the table of uarts
 	UART_t *uart = (UART_t *)&__start_UART_TABLE;
+	
 	for(; uart < (UART_t *)&__stop_UART_TABLE; ++uart)
 	{
-		if(argc<2 || (argc==2 && !strcmp(uart->name,argv[1])))
+		char * name;
+		
+		name = uartName(uart);
+		if(argc<2 || (argc==2 && !strcmp(name,argv[1])))
 		{
-			printf("UART: %s\n\r",uart->name);
+			printf("UART: %s\n\r",name);
 			printf("\tTx:%8lu Rx:%8lu Frame Err:%8lu Parity Err:%8lu\n\r",uart->stats->txBytes,uart->stats->rxBytes,uart->stats->frameError,uart->stats->parityError);
 			printf("\tTxOvrflw:%8lu RxBufferOvrflw:%8lu RxQueueOvrflw:%8lu\n\r",uart->stats->txQueueOverflow,uart->stats->rxBufferOverflow,uart->stats->rxQueueOverflow);
 		}
@@ -137,24 +141,21 @@ int uartCmd(int argc, char *argv[])
 	return(0);
 }
 
-// External Functions ---------------------------------------------------------
+// State Machine Functions ----------------------------------------------------
 
 // Initialize a given USART to operate as a UART with the given operating
 // parameters.
 // Return: 0 - No error, -1 - Invalid USART specified
-int8_t uartInit(const UART_t	*uart,
-				uint32_t		baud,
-				USART_PMODE_t	parity,
-				USART_CHSIZE_t	dataBits,
-				USART_SBMODE_t	stopBits)
+int uartInit(fsmStateMachine_t *stateMachine)
 {
-	USART_t		*usart = uart->usart;
+	UART_t      *uartInstance = (UART_t *)fsmGetInstance(stateMachine);
+	USART_t		*usartRegs = uartInstance->usartRegs;
 	int8_t		ret = 0;
 	uint32_t	freq = cpuGetFrequency();
 
 #ifdef UART_STATS
 	// Zero out the interface stats
-	memset((void *)&uart->stats,0,sizeof(uart->stats));
+	memset((void *)&uartInstance->stats,0,sizeof(UartStats_t));
 #endif	
 
 	// Disable interrupts while setting up the USART and restore interrupts to previous state
@@ -162,32 +163,32 @@ int8_t uartInit(const UART_t	*uart,
 	{
 		// If the CPU frequency is calculable...
 		if(freq)
-			usart->BAUD = (uint16_t)((freq/baud)<<2);
+			usartRegs->BAUD = (uint16_t)((freq/uartInstance->baud)<<2);
 		// Else baud is the baud register value
 		else
-			usart->BAUD = baud;
+			usartRegs->BAUD = uartInstance->baud;
 
 		// Set the mode as async and frame format as specified
-		usart->CTRLC = USART_CMODE_ASYNCHRONOUS_gc | parity | stopBits | dataBits;
+		usartRegs->CTRLC = USART_CMODE_ASYNCHRONOUS_gc | uartInstance->parity | uartInstance->stopBits | uartInstance->dataBits;
 
 		// Set the pin associated with Tx to output
 		PORT_t *port=NULL;
 		// If USART0...
-		if(usart == &USART0)
+		if(usartRegs == &USART0)
 		{
-			uart0 = (UART_t *)uart;
+			gsUart0 = (UART_t *)uartInstance;
 			port = &PORTA;
 		}
 		// If USART1...
-		else if(usart == &USART1)
+		else if(usartRegs == &USART1)
 		{
-			uart1 = (UART_t *)uart;
+			gsUart1 = (UART_t *)uartInstance;
 			port = &PORTC;
 		}
 		// If USART2...
-		else if(usart == &USART2)
+		else if(usartRegs == &USART2)
 		{
-			uart2 = (UART_t *)uart;
+			gsUart2 = (UART_t *)uartInstance;
 			port = &PORTF;
 		}
 		// If the port has been located...
@@ -203,17 +204,24 @@ int8_t uartInit(const UART_t	*uart,
 		if(!ret)
 		{
 			// If Rx queues exist, enable Rx interrupts
-			if(uart->rxQueue!=NULL)
-				usart->CTRLA |= USART_RXCIE_bm;
+			if(uartInstance->rxQueue!=NULL)
+				usartRegs->CTRLA |= USART_RXCIE_bm;
 
 			// Enable the Tx, Rx, and standard Rx mode (16 over samples)
-			usart->CTRLB |= USART_RXEN_bm | USART_TXEN_bm | USART_RXMODE_NORMAL_gc;
+			usartRegs->CTRLB |= USART_RXEN_bm | USART_TXEN_bm | USART_RXMODE_NORMAL_gc;
 		}
 	}
 	
+	// Enable global interrupts
+	sei();
+	//uartTransmitStr(uartInstance,uartInstance->name);
+	
+	// Stop the statemachine upon completion of initialization
+	fsmStop(stateMachine);	
 	return(ret);
 }
 
+// External Functions ---------------------------------------------------------
 // Imlpement putchar() to support stdio buffered file I/O
 int uartPutChar(char c, FILE *stream)
 {
@@ -221,12 +229,25 @@ int uartPutChar(char c, FILE *stream)
 	UART_t	*uart = (UART_t *)fdev_get_udata(stream);
 	
 	if(uartTransmitChar(uart,c))
-	ret = 0;
+	    ret = 0;
 	else
-	{
-		ERROR("UART xmit buffer full");
 		ret = -1;
-	}
+	
+	return(ret);
+}
+
+// Implement getchar() to support stdio buffered file I/O
+int uartGetChar(FILE *stream)
+{
+	char character;
+	int  ret;
+	
+	// If there is a character in the input queue...
+	if(uartReceiveChar(stream->udata, &character))
+		ret = (int)character;
+	// Else there was no character in the input queue...
+	else
+		ret = _FDEV_EOF;
 	
 	return(ret);
 }
@@ -251,16 +272,17 @@ int uartTransmit(const UART_t *uart, char *buffer, size_t byteCount)
 				// Increment the buffer overflow counter
 				++uart->stats->txQueueOverflow;
 #endif				
+				ERROR("UART xmit buffer full");
 				break;
 			}
 		}
 		// Enable the tx data register empty interrupt
-		uart->usart->CTRLA |= USART_DREIE_bm;
+		uart->usartRegs->CTRLA |= USART_DREIE_bm;
 	}
 	// Else there is no transmit queue...
 	else
 	{
-		uart->usart->TXDATAL = buffer[i++];
+		uart->usartRegs->TXDATAL = buffer[i++];
 #ifdef UART_STATS
 		// Increment the tx byte counter
 		++uart->stats->txBytes;
@@ -309,14 +331,19 @@ int uartReceive(const UART_t *uart, char *buffer, size_t byteCount)
 		}
 	}
 	// Else if the UART does not have a RX queue and the Receive Complete Flag is set...
-	else if(uart->usart->RXDATAH & USART_RXCIF_bm)
+	else if(uart->usartRegs->RXDATAH & USART_RXCIF_bm)
 	{
 		// Copy the 
-		buffer[0] = uart->usart->RXDATAL;
+		buffer[0] = uart->usartRegs->RXDATAL;
 		++i;
 	}
 	
 	return(i);
+}
+
+int uartReceiveChar(const UART_t *uart, char *character)
+{
+	return(uartReceive(uart, character, 1));
 }
 
 bool uartRxEmpty(const UART_t *uart)
@@ -367,4 +394,9 @@ uint8_t uartTxCount(const UART_t *uart)
 uint8_t uartTxMax(const UART_t *uart)
 {
 	return(queMax(uart->txQueue));
+}
+
+char* uartName(const UART_t *uart)
+{
+	return(uart->usartRegs==&USART0?"USART0":uart->usartRegs==&USART1?"USART1":uart->usartRegs==&USART2?"USART2":NULL);
 }

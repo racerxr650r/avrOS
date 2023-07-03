@@ -20,30 +20,15 @@
  // Includes -------------------------------------------------------------------
  #include "../avrOS.h"
 
-// Private Globals ------------------------------------------------------------
-static FILE	logSTDOUT = FDEV_SETUP_STREAM(uartPutChar, NULL, _FDEV_SETUP_WRITE);
-
-// OS Objects -----------------------------------------------------------------
-#ifdef LOG_SERIAL
-// Create the Tx queue
-ADD_QUEUE(logQueue,LOG_QUEUE_SIZE);
-// Create the Uart instance for CLI I/O
-ADD_UART(logUart,LOG_USART,&logQueue,NULL);
-#endif
-
 // External Functions ---------------------------------------------------------
 // Initialize the CLI and the associated serial port
-void logInit()
+int logInit(fsmStateMachine_t *stateMachine)
 {
-	// Setup stderr so stdout.h functions like fprintf output the log associated
-	// uart or virtual uart
-	fdev_set_udata(&logSTDOUT,(void *)&logUart);
-	stderr = &logSTDOUT;
-
-#ifdef LOG_SERIAL
-	// Initialize CLI UART
-	uartInit(&logUart,LOG_BAUDRATE,LOG_PARITY,LOG_DATA_BITS,LOG_STOP_BITS);
-#endif
+	logInstance_t *logInstance = (logInstance_t*)fsmGetInstance(stateMachine);
+	FILE          *outFile = logInstance->outFile;
+	
+	// Setup stderr so stdout.h functions like fprintf output the log
+	stderr = outFile;
 
 	// Enable global interrupts
 	sei();
@@ -54,18 +39,15 @@ void logInit()
 	// Display the system greeting
 	fprintf(stderr,LOG_BANNER);
 	
-	fprintf(stderr,"\n\rSystem Memory --------------\n\r");
+//	fprintf(stderr,"\n\rSystem Memory --------------\n\r");
 	// Wait until the Tx queue is empty...
-	while(!uartTxEmpty(&logUart));
-	//cliCallFunction("rom");
-	memRomStatus(stderr);
-	fprintf(stderr,"\n\r");
-	// Wait until the Tx queue is empty...
-	while(!uartTxEmpty(&logUart));
+//	memRomStatus(stderr);
+//	fprintf(stderr,"\n\r");
 	//cliCallFunction("ram");
-	memRamStatus(stderr);
-	// Wait until the Tx queue is empty...
-	while(!uartTxEmpty(&logUart));
+//	memRamStatus(stderr);
+
+	fsmStop(stateMachine);
+	return(0);
 }
 
 
