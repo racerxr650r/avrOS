@@ -83,9 +83,9 @@ bool sysInit()
 	// Initialize the system tick counter
 	sysInitTick();
 
-	// Enable global interrupts
-	//sei();
-
+	// Initialize the fsm scheduler
+	fsmInit();
+	
 	return(true);
 }
 
