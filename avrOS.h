@@ -23,7 +23,7 @@
 #ifndef AVROS_H_
 #define AVROS_H_
 
-// Toolchain/Library header files ****************************************************
+// Toolchain/Library header files **********************************************
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,17 +33,17 @@
 #include <avr/pgmspace.h>
 #include <util/atomic.h>
 
-// Constants ******************************************************************
+// Constants *******************************************************************
 #define AVRSMOS_OS
 
-// General definitions ********************************************************
+// General definitions *********************************************************
 #define OK		0
 #define ERR		1
 
 #define DISABLE 0
 #define ENABLE	1
 
-// avrOS System Header Files ************************************************
+// avrOS System Header Files ***************************************************
 #include "avrOSConfig.h"
 #include "sys/sys.h"
 #include "sys/fsm.h"

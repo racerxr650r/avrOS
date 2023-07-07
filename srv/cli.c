@@ -27,6 +27,7 @@
 #include <ctype.h>
 
 // Private functions prototypes ----------------------------------------------
+static int cliNewCmd(fsmStateMachine_t *stateMachine);
 static int cliGetKey(fsmStateMachine_t *stateMachine);
 static int cliEscKey(fsmStateMachine_t *stateMachine);
 static int cliEscSequence(fsmStateMachine_t *stateMachine);
@@ -97,8 +98,6 @@ int cliClear(int argC, char *argV[])
 #endif // CLI_CLI
 
 // CLI State Machine ----------------------------------------------------------
-// Forward declarations of the state handlers
-static int cliNewCmd(fsmStateMachine_t *stateMachine);
 
 // Initialize the CLI
 int cliInit(fsmStateMachine_t *stateMachine)

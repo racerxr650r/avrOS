@@ -55,6 +55,7 @@ typedef struct STATE_MACHINE_TYPE
 {
   bool				 initialCall;
   fsmHandler_t prevState, currState, nextState;
+  struct STATE_MACHINE_TYPE *next;
   const struct STATE_MACHINE_DESCR_TYPE *stateMachineDescr;
 } fsmStateMachine_t;
 
@@ -77,6 +78,7 @@ typedef struct STATE_MACHINE_DESCR_TYPE
 						  const static fsmStateMachineDescr_t SECTION(FSM_TABLES) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = &stateMachineName, .initHandler = smInitHandler, .priority = smPriority, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
 
 // Exported Functions ---------------------------------------------------------                                                          
+void        fsmInit();
 uint32_t	fsmScanCycle(void);
 const char* fsmCurrentStateMachineName();
 void*       fsmGetInstance(fsmStateMachine_t *stateMachine);

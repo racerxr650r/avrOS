@@ -25,6 +25,7 @@
 
 #include "avrOS.h"
 
+
 // Command Line Interface Configuration ----------------------------------------
 #define CLI_RX_QUEUE_SIZE	8
 #define CLI_TX_QUEUE_SIZE	255
@@ -77,6 +78,7 @@ int main(void)
     {
 	    // Call the main state machine dispatcher
 		fsmDispatch();
+		
 		// Upon return, go to sleep until the next interrupt
 		sysSleep();
     }
