@@ -158,7 +158,7 @@ int uartInit(fsmStateMachine_t *stateMachine)
 	memset((void *)&uartInstance->stats,0,sizeof(UartStats_t));
 #endif	
 
-	// Disable interrupts while setting up the USART and restore interrupts to previous state
+	// Start critical section of code
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		// If the CPU frequency is calculable...

@@ -47,8 +47,10 @@
 #include "avrOSConfig.h"
 #include "sys/sys.h"
 #include "sys/fsm.h"
+#include "sys/event.h"
 #include "sys/queue.h"
 #include "sys/tmr.h"
+#include "sys/fio.h"
 
 #include "drv/cpu.h"
 #include "drv/mem.h"

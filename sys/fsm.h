@@ -41,7 +41,7 @@ typedef enum FSM_TYPE
 // State machine priority
 typedef uint8_t fsmPriority_t;
 
-// Declare the STATE_MACHINE and STATE_DESCR types
+// Forward declare the STATE_MACHINE and STATE_DESCR structures
 struct STATE_MACHINE_TYPE;
 struct STATE_MACHINE_DESCR_TYPE;
 
@@ -53,9 +53,9 @@ typedef int (*fsmHandler_t)(struct STATE_MACHINE_TYPE *state);
 // an instance of this data structure
 typedef struct STATE_MACHINE_TYPE
 {
-  bool				 initialCall;
-  fsmHandler_t prevState, currState, nextState;
-  struct STATE_MACHINE_TYPE *next;
+  bool				                    initialCall;
+  fsmHandler_t                          prevState, currState, nextState;
+  struct STATE_MACHINE_TYPE             *next;
   const struct STATE_MACHINE_DESCR_TYPE *stateMachineDescr;
 } fsmStateMachine_t;
 
@@ -80,7 +80,8 @@ typedef struct STATE_MACHINE_DESCR_TYPE
 // Exported Functions ---------------------------------------------------------                                                          
 void        fsmInit();
 uint32_t	fsmScanCycle(void);
-const char* fsmCurrentStateMachineName();
+const char* fsmGetCurrentStateMachineName();
+fsmStateMachine_t* fsmGetCurrentStateMachine();
 void*       fsmGetInstance(fsmStateMachine_t *stateMachine);
 bool		fsmInitialCall();
 fsmHandler_t fsmCurrentState(fsmStateMachine_t *stateMachine);

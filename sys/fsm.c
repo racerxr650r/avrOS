@@ -26,7 +26,7 @@
 #include <string.h>
 
 // Externs --------------------------------------------------------------------
-extern void *__start_FSM_TABLES,*__stop_FSM_TABLES,*__start_FSM_STATES,*__stop_FSM_STATES;
+extern void *__start_FSM_TABLE,*__stop_FSM_TABLE;
 
 // Internal Globals -----------------------------------------------------------
 static uint32_t scanCycle = 0;
@@ -35,8 +35,8 @@ static char initString[] = {"Init"};
 
 // Internal functions ---------------------------------------------------------
 static fsmStateMachine_t* fsmGetStateMachine(const char *name);
-static bool fsmLstAdd(fsmStateMachine_t **list, fsmStateMachine_t *sm);
-static bool fsmLstRemove(fsmStateMachine_t **list, fsmStateMachine_t *sm);
+static int fsmLstAdd(fsmStateMachine_t **list, fsmStateMachine_t *sm);
+static int fsmLstRemove(fsmStateMachine_t **list, fsmStateMachine_t *sm);
 static void fsmLstPrint(FILE *file, fsmStateMachine_t *list);
 
 // CLI Commands ---------------------------------------------------------------
@@ -108,98 +108,106 @@ int fsmStartCmd(int argc, char *argv[])
 }
 
 // Internal Functions ----------------------------------------------------------
-static bool fsmLstAdd(fsmStateMachine_t **list, fsmStateMachine_t *sm)
+static int fsmLstAdd(fsmStateMachine_t **list, fsmStateMachine_t *sm)
 {
-	fsmStateMachine_t *curr = *list, *prev = NULL;
-	bool ret = true;
+	int ret = 0;
 	
 	// If sm is valid...
 	if(sm != NULL)
 	{
-		// If there is no elements in the current list...
-		if(*list == NULL)
-		{
-			*list = sm;
-			sm->next = NULL;
-		}
-		// Else there is at least one element in the current list...
-		else
-		{
-			// While this is not the end of the list...
-			while(curr!=NULL)
+		// Start critical section of code
+//		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+//		{
+			fsmStateMachine_t *curr = *list, *prev = NULL;
+			// If there is no elements in the current list...
+			if(*list == NULL)
 			{
-				// If this element is lower priority than the new element...
-				if(sm->stateMachineDescr->priority < curr->stateMachineDescr->priority)
-				{
-					// If not the head element...
-					if(prev)
-					{
-						sm->next = prev->next;
-						prev->next = sm;
-						break;
-					}
-					// Else head element...
-					else
-					{
-						sm->next = curr;
-						*list = sm;
-						break;
-					}
-				}
-				// Step to the next element in the list
-				prev = curr;
-				curr = curr->next;
-			}
-			// If reached the end of the list...
-			if(curr == NULL)
-			{
-				prev->next = sm;
+				*list = sm;
 				sm->next = NULL;
 			}
-		}
+			// Else there is at least one element in the current list...
+			else
+			{
+				// While this is not the end of the list...
+				while(curr!=NULL)
+				{
+					// If this element is lower priority than the new element...
+					if(sm->stateMachineDescr->priority < curr->stateMachineDescr->priority)
+					{
+						// If not the head element...
+						if(prev)
+						{
+							sm->next = prev->next;
+							prev->next = sm;
+							break;
+						}
+						// Else head element...
+						else
+						{
+							sm->next = curr;
+							*list = sm;
+							break;
+						}
+					}
+					// Step to the next element in the list
+					prev = curr;
+					curr = curr->next;
+				}
+				// If reached the end of the list...
+				if(curr == NULL)
+				{
+					prev->next = sm;
+					sm->next = NULL;
+				}
+			}
+//		} // End critical section of code
 	}
 	// Else sm is not valid...
 	else
-		ret = false;
+		ret = -1;
 	
 	return(ret);
 }
 
-static bool fsmLstRemove(fsmStateMachine_t **list, fsmStateMachine_t *sm)
+int fsmLstRemove(fsmStateMachine_t **list, fsmStateMachine_t *sm)
 {
-	fsmStateMachine_t *curr = *list, *prev = NULL;
-	bool ret = true;
+	int ret = 0;
 	
 	// If the state machine is valid...
 	if(sm != NULL)
 	{
-		// Until the end of the list
-		while(curr)
-		{
-			// If this is the element to remove...
-			if(curr == sm)
+		// Start critical section of code
+//		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+//		{
+			fsmStateMachine_t *curr = *list, *prev = NULL;
+			// Until the end of the list
+			while(curr)
 			{
-				// If this is not the head...
-				if(prev != NULL)
+				// If this is the element to remove...
+				if(curr == sm)
 				{
-					prev->next = curr->next;
-					break;
+					// If this is not the head...
+					if(prev != NULL)
+					{
+						prev->next = curr->next;
+						break;
+					}
+					// Else this is the head...
+					else
+					{
+						*list = curr->next;
+						break;
+					}
 				}
-				// Else this is the head...
-				else
-				{
-					*list = curr->next;
-					break;
-				}
+					
+				// Step to the next element
+				prev = curr;
+				curr = curr->next;
 			}
-				
-			// Step to the next element
-			prev = curr;
-			curr = curr->next;
-		}
-		// If reached the end of the list without finding the element...
-		if(curr == NULL)
-			ret = false;
+			// If reached the end of the list without finding the element...
+			if(curr == NULL)
+				ret = -1;
+//		} // End critical section of code
 	}
 	// Else the state machine is not valid...
 	else
@@ -222,9 +230,9 @@ static void fsmLstPrint(FILE *file, fsmStateMachine_t *list)
 static fsmStateMachine_t *fsmGetStateMachine(const char *name)
 {
   // Walk the table of state machines
-  fsmStateMachineDescr_t *descr = (fsmStateMachineDescr_t *)&__start_FSM_TABLES;
+  fsmStateMachineDescr_t *descr = (fsmStateMachineDescr_t *)&__start_FSM_TABLE;
   
-  for(; descr < (fsmStateMachineDescr_t *)&__stop_FSM_TABLES; ++descr)
+  for(; descr < (fsmStateMachineDescr_t *)&__stop_FSM_TABLE; ++descr)
     if(strcmp(name,descr->name) == 0)
       return(descr->stateMachine);
 
@@ -235,8 +243,8 @@ static fsmStateMachine_t *fsmGetStateMachine(const char *name)
 void fsmInit()
 {
 	// Walk the table of state machines
-	fsmStateMachineDescr_t *stateMachineDescr = (fsmStateMachineDescr_t *)&__start_FSM_TABLES;
-	for(; stateMachineDescr < (fsmStateMachineDescr_t *)&__stop_FSM_TABLES; ++stateMachineDescr)
+	fsmStateMachineDescr_t *stateMachineDescr = (fsmStateMachineDescr_t *)&__start_FSM_TABLE;
+	for(; stateMachineDescr < (fsmStateMachineDescr_t *)&__stop_FSM_TABLE; ++stateMachineDescr)
 	{
 		fsmStateMachine_t	*stateMachine = stateMachineDescr->stateMachine;
 		// Add the state machine to the ready list in priority order
@@ -251,7 +259,7 @@ uint32_t fsmScanCycle()
 }
 
 // Get the current state machine name
-const char* fsmCurrentStateMachineName()
+const char* fsmGetCurrentStateMachineName()
 {
 	const char *ret = NULL;
 	
@@ -261,6 +269,12 @@ const char* fsmCurrentStateMachineName()
 		ret = initString;
 	
 	return(ret);
+}
+
+// The the pointer to the current state machine
+fsmStateMachine_t* fsmGetCurrentStateMachine()
+{
+	return(currStateMachine);
 }
 
 void* fsmGetInstance(fsmStateMachine_t *stateMachine)
@@ -310,6 +324,29 @@ int fsmStop(fsmStateMachine_t *stateMachine)
 
 	return(0);
 }
+
+// Put the given state machine on the wait list
+int fsmWait(fsmStateMachine_t *stateMachine)
+{
+	int ret;
+	
+    if(!(ret = fsmLstRemove(&Ready,stateMachine)))
+		fsmLstAdd(&Wait,stateMachine);
+	
+	return(ret);
+}
+
+// Put the given state machine on the ready list
+int fsmReady(fsmStateMachine_t *stateMachine)
+{
+	int ret;
+	
+    if(!(ret = fsmLstRemove(&Wait,stateMachine)))
+		fsmLstAdd(&Ready,stateMachine);
+	
+	return(ret);
+}
+
 
 // Finite State Machine Dispatcher. This function steps through the state machine table and calls the current state function for each
 void fsmDispatch(void)

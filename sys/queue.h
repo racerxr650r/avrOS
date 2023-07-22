@@ -13,6 +13,14 @@
 #define QUE_MAX_SIZE		255
 
 // Data Types -----------------------------------------------------------------
+typedef enum
+{
+	QUE_EVENT_EMPTY = 1,
+	QUE_EVENT_NOT_EMPTY,
+	QUE_EVENT_FULL,
+	QUE_EVENT_NOT_FULL
+}queueEvents_t;
+
 typedef struct
 {
 	uint32_t	in, out, underflow, overflow, max;
@@ -28,19 +36,22 @@ typedef struct
 	const char				*name;
 	volatile QueueState_t	*queue;
 	char					*buffer;
+	volatile event_t        *event;
 #ifdef QUE_STATS
 	QueueStats_t	*stats;
 #endif
 }Queue_t;
 
+// Macros ----------------------------------------------------------------------
 #ifdef QUE_STATS
 #define ADD_QUEUE(queName, queSz)	static char			CONCAT(queName,_buffer)[queSz]; \
-									static QueueState_t	CONCAT(queName,_state) = {.size = queSz, .head = queSz, .tail = 0}; \
+									volatile static QueueState_t	CONCAT(queName,_state) = {.size = queSz, .head = queSz, .tail = 0}; \
 									static QueueStats_t	CONCAT(queName,_stats) = {.in = 0, .out = 0, .underflow = 0, .overflow = 0, .max = 0}; \
-									const static Queue_t SECTION(QUE_TABLE) queName = {.name = #queName, .queue = &CONCAT(queName,_state), .buffer = CONCAT(queName,_buffer), .stats = &CONCAT(queName,_stats)};
+									ADD_EVENT(queName ## _event); \
+									const static Queue_t SECTION(QUE_TABLE) queName = {.name = #queName, .queue = &CONCAT(queName,_state), .buffer = CONCAT(queName,_buffer), .stats = &CONCAT(queName,_stats), .event = &CONCAT(queName,_event)};
 #else
 #define ADD_QUEUE(queName, queSz)	static char			CONCAT(queName,_buffer)[queSz]; \
-									static QueueState_t	CONCAT(queName,_state) = {.size = queSz, .head = queSz, .tail = 0}; \
+									volatile static QueueState_t	CONCAT(queName,_state) = {.size = queSz, .head = queSz, .tail = 0}; \
 									const static Queue_t SECTION(QUE_TABLE) queName = {.name = #queName, .queue = &CONCAT(queName,_state), .buffer = CONCAT(queName,_buffer)};
 #endif
 

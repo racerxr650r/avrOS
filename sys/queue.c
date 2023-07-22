@@ -27,10 +27,11 @@ extern void *__start_QUE_TABLE,*__stop_QUE_TABLE;
 // Command line interface -----------------------------------------------------
 #ifdef QUE_CLI
 ADD_COMMAND("que",queCmd,true);
+#endif
 
 static int queCmd(int argc, char *argv[])
 {
-	// Walk the table of state machines
+	// Walk the table of queues
 	Queue_t *descr = (Queue_t *)&__start_QUE_TABLE;
 	for(; descr < (Queue_t *)&__stop_QUE_TABLE; ++descr)
 	{
@@ -43,9 +44,8 @@ static int queCmd(int argc, char *argv[])
 	}
 	return(0);
 }
-#endif // QUE_CLI
 
-// Circular que functions ************************************************
+// External functions ************************************************
 bool queEmpty(const Queue_t *que)
 {
 	return(que->queue->head == que->queue->size?true:false);
@@ -104,8 +104,11 @@ bool queGet(const Queue_t *que, char *ch)
 #endif
 			// If the buffer was previously full...
 			if(queue->tail == queue->size)
+			{
 				// Point the tail at the new empty slot
 				queue->tail = queue->head;
+				evntTrigger(que->event,QUE_EVENT_NOT_FULL);
+			}
 			
 			// Increment the head pointer and wrap if needed
 			if(++queue->head == queue->size)
@@ -113,8 +116,11 @@ bool queGet(const Queue_t *que, char *ch)
 
 			// If the buffer is now empty...
 			if(queue->tail == queue->head)
+			{
 				// Set the head pointer to show that
 				queue->head = queue->size;
+				evntTrigger(que->event,QUE_EVENT_EMPTY);
+			}
 
 			ret = true;
 		}
@@ -147,16 +153,22 @@ bool quePut(const Queue_t *que, char ch)
 #endif			
 				// If the buffer was previously empty...
 				if(queue->head == queue->size)
+				{
 					// Point the head to the char just added
 					queue->head = queue->tail;
+					evntTrigger(que->event, QUE_EVENT_NOT_EMPTY);
+				}
 				// Increment the tail pointer and wrap
 				if(++queue->tail==queue->size)
 					queue->tail = 0;
 			
 				// Is the queue now full...	
 				if(queue->tail == queue->head)
+				{
 					// Point the tail beyond the buffer
 					queue->tail = queue->size;
+					evntTrigger(que->event, QUE_EVENT_FULL);
+				}
 				
 #ifdef QUE_STATS
 				// If the current size of queueue exceeds the previous max, update the max

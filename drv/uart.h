@@ -41,7 +41,8 @@ typedef struct
                 ADD_QUEUE(usartName ## _RxQue,rxQueueSize); \
                 static UartStats_t CONCAT(usartName,_stats); \
                 const static UART_t SECTION(UART_TABLE) usartName; \
-                static FILE CONCAT(usartName,_file) = { .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_RW, .udata = (void *)&usartName }; \
+                const static fioBuffers_t CONCAT(usartName,_buffers) = {.input = &CONCAT(usartName,_RxQue), .output = &CONCAT(usartName,_TxQue)}; \
+                static FILE CONCAT(usartName,_file) = { .buf = (char *) &CONCAT(usartName,_buffers), .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_RW, .udata = (void *)&usartName }; \
 				const static UART_t SECTION(UART_TABLE) usartName = { .name = #usartName, .file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = uartBaud, .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = &CONCAT(usartName,_TxQue), .rxQueue = &CONCAT(usartName,_RxQue), .stats = &CONCAT(usartName,_stats)}; \
 				ADD_STATE_MACHINE(usartName ## _SM,uartInit,FSM_DRV | 0,(void *)&usartName);
 #define ADD_UART_WRITE(usartName, usartReg, uartBaud, uartParity, uartDataBits, uartStopBits, txQueueSize) \

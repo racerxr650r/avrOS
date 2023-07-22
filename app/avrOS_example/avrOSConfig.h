@@ -90,6 +90,7 @@
 #define TMR_CLI		// Timer commands
 #define MEM_CLI		// Memory commands
 #define CPU_CLI		// CPU commands
+#define EVNT_CLI    // Event commands
 
 // Service state machines to include ------------------------------------------
 #undef  PCM_SERVICE
