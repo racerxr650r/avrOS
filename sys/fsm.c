@@ -116,8 +116,8 @@ static int fsmLstAdd(fsmStateMachine_t **list, fsmStateMachine_t *sm)
 	if(sm != NULL)
 	{
 		// Start critical section of code
-//		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-//		{
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+		{
 			fsmStateMachine_t *curr = *list, *prev = NULL;
 			// If there is no elements in the current list...
 			if(*list == NULL)
@@ -160,7 +160,7 @@ static int fsmLstAdd(fsmStateMachine_t **list, fsmStateMachine_t *sm)
 					sm->next = NULL;
 				}
 			}
-//		} // End critical section of code
+		} // End critical section of code
 	}
 	// Else sm is not valid...
 	else
@@ -177,8 +177,8 @@ int fsmLstRemove(fsmStateMachine_t **list, fsmStateMachine_t *sm)
 	if(sm != NULL)
 	{
 		// Start critical section of code
-//		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-//		{
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+		{
 			fsmStateMachine_t *curr = *list, *prev = NULL;
 			// Until the end of the list
 			while(curr)
@@ -207,7 +207,7 @@ int fsmLstRemove(fsmStateMachine_t **list, fsmStateMachine_t *sm)
 			// If reached the end of the list without finding the element...
 			if(curr == NULL)
 				ret = -1;
-//		} // End critical section of code
+		} // End critical section of code
 	}
 	// Else the state machine is not valid...
 	else

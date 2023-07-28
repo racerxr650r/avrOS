@@ -215,6 +215,8 @@ int uartInit(fsmStateMachine_t *stateMachine)
 	// Enable global interrupts
 	sei();
 	
+//	uartTransmitStr(uartInstance,uartInstance->name);
+	
 	// Stop the statemachine upon completion of initialization
 	fsmStop(stateMachine);	
 	return(ret);

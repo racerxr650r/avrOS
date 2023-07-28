@@ -20,7 +20,7 @@
  * IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */ 
 
-#include "avrOS.h"
+/*#include "avrOS.h"
 
 // Externs ---------------------------------------------------------------------
 extern void *__start_EVNT_TABLE,*__stop_EVNT_TABLE;
@@ -112,4 +112,4 @@ int evntTrigger(volatile event_t *event, int8_t signal)
 	} // End critical section of code
 		
 	return(ret);	
-}
+}*/

@@ -72,7 +72,7 @@ int main(void)
 	// Initialize the system ---------------------------------------------------
 	sysInit();
 	
-	INFO("Starting state machine dispatch loop");
+	//INFO("Starting state machine dispatch loop");
 	// Loop forever ------------------------------------------------------------
     while (1) 
     {

@@ -92,6 +92,7 @@ bool queGet(const Queue_t *que, char *ch)
 	volatile QueueState_t	*queue = que->queue;	
 	bool			ret = false;
 	
+	// Start of critical section
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		// If not empty
@@ -107,7 +108,7 @@ bool queGet(const Queue_t *que, char *ch)
 			{
 				// Point the tail at the new empty slot
 				queue->tail = queue->head;
-				evntTrigger(que->event,QUE_EVENT_NOT_FULL);
+				//evntTrigger(que->event,QUE_EVENT_NOT_FULL);
 			}
 			
 			// Increment the head pointer and wrap if needed
@@ -119,7 +120,7 @@ bool queGet(const Queue_t *que, char *ch)
 			{
 				// Set the head pointer to show that
 				queue->head = queue->size;
-				evntTrigger(que->event,QUE_EVENT_EMPTY);
+				//evntTrigger(que->event,QUE_EVENT_EMPTY);
 			}
 
 			ret = true;
@@ -129,7 +130,7 @@ bool queGet(const Queue_t *que, char *ch)
 			++que->stats->underflow;
 #endif
 		
-	}
+	} // End of critical section
 	return(ret);
 }
 
@@ -138,6 +139,7 @@ bool quePut(const Queue_t *que, char ch)
 	volatile QueueState_t	*queue = que->queue;
 	bool			ret = false;
 	
+	// Start of critical section
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		// If not already full...
@@ -156,7 +158,7 @@ bool quePut(const Queue_t *que, char ch)
 				{
 					// Point the head to the char just added
 					queue->head = queue->tail;
-					evntTrigger(que->event, QUE_EVENT_NOT_EMPTY);
+					//evntTrigger(que->event, QUE_EVENT_NOT_EMPTY);
 				}
 				// Increment the tail pointer and wrap
 				if(++queue->tail==queue->size)
@@ -167,7 +169,7 @@ bool quePut(const Queue_t *que, char ch)
 				{
 					// Point the tail beyond the buffer
 					queue->tail = queue->size;
-					evntTrigger(que->event, QUE_EVENT_FULL);
+					//evntTrigger(que->event, QUE_EVENT_FULL);
 				}
 				
 #ifdef QUE_STATS
@@ -184,6 +186,6 @@ bool quePut(const Queue_t *que, char ch)
 		else
 			++que->stats->overflow;
 #endif
-	}
+	} // End of critical section
 	return(ret);
 }
