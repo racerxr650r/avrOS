@@ -55,20 +55,32 @@ environment on a debian based Linux distribution follow the instructions here:
     ```
    
    You will find these instructions in ./avrOS/README.md
+
+2. If you prefer an automated installation, run the provided install script. You can ignore the following steps.
+   Else if you prefer a manual installation, skip to the next step.
+
+   **Note:** This automated script will install additional tools such as minicom, gtkterm, geany, git-cola, meld, and others.
+   I encourage you to review the script before running it.
+   {: .note}
+
+    ```console
+    cd avrOS
+    ./install-tools.sh
+    ```
        
-2. Install Gnu make, git, avr-gcc Gnu C compiler, and other tools
+3. Install Gnu make, git, avr-gcc Gnu C compiler, and other tools
 
     ```console
     sudo apt install make git binutils gcc-avr avr-libc flex byacc bison unzip
     ```
     
-3. Download the Microchip Device Family Pack for the Atmel-Dx series from the [Microchip Packs Repository](http://packs.download.atmel.com/)
+4. Download the Microchip Device Family Pack for the Atmel-Dx series from the [Microchip Packs Repository](http://packs.download.atmel.com/)
 
    ```console
    wget http://packs.download.atmel.com/Atmel.AVR-Dx_DFP.2.2.253.atpack
    ```
 
-4. Extract the `Atmel.AVR-Dx_DFP.2.2.253.atpack` file locally and copy it to the `/usr/lib/gcc/avr/5.4.0` directory
+5. Extract the `Atmel.AVR-Dx_DFP.2.2.253.atpack` file locally and copy it to the `/usr/lib/gcc/avr/5.4.0` directory
 
     ```console
     mkdir ./Atmel.AVR-Dx_DFP.2.2.253
@@ -78,7 +90,7 @@ environment on a debian based Linux distribution follow the instructions here:
     rm Atmel.AVR-Dx_DFP.2.2.253.atpack
     ```
 
-5. Install AVRDUDE from sources on github
+6. Install AVRDUDE from sources on github
 
     Go to this [AVRDUDE github page](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
     for instructions to clone, build, and install it from the latest source
@@ -87,7 +99,7 @@ environment on a debian based Linux distribution follow the instructions here:
     repository does not include support for the Atmel Ice and it's UPDI programming
     interface.
 
-6. Build avrOS example application
+7. Build avrOS example application
 
     Goto the application directory and make the .hex image
 
@@ -96,7 +108,7 @@ environment on a debian based Linux distribution follow the instructions here:
     make
     ```
 
-7. Program the .hex image into the MCU flash [^1] [^2]
+8. Program the .hex image into the MCU flash [^1] [^2]
 
     ```console
     make flash
