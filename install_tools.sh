@@ -9,7 +9,7 @@ sudo apt-get install -y make binutils gcc-avr gdb-avr avr-libc flex byacc bison 
 sudo apt-get install -y minicom screens micro 
 
 # Install visual tools
-sudo apt-get install -y gtkterm geany geany-plugins
+sudo apt-get install -y gtkterm geany geany-plugins git-cola meld
 
 # Get geany color scheme(s)
 wget -P=~/.config/geany/colorschemes https://raw.github.com/geany/geany-themes/master/colorschemes/delt-dark.conf
