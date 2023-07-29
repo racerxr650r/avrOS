@@ -56,11 +56,11 @@ environment on a debian based Linux distribution follow the instructions here:
    
    You will find these instructions in ./avrOS/README.md
 
-2. If you prefer an automated installation, run the provided install script. You can ignore the following steps.
+2. For an automated installation, run the provided install script and ignore the following steps.
    Else if you prefer a manual installation, skip to the next step.
 
-   > :memo: **Note:** This automated script will install additional tools such as minicom, gtkterm, geany, git-cola, meld, and others.
-   I encourage you to review the script before running it.
+       > :memo: **Note:** This automated script will install additional tools such as minicom, gtkterm, geany, git-cola, meld, and others.
+       I encourage you to review the script before running it.
 
     ```console
     cd avrOS
