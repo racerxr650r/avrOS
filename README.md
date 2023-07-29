@@ -59,9 +59,8 @@ environment on a debian based Linux distribution follow the instructions here:
 2. If you prefer an automated installation, run the provided install script. You can ignore the following steps.
    Else if you prefer a manual installation, skip to the next step.
 
-   **Note:** This automated script will install additional tools such as minicom, gtkterm, geany, git-cola, meld, and others.
+   > :memo: **Note:** This automated script will install additional tools such as minicom, gtkterm, geany, git-cola, meld, and others.
    I encourage you to review the script before running it.
-   {: .note}
 
     ```console
     cd avrOS
