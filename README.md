@@ -3,15 +3,15 @@
 # avrOS Getting Started
 
 **avrOS** - _Operating Environment for AVR DA_, is a scalable operating environment 
-including drivers for the AVR DA family of microcontrollers. It uses macros, a 
-custom linker script, and the linker to build the system tables (state machines,
-states, drivers, services, CLI callbacks, Flags, Queues, and Timers) at compile 
-time. So application code defining these objects can be distributed across several
-source files. In addition, these tables reside in FLASH where possible and the
+including drivers for the AVR DA family of microcontrollers. It provides macros and a 
+custom linker script to build the system tables (state machines, drivers, services, 
+command line interface callbacks, Events, Queues, and Timers) at compile time. 
+Application code defining these objects can be distributed across several source files.
+In addition, these tables reside in FLASH where possible and the
 system doesn't require run-time registration and related fault handling code.
 There is no need to edit a single source file containing all these system tables.
 
-avrOS also comes with a makefile and instructions to setup a development
+avrOS also provides a makefile and instructions to setup a development
 environment and build applications on a Linux desktop PC, chromebook, or even a
 Raspberry PI. There's no need to use Atmel Studio and Windows for AVR application
 development.
@@ -19,16 +19,18 @@ development.
 avrOS provides the following system objects and services:
 
 * Finite State Machine manager (fsm)
-* Command Line Interface (cli)
+* Extensible Command Line Interface (cli)
 * Logger (log)
 * Memory usage API (mem)
 * Pulse Code Modulated sound player API (pcm)
 * Flags API (flg)
 * Queues API (que)
 * Timers API (tmr)
+* Events (evnt)
 
-It also includes the following AVR DA device drivers:
+It also provides the following AVR DA device drivers:
 
+* GPIO
 * UART
 * System Tick (16 bit Timer Type B)
 * DAC
