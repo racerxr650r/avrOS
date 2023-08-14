@@ -9,13 +9,13 @@ sudo apt-get install -y make binutils gcc-avr gdb-avr avr-libc flex byacc bison 
 sudo apt-get install -y minicom screens micro 
 
 # Install visual tools
-sudo apt-get install -y gtkterm geany geany-plugins git-cola meld
+sudo apt-get install -y gtkterm geany geany-plugins git-cola meld code
 
 # Get geany color scheme(s)
-wget -P=~/.config/geany/colorschemes https://raw.github.com/geany/geany-themes/master/colorschemes/delt-dark.conf
-wget -P=~/.config/geany/colorschemes https://raw.github.com/geany/geany-themes/master/colorschemes/dark-colors.conf
-wget -P=~/.config/geany/colorschemes https://raw.github.com/geany/geany-themes/master/colorschemes/himbeere.conf
-wget -P=~/.config/geany/colorschemes https://raw.github.com/geany/geany-themes/master/colorschemes/mc.conf
+wget -P ~/.config/geany/colorschemes https://raw.github.com/geany/geany-themes/master/colorschemes/delt-dark.conf
+wget -P ~/.config/geany/colorschemes https://raw.github.com/geany/geany-themes/master/colorschemes/dark-colors.conf
+wget -P ~/.config/geany/colorschemes https://raw.github.com/geany/geany-themes/master/colorschemes/himbeere.conf
+wget -P ~/.config/geany/colorschemes https://raw.github.com/geany/geany-themes/master/colorschemes/mc.conf
 
 # Get the AVR Dx DFP file for the AVR DA libs and header files
 wget http://packs.download.atmel.com/Atmel.AVR-Dx_DFP.2.2.253.atpack
@@ -33,6 +33,6 @@ rm -rf ../avrdude
 
 # Goto the avrOS_example directory and build the application image (.hex)
 pushd .
-cd avrOS/app/avrOS_example
+cd ./app/avrOS_example
 make
 popd
