@@ -116,6 +116,23 @@ environment on a debian based Linux distribution follow the instructions here:
     ```
     
     The default programmer defined in the makefile is the Atmel ICE.
+
+9. Setup your git username and email
+
+    If you haven't already, you should setup your git username and email address
+    using the following commands.
+
+    To setup your username:
+
+    ```console
+    git config --global user.name "John Doe"
+    ```
+
+    To setup your email:
+
+    ```console
+    git config --global user.email "john_doe@gmail.com"
+    ```
     
 These instructions are similar for Fedora and MacOS. You'll need to use the
 appropiate package manager
