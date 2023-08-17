@@ -58,7 +58,7 @@ environment on a debian based Linux distribution follow the instructions here:
    
    You will find these instructions in ./avrOS/README.md
 
-2. For an automated installation, run the provided install script and ignore the following steps.
+2. For an automated installation, run the provided install script and then goto step #9.
    Else if you prefer a manual installation, skip to the next step.
 
    > :memo: **Note:** This automated script will install additional tools such as minicom, gtkterm, geany, git-cola, meld, and others.
