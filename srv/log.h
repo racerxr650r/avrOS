@@ -117,6 +117,6 @@ typedef struct
 #endif
 
 // External Functions----------------------------------------------------------
-//static int logInit(fsmStateMachine_t *stateMachine);
+//int logInit(fsmStateMachine_t *stateMachine);
 
 #endif /* LOG_H_ */

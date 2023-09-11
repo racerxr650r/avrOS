@@ -75,7 +75,7 @@ struct cliCommand_struct
 #define KEYCODE_RIGHT       0x14
 
 // External Functions----------------------------------------------------------
-//extern int cliInit(fsmStateMachine_t stateMachine);
+//extern int cliInit(volatile fsmStateMachine_t stateMachine);
 extern int cliCallFunction(char *commandLine);
 //extern int cliReceiveFunc(fsmStateMachine_t *state);
 

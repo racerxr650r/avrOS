@@ -20,7 +20,7 @@
  * IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */ 
 
-/*#include "avrOS.h"
+#include "avrOS.h"
 
 // Externs ---------------------------------------------------------------------
 extern void *__start_EVNT_TABLE,*__stop_EVNT_TABLE;
@@ -37,7 +37,12 @@ static int evntCmd(int argc, char *argv[])
 	for(; descr < (evntDescriptor_t *)&__stop_EVNT_TABLE; ++descr)
 	{
 		if(argc<2 || (argc==2 && !strcmp(descr->name,argv[1])))
-			printf("Event: %s - status %s\n\r",descr->name,descr->status->handler!=NULL?"armed":"unarmed");
+		{
+			printf("Event: %s - %s\n\r",descr->name,descr->status->handler==NULL?"unarmed":"armed");
+#ifdef EVNT_STATS
+			printf("\tTriggered: %8lu  Errors: %8lu\n\r",descr->status->stats.triggered,descr->status->stats.error); 
+#endif
+		}
 	}
 	return(0);
 }
@@ -68,18 +73,26 @@ int evntReset(volatile event_t *event)
 	return(EVENT_DISARMED);
 }
 
-int evntEnable(volatile event_t *event, int8_t trigger, evntHandler_t handler, fsmStateMachine_t *stateMachine)
+int evntEnable(volatile event_t *event, int8_t trigger, evntHandler_t handler, volatile fsmStateMachine_t *stateMachine)
 {
-	// Start critical section of code
-	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	int ret;
+
+	if(event != NULL && handler != NULL && stateMachine != NULL)
 	{
-		// Set up the event
-		event->stateMachine = stateMachine;
-		event->trigger = trigger;
-		event->handler = handler;
-	} // End critical section of code
+		// Start critical section of code
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+		{
+			// Set up the event
+			event->stateMachine = stateMachine;
+			event->trigger = trigger;
+			event->handler = handler;
+			
+		} // End critical section of code
+		ret = EVENT_ARMED;
+	}
+	else ret = EVENT_ERROR;
 	
-    return(EVENT_ARMED);
+    return(ret);
 }
 
 int evntDisable(volatile event_t *event)
@@ -91,13 +104,16 @@ int evntDisable(volatile event_t *event)
 int evntTrigger(volatile event_t *event, int8_t signal)
 {
 	int    ret;
-	
+
 	// Start critical section of code
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		// If the event is armed and the trigger matches...
-		if(event->handler && (!event->trigger || event->trigger == signal))
+		if(event->handler!=NULL && (event->trigger == signal))
 		{
+#ifdef EVNT_STATS
+			++event->stats.triggered;
+#endif
 			// Set the signal and call the handler
 			event->signal = signal;
 			event->handler(event->stateMachine);
@@ -112,4 +128,8 @@ int evntTrigger(volatile event_t *event, int8_t signal)
 	} // End critical section of code
 		
 	return(ret);	
-}*/
+}
+
+void evntDispatch(void)
+{
+}

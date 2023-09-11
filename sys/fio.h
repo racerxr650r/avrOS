@@ -28,7 +28,7 @@
 // Types ----------------------------------------------------------------------
 typedef struct
 {
-	const Queue_t		*input, *output;
+	volatile queue_t		*input, *output;
 }fioBuffers_t;
 
 // Macros ----------------------------------------------------------------------
@@ -38,19 +38,43 @@ typedef struct
 #define fioSetOutputQueue(file, que) ((ioBuffers_t)file.buf)->input = que;
 
 // Wait until the file input buffer is not empty
-#define fioWaitInput(file)                         \
-        do                                         \
-        {                                          \
-			evntEnable(file.((fioBuffers_t *)buf)->input->event, fsmGetCurrentStateMachine(), QUE_EVENT_NOT_EMPTY, fsmReady); \
-			fsmWait(fsmGetCurrentStateMachine());  \
-		}while(0)
+static inline void fioWaitInput(FILE *file)
+{
+	fioBuffers_t *buffer = (fioBuffers_t *)(file->buf);
+	
+	// Start critical section of code
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		evntEnable(queGetEvent(buffer->input), QUE_EVENT_NOT_EMPTY, fsmReady, fsmGetCurrentStateMachine());
+		fsmWait(fsmGetCurrentStateMachine());
+	} // End of critical section
+}
 
 // Wait until the file output buffer is empty
-#define fioWaitOutput(file)                        \
-        do                                         \
-        {                                          \
-			evntEnable(file.((fioBuffers_t *)buf)->output->event, fsmGetCurrentStateMachine(), QUE_EVENT_EMPTY, fsmReady) \
-			fsmWait(fsmGetCurrentStateMachine());  \
-		}while(0)
+static inline void fioWaitOutput(FILE *file)
+{
+	fioBuffers_t *buffer = (fioBuffers_t *)(file->buf);
+	
+	// Start critical section of code
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		evntEnable(queGetEvent(buffer->output), QUE_EVENT_EMPTY, fsmReady, fsmGetCurrentStateMachine());
+		fsmWait(fsmGetCurrentStateMachine());
+	} // End of critical section
+}
+
+static inline void fioBusyWaitInput(FILE *file)
+{
+	fioBuffers_t *buffer = (fioBuffers_t *)(file->buf);
+
+	while(queIsEmpty(buffer->input) == true);
+}
+
+static inline void fioBusyWaitOutput(FILE *file)
+{
+	fioBuffers_t *buffer = (fioBuffers_t *)(file->buf);
+
+	while(queIsEmpty(buffer->output) == false);
+}
 
 #endif  // __FIO_H

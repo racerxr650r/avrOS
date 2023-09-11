@@ -144,7 +144,6 @@ void sysInitTick()
 		// Enable the clock
 		tcb->CTRLA |= TCB_ENABLE_bm;
 	}
-	INFO("Init System Tick; CPU = %lu Mhz, Tick = 1 MHz, Timer %s",freq/1000000,tcb==&TCB0?"TCB0":tcb==&TCB1?"TCB1":tcb==&TCB2?"TCB2":"N/A");
 }
 
 uint32_t sysGetTick()

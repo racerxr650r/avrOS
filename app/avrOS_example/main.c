@@ -71,8 +71,9 @@ int main(void)
 {
 	// Initialize the system ---------------------------------------------------
 	sysInit();
+    // Call the state machine dispatcher to initialize the drivers
+	fsmDispatch();
 	
-	//INFO("Starting state machine dispatch loop");
 	// Loop forever ------------------------------------------------------------
     while (1) 
     {

@@ -28,20 +28,32 @@
 // Types ----------------------------------------------------------------------
 typedef enum
 {
+	EVENT_ERROR = -1,
 	EVENT_NONE = 0,
 	EVENT_ARMED,
 	EVENT_DISARMED,
-	EVENT_TRIGGERED,
-	EVENT_ERROR
+	EVENT_TRIGGERED
 } evntCode_t;
 
-typedef int (*evntHandler_t)(fsmStateMachine_t *stateMachine);
+typedef int (*evntHandler_t)(volatile fsmStateMachine_t *stateMachine);
+
+struct EVENT_TYPE;
+struct EVENT_STATE_TYPE;
+
+typedef struct EVENT_STATS
+{
+	uint32_t	triggered, error;
+}evntStats_t;
 
 typedef struct EVENT_STATE_TYPE
 {
 	int8_t            signal, trigger;
-	fsmStateMachine_t *stateMachine;
+	volatile fsmStateMachine_t *stateMachine;
 	evntHandler_t     handler;
+	const struct EVENT_TYPE *descriptor;
+#ifdef EVNT_STATS
+	evntStats_t       stats;
+#endif
 }event_t;
 
 typedef struct EVENT_TYPE
@@ -51,16 +63,31 @@ typedef struct EVENT_TYPE
 }evntDescriptor_t;
 
 // Macros ----------------------------------------------------------------------
-#define ADD_EVENT(evntName)	volatile static event_t	evntName = {.signal = EVENT_NONE, .trigger = EVENT_NONE, .stateMachine = NULL, .handler = NULL}; \
-							const static evntDescriptor_t SECTION(EVNT_TABLE) CONCAT(evntName,_descr) = {.name = #evntName, .status = &evntName};
+#ifdef EVNT_STATS
+#define ADD_EVENT(evntName)	\
+        volatile static event_t	evntName; \
+	    const static evntDescriptor_t SECTION(EVNT_TABLE) CONCAT(evntName,_descr) = {.name = #evntName, .status = &evntName}; \
+        volatile static event_t	evntName = {.signal = EVENT_NONE, .trigger = EVENT_NONE, .stateMachine = NULL, .handler = NULL, .descriptor = &CONCAT(evntName,_descr), .stats.triggered = 0, .stats.error = 0};
+#else
+#define ADD_EVENT(evntName)	\
+        volatile static event_t	evntName; \
+	    const static evntDescriptor_t SECTION(EVNT_TABLE) CONCAT(evntName,_descr) = {.name = #evntName, .status = &evntName}; \
+        volatile static event_t	evntName = {.signal = EVENT_NONE, .trigger = EVENT_NONE, .stateMachine = NULL, .handler = NULL, .descriptor = &CONCAT(evntName,_descr)};
+#endif
 
 #define evntGetSignal(event)        (event->signal)
 #define evntSetSignal(event,signal) event->signal = signal;
 
+// Inline functions ------------------------------------------------------------
+inline const char* evntGetName(volatile event_t *event)
+{
+	return(event->descriptor->name);
+}
+
 // External Functions ----------------------------------------------------------
 extern volatile event_t* evntGetEvent(char *name);
 extern int evntReset(volatile event_t *event);
-extern int evntEnable(volatile event_t *event, int8_t trigger, evntHandler_t handler, fsmStateMachine_t *stateMachine);
+extern int evntEnable(volatile event_t *event, int8_t trigger, evntHandler_t handler, volatile fsmStateMachine_t *stateMachine);
 extern int evntDisable(volatile event_t *event);
 extern int evntTrigger(volatile event_t *event, int8_t trigger);
 

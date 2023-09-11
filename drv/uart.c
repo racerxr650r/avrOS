@@ -98,7 +98,7 @@ static void isrUsartRXC(UART_t *uart)
 	
 	if(error == USART_RXCIF_bm)
 	{
-		bool queued = quePut(uart->rxQueue,uart->usartRegs->RXDATAL);
+		bool queued = quePutByte(uart->rxQueue,uart->usartRegs->RXDATAL);
 #ifdef UART_STATS
 		if(queued)
 			++uart->stats->rxBytes;
@@ -134,8 +134,10 @@ int uartCmd(int argc, char *argv[])
 		if(argc<2 || (argc==2 && !strcmp(name,argv[1])))
 		{
 			printf("UART: %s\n\r",name);
+#ifdef UART_STATS
 			printf("\tTx:%8lu Rx:%8lu Frame Err:%8lu Parity Err:%8lu\n\r",uart->stats->txBytes,uart->stats->rxBytes,uart->stats->frameError,uart->stats->parityError);
 			printf("\tTxOvrflw:%8lu RxBufferOvrflw:%8lu RxQueueOvrflw:%8lu\n\r",uart->stats->txQueueOverflow,uart->stats->rxBufferOverflow,uart->stats->rxQueueOverflow);
+#endif
 		}
 	}
 	return(0);
@@ -146,12 +148,14 @@ int uartCmd(int argc, char *argv[])
 // Initialize a given USART to operate as a UART with the given operating
 // parameters.
 // Return: 0 - No error, -1 - Invalid USART specified
-int uartInit(fsmStateMachine_t *stateMachine)
+int uartInit(volatile fsmStateMachine_t *stateMachine)
 {
 	UART_t      *uartInstance = (UART_t *)fsmGetInstance(stateMachine);
 	USART_t		*usartRegs = uartInstance->usartRegs;
 	int8_t		ret = 0;
 	uint32_t	freq = cpuGetFrequency();
+
+//	INFO("Initializing UART instance %s",uartInstance->name);
 
 #ifdef UART_STATS
 	// Zero out the interface stats
@@ -215,8 +219,6 @@ int uartInit(fsmStateMachine_t *stateMachine)
 	// Enable global interrupts
 	sei();
 	
-//	uartTransmitStr(uartInstance,uartInstance->name);
-	
 	// Stop the statemachine upon completion of initialization
 	fsmStop(stateMachine);	
 	return(ret);
@@ -267,7 +269,7 @@ int uartTransmit(const UART_t *uart, char *buffer, size_t byteCount)
 		for(;i<byteCount;++i)
 		{
 			// If the buffer is full...
-			if(!quePut(uart->txQueue,buffer[i]))
+			if(!quePutByte(uart->txQueue,buffer[i]))
 			{
 #ifdef UART_STATS
 				// Increment the buffer overflow counter
@@ -349,52 +351,52 @@ int uartReceiveChar(const UART_t *uart, char *character)
 
 bool uartRxEmpty(const UART_t *uart)
 {
-	return(queEmpty(uart->rxQueue));
+	return(queIsEmpty(uart->rxQueue));
 }
 
 bool uartRxFull(const UART_t *uart)
 {
-	return(queFull(uart->rxQueue));
+	return(queIsFull(uart->rxQueue));
 }
 
 uint8_t uartRxSize(const UART_t *uart)
 {
-	return(queSize(uart->rxQueue));
+	return(queGetSize(uart->rxQueue));
 }
 
-uint8_t uartRxCount(const UART_t *uart)
+uint8_t uartRxCapacity(const UART_t *uart)
 {
-	return(queCount(uart->rxQueue));
+	return(queGetCapacity(uart->rxQueue));
 }
 
 uint8_t uartRxMax(const UART_t *uart)
 {
-	return(queMax(uart->rxQueue));
+	return(queGetMaxSize(uart->rxQueue));
 }
 
 bool uartTxEmpty(const UART_t *uart)
 {
-	return(queEmpty(uart->txQueue));
+	return(queIsEmpty(uart->txQueue));
 }
 
 bool uartTxFull(const UART_t *uart)
 {
-	return(queFull(uart->txQueue));
+	return(queIsFull(uart->txQueue));
 }
 
 uint8_t uartTxSize(const UART_t *uart)
 {
-	return(queSize(uart->txQueue));
+	return(queGetSize(uart->txQueue));
 }
 
 uint8_t uartTxCount(const UART_t *uart)
 {
-	return(queCount(uart->txQueue));
+	return(queGetCapacity(uart->txQueue));
 }
 
 uint8_t uartTxMax(const UART_t *uart)
 {
-	return(queMax(uart->txQueue));
+	return(queGetMaxSize(uart->txQueue));
 }
 
 char* uartName(const UART_t *uart)
