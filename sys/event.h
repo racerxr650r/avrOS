@@ -50,7 +50,7 @@ typedef struct EVENT_STATE_TYPE
 	int8_t            signal, trigger;
 	volatile fsmStateMachine_t *stateMachine;
 	evntHandler_t     handler;
-	const struct EVENT_TYPE *descriptor;
+	const struct EVENT_TYPE *descr;
 #ifdef EVNT_STATS
 	evntStats_t       stats;
 #endif
@@ -67,12 +67,12 @@ typedef struct EVENT_TYPE
 #define ADD_EVENT(evntName)	\
         volatile static event_t	evntName; \
 	    const static evntDescriptor_t SECTION(EVNT_TABLE) CONCAT(evntName,_descr) = {.name = #evntName, .status = &evntName}; \
-        volatile static event_t	evntName = {.signal = EVENT_NONE, .trigger = EVENT_NONE, .stateMachine = NULL, .handler = NULL, .descriptor = &CONCAT(evntName,_descr), .stats.triggered = 0, .stats.error = 0};
+        volatile static event_t	evntName = {.signal = EVENT_NONE, .trigger = EVENT_NONE, .stateMachine = NULL, .handler = NULL, .descr = &CONCAT(evntName,_descr), .stats.triggered = 0, .stats.error = 0};
 #else
 #define ADD_EVENT(evntName)	\
         volatile static event_t	evntName; \
 	    const static evntDescriptor_t SECTION(EVNT_TABLE) CONCAT(evntName,_descr) = {.name = #evntName, .status = &evntName}; \
-        volatile static event_t	evntName = {.signal = EVENT_NONE, .trigger = EVENT_NONE, .stateMachine = NULL, .handler = NULL, .descriptor = &CONCAT(evntName,_descr)};
+        volatile static event_t	evntName = {.signal = EVENT_NONE, .trigger = EVENT_NONE, .stateMachine = NULL, .handler = NULL, .descr = &CONCAT(evntName,_descr)};
 #endif
 
 #define evntGetSignal(event)        (event->signal)
@@ -81,7 +81,7 @@ typedef struct EVENT_TYPE
 // Inline functions ------------------------------------------------------------
 inline const char* evntGetName(volatile event_t *event)
 {
-	return(event->descriptor->name);
+	return(event->descr->name);
 }
 
 // External Functions ----------------------------------------------------------
@@ -90,5 +90,6 @@ extern int evntReset(volatile event_t *event);
 extern int evntEnable(volatile event_t *event, int8_t trigger, evntHandler_t handler, volatile fsmStateMachine_t *stateMachine);
 extern int evntDisable(volatile event_t *event);
 extern int evntTrigger(volatile event_t *event, int8_t trigger);
+extern int evntDispatch(void);
 
 #endif  // EVENT_H_

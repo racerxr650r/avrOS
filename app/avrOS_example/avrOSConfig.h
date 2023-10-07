@@ -61,7 +61,7 @@
 #define MAX_CMD_LINE    128
 #define MAX_ARGS        16
 #define REPEAT_SWITCH	'r'
-#define CLI_BANNER		"\n\ravrOS Command Line Interface"
+#define CLI_BANNER		"\n\r+++| avrOS Command Line Interface |+++"
 
 // Driver/Service CLI command(s)
 #define UART_CLI	// Uart driver CLI commands

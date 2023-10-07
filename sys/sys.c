@@ -38,7 +38,6 @@ int tickCmd(int argc, char *argv[])
 	uint32_t secs = ticks/1000000;
 	uint32_t msecs = (ticks%1000000)/1000;
 	
-	printf("System Info:\n\r");
 	printf("  Tick Timer: %s\n\r",&SYS_TICK_TIMER==&TCB0?"TCB0":&SYS_TICK_TIMER==&TCB1?"TCB1":&SYS_TICK_TIMER==&TCB2?"TCB2":"N/A");
 	printf("    CPU Freq: %2lu MHz\n\r",cpuGetFrequency()/FREQ_1_MHZ);
 	printf("   Tick Freq: %2lu MHz\n\r",tickDivisor);

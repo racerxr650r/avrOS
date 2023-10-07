@@ -28,7 +28,7 @@
 
 // Command Line Interface Configuration ----------------------------------------
 #define CLI_RX_QUEUE_SIZE	8
-#define CLI_TX_QUEUE_SIZE	255
+#define CLI_TX_QUEUE_SIZE	1026
 #define CLI_USART     USART2
 #define CLI_BAUDRATE  115200
 #define CLI_PARITY    USART_PMODE_DISABLED_gc // USART_PMODE_DISABLED_gc = No Parity
@@ -71,16 +71,13 @@ int main(void)
 {
 	// Initialize the system ---------------------------------------------------
 	sysInit();
-    // Call the state machine dispatcher to initialize the drivers
-	fsmDispatch();
 	
 	// Loop forever ------------------------------------------------------------
     while (1) 
     {
 	    // Call the main state machine dispatcher
 		fsmDispatch();
-		
-		// Upon return, go to sleep until the next interrupt
+		// Go to sleep until the next interrupt
 		sysSleep();
     }
 }

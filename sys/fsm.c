@@ -361,6 +361,9 @@ void fsmDispatch(void)
 {
 	++scanCycle;
 	
+	// Resolve the triggered events
+  	evntDispatch();
+
 	while(Ready != NULL)
 	{
 		// Walk the Ready list
@@ -368,8 +371,8 @@ void fsmDispatch(void)
 		while(currStateMachine)
 		{
 			// Get the next state machine in the Ready list
-			volatile fsmStateMachine_t *nextStateMachine = currStateMachine->next;
-			
+			volatile fsmStateMachine_t *nextStateMachine = currStateMachine->next;				
+
 			// If a next state has been set, update the current state...
 			if(currStateMachine->nextState != NULL)
 			{
@@ -389,6 +392,11 @@ void fsmDispatch(void)
 			
 			// Assign the next state machine in the Ready list
 			currStateMachine = nextStateMachine;
+ 
+     	    // If an event has occurred...
+  	        if(evntDispatch())
+  	            // Reset to the highest priority task
+				currStateMachine = Ready;
 		}
 	}
 }

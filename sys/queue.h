@@ -124,7 +124,7 @@ static inline bool queGetWord(volatile queue_t *que, uint16_t *word)
 }
 static inline bool queGetPtr(volatile queue_t *que, void **ptr)
 {
-	return(queGetWord(que,(uint16_t *)*ptr));
+	return(queGetWord(que,(uint16_t *)ptr));
 };
 
 extern bool quePut(volatile queue_t *que, void *element);

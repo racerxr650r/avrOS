@@ -25,6 +25,9 @@
 // Externs ---------------------------------------------------------------------
 extern void *__start_EVNT_TABLE,*__stop_EVNT_TABLE;
 
+// Locals ----------------------------------------------------------------------
+ADD_QUEUE(evntQue,sizeof(event_t *),4);
+
 // Command line interface ------------------------------------------------------
 #ifdef EVNT_CLI
 ADD_COMMAND("evnt",evntCmd,true);
@@ -114,13 +117,16 @@ int evntTrigger(volatile event_t *event, int8_t signal)
 #ifdef EVNT_STATS
 			++event->stats.triggered;
 #endif
-			// Set the signal and call the handler
+			// Set the signal and put the event in the queue
 			event->signal = signal;
-			event->handler(event->stateMachine);
+			quePutPtr(&evntQue,(void *)event);
 			
+			// TODO: Remove this
+			//event->handler(event->stateMachine);
 			// Disarm the event
-			event->handler = NULL;
-			event->stateMachine = NULL;
+			//event->handler = NULL;
+			//event->stateMachine = NULL;
+			
 			ret = EVENT_TRIGGERED;
 		}
 		else
@@ -130,6 +136,22 @@ int evntTrigger(volatile event_t *event, int8_t signal)
 	return(ret);	
 }
 
-void evntDispatch(void)
+int evntDispatch(void)
 {
+	int     ret = 0;
+	event_t *event;
+	
+	// While there are events in the queue...
+	while(queGetPtr(&evntQue,(void **)&event) == true)
+	{
+		// Call the event handler for the event
+		event->handler(event->stateMachine);
+		
+		// Disarm the event
+		event->handler = NULL;
+		event->stateMachine = NULL;
+		
+		// Increment the event count
+		++ret;
+	}
 }
