@@ -182,13 +182,13 @@ SECTIONS
 	*(CLI_CMDS)
 	__stop_CLI_CMDS = . ;
   } AT> text_window
-  FSM_TABLES ADDR(CLI_CMDS) + SIZEOF (CLI_CMDS) :
+  FSM_TABLE ADDR(CLI_CMDS) + SIZEOF (CLI_CMDS) :
   {
-	__start_FSM_TABLES = . ;
-	*(FSM_TABLES)
-	__stop_FSM_TABLES = . ;
+	__start_FSM_TABLE = . ;
+	*(FSM_TABLE)
+	__stop_FSM_TABLE = . ;
   } AT> text_window
-  QUE_TABLE ADDR(FSM_TABLES) + SIZEOF (FSM_TABLES) :
+  QUE_TABLE ADDR(FSM_TABLE) + SIZEOF (FSM_TABLE) :
   {
 	__start_QUE_TABLE = . ;
 	*(QUE_TABLE)
@@ -200,7 +200,13 @@ SECTIONS
 	*(TMR_TABLE)
 	__stop_TMR_TABLE = . ;
   } AT> text_window
-  UART_TABLE ADDR(TMR_TABLE) + SIZEOF (TMR_TABLE) :
+  EVNT_TABLE ADDR(TMR_TABLE) + SIZEOF (TMR_TABLE) :
+  {
+    __start_EVNT_TABLE = . ;
+    *(EVNT_TABLE)
+    __stop_EVNT_TABLE = . ;
+  } AT> text_window
+  UART_TABLE ADDR(EVNT_TABLE) + SIZEOF (EVNT_TABLE) :
   {
 	__start_UART_TABLE = . ;
 	*(UART_TABLE)

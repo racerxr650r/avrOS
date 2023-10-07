@@ -26,18 +26,18 @@
 #include <string.h>
 
 // Externs --------------------------------------------------------------------
-extern void *__start_FSM_TABLES,*__stop_FSM_TABLES,*__start_FSM_STATES,*__stop_FSM_STATES;
+extern void *__start_FSM_TABLE,*__stop_FSM_TABLE;
 
 // Internal Globals -----------------------------------------------------------
 static uint32_t scanCycle = 0;
-static fsmStateMachine_t   *currStateMachine = NULL, *Ready = NULL, *Wait = NULL, *Stopped = NULL; 
+volatile static fsmStateMachine_t   *currStateMachine = NULL, *Ready = NULL, *Wait = NULL, *Stopped = NULL; 
 static char initString[] = {"Init"};
 
 // Internal functions ---------------------------------------------------------
-static fsmStateMachine_t* fsmGetStateMachine(const char *name);
-static bool fsmLstAdd(fsmStateMachine_t **list, fsmStateMachine_t *sm);
-static bool fsmLstRemove(fsmStateMachine_t **list, fsmStateMachine_t *sm);
-static void fsmLstPrint(FILE *file, fsmStateMachine_t *list);
+volatile static fsmStateMachine_t* fsmGetStateMachine(const char *name);
+static int fsmLstAdd(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm);
+static int fsmLstRemove(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm);
+static void fsmLstPrint(FILE *file, volatile fsmStateMachine_t *list);
 
 // CLI Commands ---------------------------------------------------------------
 #ifdef FSM_CLI
@@ -82,7 +82,7 @@ int fsmStopCmd(int argc, char *argv[])
 	// If command line includes a name of a state machine...
 	if((argc == 2) && (argv[1] != NULL))
 	{
-		fsmStateMachine_t *stateMachine = fsmGetStateMachine(argv[1]);
+		volatile fsmStateMachine_t *stateMachine = fsmGetStateMachine(argv[1]);
 		
 		if(stateMachine!=NULL)
 			return(fsmStop(stateMachine));
@@ -99,7 +99,7 @@ int fsmStartCmd(int argc, char *argv[])
   // If command line includes a name of a state machine...
   if((argc == 2) && (argv[1] != NULL))
   {
-    fsmStateMachine_t	*stateMachine = fsmGetStateMachine(argv[1]);
+    volatile fsmStateMachine_t	*stateMachine = fsmGetStateMachine(argv[1]);
 	
     if(stateMachine->currState == NULL && stateMachine != NULL)
       return(fsmNextState(stateMachine,stateMachine->stateMachineDescr->initHandler));
@@ -108,14 +108,14 @@ int fsmStartCmd(int argc, char *argv[])
 }
 
 // Internal Functions ----------------------------------------------------------
-static bool fsmLstAdd(fsmStateMachine_t **list, fsmStateMachine_t *sm)
+static int fsmLstAdd(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm)
 {
-	fsmStateMachine_t *curr = *list, *prev = NULL;
-	bool ret = true;
+	int ret = 0;
 	
 	// If sm is valid...
 	if(sm != NULL)
 	{
+		volatile fsmStateMachine_t *curr = *list, *prev = NULL;
 		// If there is no elements in the current list...
 		if(*list == NULL)
 		{
@@ -160,19 +160,19 @@ static bool fsmLstAdd(fsmStateMachine_t **list, fsmStateMachine_t *sm)
 	}
 	// Else sm is not valid...
 	else
-		ret = false;
+		ret = -1;
 	
 	return(ret);
 }
 
-static bool fsmLstRemove(fsmStateMachine_t **list, fsmStateMachine_t *sm)
+int fsmLstRemove(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm)
 {
-	fsmStateMachine_t *curr = *list, *prev = NULL;
-	bool ret = true;
+	int ret = 0;
 	
 	// If the state machine is valid...
 	if(sm != NULL)
 	{
+		volatile fsmStateMachine_t *curr = *list, *prev = NULL;
 		// Until the end of the list
 		while(curr)
 		{
@@ -191,6 +191,7 @@ static bool fsmLstRemove(fsmStateMachine_t **list, fsmStateMachine_t *sm)
 					*list = curr->next;
 					break;
 				}
+				curr->next = NULL;
 			}
 				
 			// Step to the next element
@@ -199,7 +200,7 @@ static bool fsmLstRemove(fsmStateMachine_t **list, fsmStateMachine_t *sm)
 		}
 		// If reached the end of the list without finding the element...
 		if(curr == NULL)
-			ret = false;
+			ret = -1;
 	}
 	// Else the state machine is not valid...
 	else
@@ -208,9 +209,9 @@ static bool fsmLstRemove(fsmStateMachine_t **list, fsmStateMachine_t *sm)
 	return(ret);
 }
 
-static void fsmLstPrint(FILE *file, fsmStateMachine_t *list)
+void fsmLstPrint(FILE *file, volatile fsmStateMachine_t *list)
 {
-	fsmStateMachine_t *curr = list;
+	volatile fsmStateMachine_t *curr = list;
 	
     while(curr)
 	{
@@ -219,12 +220,12 @@ static void fsmLstPrint(FILE *file, fsmStateMachine_t *list)
 	}
 }
 
-static fsmStateMachine_t *fsmGetStateMachine(const char *name)
+volatile static fsmStateMachine_t *fsmGetStateMachine(const char *name)
 {
   // Walk the table of state machines
-  fsmStateMachineDescr_t *descr = (fsmStateMachineDescr_t *)&__start_FSM_TABLES;
+  fsmStateMachineDescr_t *descr = (fsmStateMachineDescr_t *)&__start_FSM_TABLE;
   
-  for(; descr < (fsmStateMachineDescr_t *)&__stop_FSM_TABLES; ++descr)
+  for(; descr < (fsmStateMachineDescr_t *)&__stop_FSM_TABLE; ++descr)
     if(strcmp(name,descr->name) == 0)
       return(descr->stateMachine);
 
@@ -234,14 +235,18 @@ static fsmStateMachine_t *fsmGetStateMachine(const char *name)
 // External Functions ----------------------------------------------------------
 void fsmInit()
 {
-	// Walk the table of state machines
-	fsmStateMachineDescr_t *stateMachineDescr = (fsmStateMachineDescr_t *)&__start_FSM_TABLES;
-	for(; stateMachineDescr < (fsmStateMachineDescr_t *)&__stop_FSM_TABLES; ++stateMachineDescr)
+	// Start critical section of code
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-		fsmStateMachine_t	*stateMachine = stateMachineDescr->stateMachine;
-		// Add the state machine to the ready list in priority order
-		fsmLstAdd(&Ready,stateMachine);
-	}
+		// Walk the table of state machines
+		fsmStateMachineDescr_t *stateMachineDescr = (fsmStateMachineDescr_t *)&__start_FSM_TABLE;
+		for(; stateMachineDescr < (fsmStateMachineDescr_t *)&__stop_FSM_TABLE; ++stateMachineDescr)
+		{
+			volatile fsmStateMachine_t	*stateMachine = stateMachineDescr->stateMachine;
+			// Add the state machine to the ready list in priority order
+			fsmLstAdd(&Ready,stateMachine);
+		}
+	} // End of critical section
 }
 
 // Get the scan cycle count
@@ -251,7 +256,7 @@ uint32_t fsmScanCycle()
 }
 
 // Get the current state machine name
-const char* fsmCurrentStateMachineName()
+const char* fsmGetCurrentStateMachineName()
 {
 	const char *ret = NULL;
 	
@@ -263,7 +268,13 @@ const char* fsmCurrentStateMachineName()
 	return(ret);
 }
 
-void* fsmGetInstance(fsmStateMachine_t *stateMachine)
+// The the pointer to the current state machine
+volatile fsmStateMachine_t* fsmGetCurrentStateMachine()
+{
+	return(currStateMachine);
+}
+
+void* fsmGetInstance(volatile fsmStateMachine_t *stateMachine)
 {
 	return(stateMachine->stateMachineDescr->instance);
 }
@@ -275,104 +286,117 @@ bool fsmInitialCall()
 }
 
 // Return pointer to the current state
-fsmHandler_t fsmCurrentState(fsmStateMachine_t *stateMachine)
+fsmHandler_t fsmCurrentState(volatile fsmStateMachine_t *stateMachine)
 {
 	return(stateMachine->currState);
 }
 
 // Return pointer to the previous state
-fsmHandler_t fsmPreviousState(fsmStateMachine_t *stateMachine)
+fsmHandler_t fsmPreviousState(volatile fsmStateMachine_t *stateMachine)
 {
 	return(stateMachine->prevState);
 }
 
 // Change the given state machine to the given state
-int fsmNextState(fsmStateMachine_t *stateMachine, fsmHandler_t handler)
-{
-  if(stateMachine)
-    stateMachine->nextState = handler;
-  else
-    return(-1);
-
-  return(0);
-}
-
-// Stop the given state machine
-int fsmStop(fsmStateMachine_t *stateMachine)
+int fsmNextState(volatile fsmStateMachine_t *stateMachine, fsmHandler_t handler)
 {
 	if(stateMachine)
-	{
-		stateMachine->prevState = stateMachine->currState;
-		stateMachine->nextState = stateMachine->currState = NULL;
-	}
+		stateMachine->nextState = handler;
 	else
 		return(-1);
 
 	return(0);
 }
 
+// Stop the given state machine
+int fsmStop(volatile fsmStateMachine_t *stateMachine)
+{
+	int ret;
+	
+	// Start critical section of code
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		if(!(ret = fsmLstRemove(&Ready,stateMachine)))
+			fsmLstAdd(&Stopped,stateMachine);
+		else if(!(ret = fsmLstRemove(&Wait,stateMachine)))
+			fsmLstAdd(&Stopped,stateMachine);
+	} // End critical section
+		
+	return(ret);
+}
+
+// Put the given state machine on the wait list
+int fsmWait(volatile fsmStateMachine_t *stateMachine)
+{
+	int ret;
+	
+	// Start critical section of code
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		if(!(ret = fsmLstRemove(&Ready,stateMachine)))
+			fsmLstAdd(&Wait,stateMachine);
+	} // End critical section
+	
+	return(ret);
+}
+
+// Put the given state machine on the ready list
+int fsmReady(volatile fsmStateMachine_t *stateMachine)
+{
+	int ret;
+	
+	// Start critical section of code
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		if(!(ret = fsmLstRemove(&Wait,stateMachine)))
+			fsmLstAdd(&Ready,stateMachine);
+	} // End critical section
+	
+	return(ret);
+}
+
+
 // Finite State Machine Dispatcher. This function steps through the state machine table and calls the current state function for each
 void fsmDispatch(void)
 {
 	++scanCycle;
 	
-	// Walk the Ready list
-	currStateMachine = Ready;
-	while(currStateMachine)
+	// Resolve the triggered events
+  	evntDispatch();
+
+	while(Ready != NULL)
 	{
-		// If a next state has been set, update the current state
-		if(currStateMachine->nextState != NULL)
+		// Walk the Ready list
+		currStateMachine = Ready;
+		while(currStateMachine)
 		{
-			currStateMachine->prevState = currStateMachine->currState;
-			currStateMachine->currState = currStateMachine->nextState;
-			currStateMachine->nextState = NULL;
-			currStateMachine->initialCall = true;
-		}
-		// If the current state is valid...
-		if(currStateMachine->currState != NULL)
-		{
-			// If the specified state was found in the table...
-			if(currStateMachine != NULL)
+			// Get the next state machine in the Ready list
+			volatile fsmStateMachine_t *nextStateMachine = currStateMachine->next;				
+
+			// If a next state has been set, update the current state...
+			if(currStateMachine->nextState != NULL)
 			{
+				currStateMachine->prevState = currStateMachine->currState;
+				currStateMachine->currState = currStateMachine->nextState;
+				currStateMachine->nextState = NULL;
+				currStateMachine->initialCall = true;
+			}
+
+			// If the current state is valid..
+			if(currStateMachine->currState != NULL)
+			{
+				// Call the current state machine's state handler
 				currStateMachine->currState(currStateMachine);
 				currStateMachine->initialCall = false;
 			}
+			
+			// Assign the next state machine in the Ready list
+			currStateMachine = nextStateMachine;
+ 
+     	    // If an event has occurred...
+  	        if(evntDispatch())
+  	            // Reset to the highest priority task
+				currStateMachine = Ready;
 		}
-		// Else the current state is NULL...
-		else
-		{
-		    fsmLstRemove(&Ready,currStateMachine);
-		    fsmLstAdd(&Stopped,currStateMachine);
-		    INFO("State Machine %s Stopped",currStateMachine->stateMachineDescr->name);
-        }
-        // Step to the next state machine in the Ready list
-        currStateMachine = currStateMachine->next;
 	}
-	
-	// Walk the table of state machines
-/*	currStateMachine = (fsmStateMachineDescr_t *)&__start_FSM_TABLES;
-	for(; currStateMachine < (fsmStateMachineDescr_t *)&__stop_FSM_TABLES; ++currStateMachine)
-	{
-		fsmStateMachine_t	*stateMachine = currStateMachine->stateMachine;
-	  
-		// If a next state has been set, update the current state
-		if(stateMachine->nextState != NULL)
-		{
-			stateMachine->prevState = currStateMachine->stateMachine->currState;
-			stateMachine->currState = currStateMachine->stateMachine->nextState;
-			stateMachine->nextState = NULL;
-			stateMachine->initialCall = true;
-		}
-
-		// If the current state is valid...
-		if(stateMachine->currState != NULL)
-		{
-			// If the specified state was found in the table...
-			if(stateMachine != NULL)
-			{
-				stateMachine->currState(currStateMachine->stateMachine);
-				stateMachine->initialCall = false;
-			}
-		}
-	}*/
 }

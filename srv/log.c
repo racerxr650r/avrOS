@@ -20,9 +20,33 @@
  // Includes -------------------------------------------------------------------
  #include "../avrOS.h"
 
-// External Functions ---------------------------------------------------------
-// Initialize the CLI and the associated serial port
-int logInit(fsmStateMachine_t *stateMachine)
+// Internal Functions ----------------------------------------------------------
+static int logRAM(volatile fsmStateMachine_t *stateMachine)
+{
+	// Display the system RAM info
+	memRamStatus(stderr);
+
+	// Stop the log initialization SM
+	fsmStop(stateMachine);
+	return(0);
+}
+
+static int logROM(volatile fsmStateMachine_t *stateMachine)
+{
+	// Display the system ROM info
+	//fprintf(stderr,"\n\rSystem Memory --------------\n\r");
+	memRomStatus(stderr);
+	fprintf(stderr,"\n\r");
+
+	// Wait until the stderr output queue is empty and then go to next state
+    fioWaitOutput(stderr);
+	fsmNextState(stateMachine,logRAM);
+
+	return(0);
+}
+
+// External Functions ----------------------------------------------------------
+int logInit(volatile fsmStateMachine_t *stateMachine)
 {
 	logInstance_t *logInstance = (logInstance_t*)fsmGetInstance(stateMachine);
 	FILE          *outFile = logInstance->outFile;
@@ -30,24 +54,14 @@ int logInit(fsmStateMachine_t *stateMachine)
 	// Setup stderr so stdout.h functions like fprintf output the log
 	stderr = outFile;
 
-	// Enable global interrupts
-	sei();
-
 	// Hide the cursor
 	fprintf(stderr,"\e[?25l");
-
 	// Display the system greeting
 	fprintf(stderr,LOG_BANNER);
-	
-//	fprintf(stderr,"\n\rSystem Memory --------------\n\r");
-	// Wait until the Tx queue is empty...
-//	memRomStatus(stderr);
-//	fprintf(stderr,"\n\r");
-	//cliCallFunction("ram");
-//	memRamStatus(stderr);
 
-	fsmStop(stateMachine);
+	// Wait until the stderr output queue is empty and then go to next state
+    fioWaitOutput(stderr);
+    fsmNextState(stateMachine,logROM);
+
 	return(0);
 }
-
-

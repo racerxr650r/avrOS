@@ -18,14 +18,14 @@ typedef struct
 
 typedef struct  
 {
-	char			*name;
-	const FILE*		file;
-	USART_t			*usartRegs;
-	uint32_t		baud;
-	USART_PMODE_t	parity;
-	USART_CHSIZE_t	dataBits;
-	USART_SBMODE_t	stopBits;	
-	const Queue_t	*txQueue,*rxQueue;
+	char			 *name;
+	const FILE*		 file;
+	USART_t			 *usartRegs;
+	uint32_t		 baud;
+	USART_PMODE_t	 parity;
+	USART_CHSIZE_t	 dataBits;
+	USART_SBMODE_t	 stopBits;	
+	volatile queue_t *txQueue,*rxQueue;
 #ifdef UART_STATS
 	UartStats_t		*stats;
 #endif
@@ -37,22 +37,24 @@ typedef struct
 // Adds a new state machine to the list of state machines handled by the FSM manager
 #ifdef UART_STATS
 #define ADD_UART_RW(usartName, usartReg, uartBaud, uartParity, uartDataBits, uartStopBits, txQueueSize, rxQueueSize) \
-                ADD_QUEUE(usartName ## _TxQue,txQueueSize); \
-                ADD_QUEUE(usartName ## _RxQue,rxQueueSize); \
+                ADD_QUEUE(usartName ## _TxQue,sizeof(uint8_t),txQueueSize); \
+                ADD_QUEUE(usartName ## _RxQue,sizeof(uint8_t),rxQueueSize); \
                 static UartStats_t CONCAT(usartName,_stats); \
                 const static UART_t SECTION(UART_TABLE) usartName; \
-                static FILE CONCAT(usartName,_file) = { .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_RW, .udata = (void *)&usartName }; \
+                const static fioBuffers_t CONCAT(usartName,_buffers) = {.input = &CONCAT(usartName,_RxQue), .output = &CONCAT(usartName,_TxQue)}; \
+                static FILE CONCAT(usartName,_file) = {.buf = (char *) &CONCAT(usartName,_buffers), .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_RW, .udata = (void *)&usartName }; \
 				const static UART_t SECTION(UART_TABLE) usartName = { .name = #usartName, .file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = uartBaud, .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = &CONCAT(usartName,_TxQue), .rxQueue = &CONCAT(usartName,_RxQue), .stats = &CONCAT(usartName,_stats)}; \
 				ADD_STATE_MACHINE(usartName ## _SM,uartInit,FSM_DRV | 0,(void *)&usartName);
 #define ADD_UART_WRITE(usartName, usartReg, uartBaud, uartParity, uartDataBits, uartStopBits, txQueueSize) \
-                ADD_QUEUE(usartName ## _TxQue,txQueueSize); \
+                ADD_QUEUE(usartName ## _TxQue,sizeof(uint8_t),txQueueSize); \
                 static UartStats_t CONCAT(usartName,_stats); \
                 const static UART_t SECTION(UART_TABLE) usartName; \
-                static FILE CONCAT(usartName,_file) = { .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_WRITE, .udata = (void *)&usartName }; \
+                const static fioBuffers_t CONCAT(usartName,_buffers) = {.input = NULL, .output = &CONCAT(usartName,_TxQue)}; \
+                static FILE CONCAT(usartName,_file) = {.buf = (char *) &CONCAT(usartName,_buffers), .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_WRITE, .udata = (void *)&usartName }; \
 				const static UART_t SECTION(UART_TABLE) usartName = { .name = #usartName, .file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = uartBaud, .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = &CONCAT(usartName,_TxQue), .rxQueue = NULL, .stats = &CONCAT(usartName,_stats)}; \
 				ADD_STATE_MACHINE(usartName ## _SM,uartInit,FSM_DRV | 0,(void *)&usartName);
 #define ADD_UART_READ(usartName, usartReg, uartBaud, uartParity, uartDataBits, uartStopBits, rxQueueSize) \
-                ADD_QUEUE(usartName ## _RxQue,rxQueueSize); \
+                ADD_QUEUE(usartName ## _RxQue,sizeof(uint8_t),rxQueueSize); \
                 static UartStats_t CONCAT(usartName,_stats); \
                 const static UART_t SECTION(UART_TABLE) usartName; \
                 static FILE CONCAT(usartName,_file) = { .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_READ, .udata = (void *)&usartName }; \

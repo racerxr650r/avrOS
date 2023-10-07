@@ -27,12 +27,13 @@ extern void *__start_QUE_TABLE,*__stop_QUE_TABLE;
 // Command line interface -----------------------------------------------------
 #ifdef QUE_CLI
 ADD_COMMAND("que",queCmd,true);
+#endif
 
 static int queCmd(int argc, char *argv[])
 {
-	// Walk the table of state machines
-	Queue_t *descr = (Queue_t *)&__start_QUE_TABLE;
-	for(; descr < (Queue_t *)&__stop_QUE_TABLE; ++descr)
+	// Walk the table of queues
+	queDescriptor_t *descr = (queDescriptor_t *)&__start_QUE_TABLE;
+	for(; descr < (queDescriptor_t *)&__stop_QUE_TABLE; ++descr)
 	{
 		if(argc<2 || (argc==2 && !strcmp(descr->name,argv[1])))
 		{
@@ -43,126 +44,119 @@ static int queCmd(int argc, char *argv[])
 	}
 	return(0);
 }
-#endif // QUE_CLI
 
-// Circular que functions ************************************************
-bool queEmpty(const Queue_t *que)
+// External functions ************************************************
+uint8_t queGetSize(volatile queue_t *que)
 {
-	return(que->queue->head == que->queue->size?true:false);
-}
-
-bool queFull(const Queue_t *que)
-{
-	return(que->queue->tail == que->queue->size?true:false);
-}
-
-uint8_t queSize(const Queue_t *que)
-{
-	return(que->queue->size);
-}
-
-#ifdef QUE_STATS
-uint8_t queMax(const Queue_t *que)
-{
-	return(que->stats->max);
-}
-#endif
-
-uint8_t queCount(const Queue_t *que)
-{
-	volatile QueueState_t	*queue = que->queue;
+	const queDescriptor_t *descr = que->descr;
 	uint8_t			ret;
 	
-	if(queEmpty(que))
+	if(queIsEmpty(que))
 		ret = 0;
-	else if(queFull(que))
-		ret = queue->size;
-	else if(queue->tail==queue->head)
-		ret = queue->size-1;
-	else if(queue->tail>=queue->head)
-		ret = queue->tail-queue->head;
+	else if(queIsFull(que))
+		ret = descr->capacity;
+	else if(que->tail==que->head)
+		ret = descr->capacity-1;
+	else if(que->tail>=que->head)
+		ret = que->tail-que->head;
 	else
-		ret = queue->size-(queue->head-queue->tail);
+		ret = descr->capacity-(que->head-que->tail);
 		
 	return(ret);	
 }
 
-bool queGet(const Queue_t *que, char *ch)
+bool queGet(volatile queue_t *que, void *element)
 {
-	volatile QueueState_t	*queue = que->queue;	
+	const queDescriptor_t *descr = que->descr;
 	bool			ret = false;
 	
+	// Start of critical section
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		// If not empty
-		if(queue->head < queue->size)
+		if(que->head < descr->capacity)
 		{
-			// Get the char from the head of the queue
-			*ch = que->buffer[queue->head];
+			// Get the element from the head of the queue
+			memcpy(element,&(descr->buffer[que->head*descr->sizeOfElement]),descr->sizeOfElement);
+			// *ch = que->buffer[queue->head];
 #ifdef QUE_STATS
-			++que->stats->out;
+			++descr->stats->out;
 #endif
 			// If the buffer was previously full...
-			if(queue->tail == queue->size)
+			if(que->tail == descr->capacity)
+			{
 				// Point the tail at the new empty slot
-				queue->tail = queue->head;
+				que->tail = que->head;
+				evntTrigger(descr->event,QUE_EVENT_NOT_FULL);
+			}
 			
 			// Increment the head pointer and wrap if needed
-			if(++queue->head == queue->size)
-				queue->head = 0;
+			if(++que->head == descr->capacity)
+				que->head = 0;
 
 			// If the buffer is now empty...
-			if(queue->tail == queue->head)
+			if(que->tail == que->head)
+			{
 				// Set the head pointer to show that
-				queue->head = queue->size;
+				que->head = descr->capacity;
+				evntTrigger(descr->event,QUE_EVENT_EMPTY);
+			}
 
 			ret = true;
 		}
 #ifdef QUE_STATS
 		else
-			++que->stats->underflow;
+			++descr->stats->underflow;
 #endif
 		
-	}
+	} // End of critical section
 	return(ret);
 }
 
-bool quePut(const Queue_t *que, char ch)
+bool quePut(volatile queue_t *que, void *element)
 {
-	volatile QueueState_t	*queue = que->queue;
+	const queDescriptor_t *descr = que->descr;
 	bool			ret = false;
 	
+	// Start of critical section
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		// If not already full...
-		if(queue->tail < queue->size)
+		if(que->tail < descr->capacity)
 		{
 			// If not full now...
-			if(queue->tail != queue->head)
+			if(que->tail != que->head)
 			{
-				// Put the char into the buffer
-				que->buffer[queue->tail] = ch;
+				// Put the element into the buffer
+				memcpy(&(descr->buffer[que->tail*descr->sizeOfElement]),element,descr->sizeOfElement);
+				//que->buffer[queue->tail] = ch;
 #ifdef QUE_STATS
-				++que->stats->in;
+				++descr->stats->in;
 #endif			
 				// If the buffer was previously empty...
-				if(queue->head == queue->size)
+				if(que->head == descr->capacity)
+				{
 					// Point the head to the char just added
-					queue->head = queue->tail;
+					que->head = que->tail;
+					evntTrigger(descr->event, QUE_EVENT_NOT_EMPTY);
+				}
 				// Increment the tail pointer and wrap
-				if(++queue->tail==queue->size)
-					queue->tail = 0;
+				if(++que->tail==descr->capacity)
+					que->tail = 0;
 			
 				// Is the queue now full...	
-				if(queue->tail == queue->head)
+				if(que->tail == que->head)
+				{
 					// Point the tail beyond the buffer
-					queue->tail = queue->size;
+					que->tail = descr->capacity;
+					evntTrigger(descr->event, QUE_EVENT_FULL);
+				}
 				
 #ifdef QUE_STATS
-				// If the current size of queueue exceeds the previous max, update the max
-				uint8_t	size = queSize(que);
-				if(size>que->stats->max)
-					que->stats->max = size;
+				// If the current capacity of queueue exceeds the previous max, update the max
+				uint8_t	size = queGetSize(que);
+				if(size>descr->stats->max)
+					descr->stats->max = size;
 #endif			
 				
 				ret = true;
@@ -170,8 +164,8 @@ bool quePut(const Queue_t *que, char ch)
 		}
 #ifdef QUE_STATS
 		else
-			++que->stats->overflow;
+			++descr->stats->overflow;
 #endif
-	}
+	} // End of critical section
 	return(ret);
 }
