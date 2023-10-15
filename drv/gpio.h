@@ -27,6 +27,8 @@
 #include "avrOS.h"
 
 // Data Types -----------------------------------------------------------------
+typedef void (*gpioHandler_t)(PORT_t *port);
+
 typedef enum
 {
     GPIO_PIN_0 = 0b00000001,
@@ -56,6 +58,7 @@ typedef struct
     PORT_t  *port;
     uint8_t pin;
     gpioDirection_t direction;
+    gpioHandler_t   handler;
 
 #ifdef GPIO_STATS
     gpioStats_t		*stats;
