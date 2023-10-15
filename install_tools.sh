@@ -3,10 +3,10 @@
 sudo apt-get update
 
 # Install make, git, gcc-avr, gcc tools, and unzip
-sudo apt-get install -y make binutils gcc-avr gdb-avr avr-libc flex byacc bison cmake unzip 
+sudo apt-get install -y make binutils gcc-avr gdb-avr avr-libc flex byacc bison cmake unzip
 
 # Install command line app tools
-sudo apt-get install -y minicom screens micro 
+sudo apt-get install -y minicom screens micro
 
 # Install visual tools
 sudo apt-get install -y gtkterm geany geany-plugins git-cola meld code

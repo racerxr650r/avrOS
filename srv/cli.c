@@ -89,9 +89,9 @@ int cliClear(int argC, char *argV[])
 	UNUSED(argV);
 	
 	// Clear the entire screen	
-	printf("\e[2J");
+	printf(CLEAR_SCREEN);
 	// Set the cursor to Home (upper left of screen)
-	printf("\e[H");
+	printf(CURSOR_HOME);
 
 	return(0);
 }
@@ -123,7 +123,7 @@ static int cliNewCmd(volatile fsmStateMachine_t *stateMachine)
 	fsmNextState(stateMachine,cliGetKey);
 	
 	// Display the prompt
-	printf("\n\r> ");
+	printf(DISPLAY_PROMPT);
 	return(0);
 }
 
@@ -133,7 +133,7 @@ static int cliGetKey(volatile fsmStateMachine_t *stateMachine)
 		
 //	if(key!=EOF)
 //	{
-		if(key == '\e')
+		if(key == ESC)
 		{
 			fioWaitInput(stdin);
 			fsmNextState(stateMachine, cliEscKey);
@@ -185,7 +185,7 @@ static int cliConsumeKey(volatile fsmStateMachine_t *stateMachine)
 {
 	switch(key)
 	{
-		case '\r':
+		case CR:
 			// Transmit a carriage return + line feed back
 			printf("\n\r");
 			// Update command line and counter
@@ -197,7 +197,7 @@ static int cliConsumeKey(volatile fsmStateMachine_t *stateMachine)
 			fsmNextState(stateMachine, cliWaitTxQueue);
 			break;
 		case KEYCODE_LEFT:
-		case '\b':
+		case BS:
 			// If there is some line to delete...
 			if(lineCounter>0)
 			{
@@ -251,7 +251,7 @@ static int cliClearScreen(volatile fsmStateMachine_t *stateMachine)
 	if(uartTxEmpty(uart))
 	{
 		// Clear the entire screen
-		printf("\e[2J");
+		printf(CLEAR_SCREEN);
 		fsmNextState(stateMachine, cliWaitTxQueue);
 	}
 	
@@ -270,9 +270,9 @@ static int cliWaitTxQueue(volatile fsmStateMachine_t *stateMachine)
 		else
 		{
 			// Set the cursor to Home (upper left of screen)
-			printf("\e[H");
+			printf(CURSOR_HOME);
 			// Hide the cursor
-			printf("\e[?25l");
+			printf(CURSOR_HIDE);
 			
 			fsmNextState(stateMachine, cliRepeatCommand);
 		}
@@ -311,7 +311,7 @@ static int cliDisplayEscape(volatile fsmStateMachine_t *stateMachine)
 			{
 				cmdFuncPtr = NULL;
 				// Unhide the cursor
-				printf("\e[?25h");
+				printf(CURSOR_UNHIDE);
 				fsmNextState(stateMachine, cliNewCmd);
 			}
 		}

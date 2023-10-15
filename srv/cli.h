@@ -32,22 +32,22 @@ typedef int (*commandHandler_t)(int argc, char *argv[]);
 
 typedef struct
 {
-	char				key;
-	char				commandLine[MAX_CMD_LINE];
-	char				previousCommand[MAX_CMD_LINE];
-	int				    lineCounter;
-	char*			    argV[MAX_ARGS];
-	int				    argC;
-	commandHandler_t	cmdFuncPtr;
-	cliCommand_t		*currentCommand;	
+    char				key;
+    char				commandLine[MAX_CMD_LINE];
+    char				previousCommand[MAX_CMD_LINE];
+    int				    lineCounter;
+    char*			    argV[MAX_ARGS];
+    int				    argC;
+    commandHandler_t	cmdFuncPtr;
+    cliCommand_t		*currentCommand;
 }cliState_t;
 
 typedef struct
 {
-	char	  *name;
-	FILE      *inFile, *outFile;
-	UART_t	  *uart;
-	cliState_t state;
+    char	  *name;
+    FILE      *inFile, *outFile;
+    UART_t	  *uart;
+    cliState_t state;
 //  crtWindow *window;
 }cliInstance_t;
 
@@ -55,7 +55,8 @@ struct cliCommand_struct
 {
     const char			*commandStr;
     commandHandler_t	funcPtr;
-	bool				repeatable;
+    bool				repeatable;
+    cliCommand_t        *rootCommand;
 };
 
 // This macro adds a new instance of a CLI
@@ -65,14 +66,34 @@ struct cliCommand_struct
 
 // This macro adds a command string and a function to the cli table
 #define ADD_COMMAND(name,function,...)	static int function(int argc, char *argv[]); \
-										const static cliCommand_t SECTION(CLI_CMDS) CONCAT(function,__COUNTER__) = { .commandStr = name, .funcPtr = &function, .repeatable = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,false)};
+                                        const static cliCommand_t SECTION(CLI_CMDS) CONCAT(function,__COUNTER__) = { .commandStr = name, .funcPtr = &function, .repeatable = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,false), .rootCommand = NULL};
 
+// This macro adds a command string and a function to the cli table
+#define ADD_SUBCOMMAND(name,function,root,...)	static int function(int argc, char *argv[]); \
+                                                const static cliCommand_t SECTION(CLI_CMDS) CONCAT(function,__COUNTER__) = { .commandStr = name, .funcPtr = &function, .repeatable = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,false), .rootCommand = &root};
 
 // Constants ------------------------------------------------------------------
 #define KEYCODE_UP          0x11
 #define KEYCODE_DOWN        0x12
 #define KEYCODE_LEFT        0x13
 #define KEYCODE_RIGHT       0x14
+
+#define DISPLAY_PROMPT      "\n\r> "
+
+#define CLEAR_SCREEN        "\e[2J"
+#define CURSOR_HOME         "\e[H"
+#define CURSOR_HIDE         "\e[?25l"
+#define CURSOR_UNHIDE       "\e[?25h"
+
+#define BEL                 '\a'    // Terminal Bell
+#define BS                  '\b'    // Backspace
+#define HT                  '\t'    // Horizontal Tab
+#define LF                  '\n'    // Linefeed
+#define VT                  '\v'    // Vertical Tab
+#define FF                  '\f'    // Formfeed/New Page
+#define CR                  '\r'    // Carriage Return
+#define ESC                 '\e'    // Escape Character
+#define DEL
 
 // External Functions----------------------------------------------------------
 //extern int cliInit(volatile fsmStateMachine_t stateMachine);

@@ -56,8 +56,7 @@ avrOS.geany
 avrOS.tags
 
 # VS Code configuration directories
-.vs/
-.vscode/
+.vscode/settings.json
 
 # Lizard output files (Cyclomatic Complexity)
 ./cca.csv

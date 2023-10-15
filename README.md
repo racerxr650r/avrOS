@@ -56,12 +56,14 @@ environment on a debian based Linux distribution follow the instructions here:
     git clone https://github.com/racerxr650r/avrOS.git
     ```
    
-   You will find these instructions in ./avrOS/README.md
+   You will find these instructions in ./avrOS/README.md included in the project
+   files from git. In addition, ./.vscode/c_cpp_properties.json configuration file
+   is included with the project. This file will setup the visual studio code C/C++ intellisense to find all the appropriate include directories and files.
 
 2. For an automated installation, run the provided install script and then goto step #9.
    Else if you prefer a manual installation, skip to the next step.
 
-   > :memo: **Note:** This automated script will install additional tools such as minicom, gtkterm, geany, git-cola, meld, and others.
+   > :memo: **Note:** This automated script will install additional tools such as minicom, gtkterm, geany, vscode, git-cola, meld, and others.
    I encourage you to review the script before running it.
 
     ```console
@@ -135,7 +137,7 @@ environment on a debian based Linux distribution follow the instructions here:
     ```
     
 These instructions are similar for Fedora and MacOS. You'll need to use the
-appropiate package manager
+appropiate package manager.
 
 [^1]: The make flash target will build and program the application into flash
 [^2]: If you are using a different programmer that is supported by AVRDUDE, 

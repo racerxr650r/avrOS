@@ -8,17 +8,17 @@
  *
  * Copyright (C) 2021 by John Anderson <racerxr650r@gmail.com>
  *
- * Permission to use, copy, modify, and/or distribute this software for any 
+ * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted.
  *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF 
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
- * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES 
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN 
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
  * IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */ 
+ */
 
 #ifndef AVROS_H_
 #define AVROS_H_
@@ -57,6 +57,7 @@
 #include "drv/mem.h"
 #include "drv/uart.h"
 #include "drv/dac.h"
+#include "drv/gpio.h"
 
 #include "srv/cli.h"
 //#include "crtDrv.h"
@@ -83,7 +84,6 @@
 
 #define SECTION(sectionName)			__attribute__((__used__,__section__(#sectionName)))
 
-//#define ROM_STR(prefix,str)			static char const UNIQUENAME(prefix) PROGMEM = {str}
 #define ROM_STR(var_name,str)			static char const var_name[] PROGMEM = {str}
 #define ROM_STR_G(var_name,str)			char const var_name[] PROGMEM = {str}
 
