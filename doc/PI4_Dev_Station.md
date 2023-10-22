@@ -105,6 +105,18 @@ This is what it should look like when you are done.
 
 3. Reboot the Pi and confirm the serial ports are enabled.
 
+   ```console
+   ls -l /dev/ttyAMA*
+   ```
+
+   You should see the following output
+
+   ```console
+   crw-rw---- 1 root dialout 204, 66 Oct 22 11:10 /dev/ttyAMA2
+   crw-rw---- 1 root dialout 204, 67 Oct 22 11:11 /dev/ttyAMA3
+   crw-rw---- 1 root dialout 204, 68 Oct 22 09:06 /dev/ttyAMA4
+   ```
+
 4. Update the avrOS makefile to use the correct serial port for UPDI programming.
    Open the makefile found in the .../avrOS/app/avrOS_example directory with your
    program editor. Find the following lines in the makefile
@@ -135,9 +147,24 @@ This is what it should look like when you are done.
 
    Start GTK Terminal from the Pi accessories menu
 
-   ![]()
+   ![Launch GTK Term](./images/Launch_Term.jpg)
 
-6. From the same avrOS_example directory run the following command to build the
+   Select Configuration | Port from the top menu. In the configuration dialog,
+   set the /dev/ttyAMA3
+
+   ![Config GTK Term](./images/Config_Term.jpg)
+
+   Select Configuration | Save Configuration from the top menu. In this dialog,
+   type the name of the configuration (ie. console) and hit <Enter> to save the
+   configuration so you can load it later
+
+   Do the same for the logging terminal. This time set the port to /dev/ttyAMA4
+   and save the configuration (ie. log)
+
+   Now you can launch two instances of GTK Terminal and load the "console"
+   configuration in one and the "log" configuration in the other
+
+6. From the avrOS_example directory run the following command to build the
    example application, load it into the AVR flash memory, and reset the AVR
 
    ```console
@@ -146,6 +173,8 @@ This is what it should look like when you are done.
    
    At this point, you should see the user prompt on the console serial terminal
    and the log output on the logging serial terminal.
+
+   [Console and Log Terminals](./images/Console_Log_Terms.jpg)
 
    For more information regarding building, loading, and running avrOS, check out
    the [User Manual](./MANUAL.md).
