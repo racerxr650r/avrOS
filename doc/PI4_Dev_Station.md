@@ -181,7 +181,7 @@ This is what it should look like when you are done.
    For more information regarding building, loading, and running avrOS, check out
    the [User Manual](./MANUAL.md).
 
-[^1] - To simplify purchasing, I suggest buying a leaded ceramic capacitor
+[^1]: To simplify purchasing, I suggest buying a leaded ceramic capacitor
        kit from [Sparkfun](https://www.sparkfun.com/products/13698), [Digikey](https://www.digikey.com/), [Mouser](https://www.mouser.com/), [Jameco](https://www.jameco.com), or other online source
-[^2] - To simplify purchasing, I suggest buying a leaded resistor
+[^2]: To simplify purchasing, I suggest buying a leaded resistor
        kit from [Sparkfun](https://www.sparkfun.com/products/13698), [Digikey](https://www.digikey.com/), [Mouser](https://www.mouser.com/), [Jameco](https://www.jameco.com), or other online source
