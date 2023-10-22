@@ -174,7 +174,7 @@ This is what it should look like when you are done.
    At this point, you should see the user prompt on the console serial terminal
    and the log output on the logging serial terminal.
 
-   [Console and Log Terminals](./images/Console_Log_Terms.jpg)
+   ![Console and Log Terminals](./images/Console_Log_Terms.jpg)
 
    For more information regarding building, loading, and running avrOS, check out
    the [User Manual](./MANUAL.md).
