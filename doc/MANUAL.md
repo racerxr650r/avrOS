@@ -219,15 +219,17 @@ test and handle the condition when not enough RAM is available.
 To use RAM as efficiently as possible, avrOS implements a form of cooperative
 multitasking. This requires that the application code does not block or busy
 wait. Instead it will check the status of various variables or objects to 
-detemine if it should do something, do it, and then return. By doing this,
-avrOS is able to use a single stack for all the system threads and interrupt 
-contexts.
+detemine if it should do something, do it, change state if applicable, notify
+the OS that it will wait on an OS event if applicable, and then return. 
+By doing this, avrOS is able to efficiently use a single stack for all the 
+system threads and interrupt contexts.
 
 avrOS does not implement threading. The AVR microcontrollers have a very rich
 set of interrupts to handle asynchronous events. Handlers for these interrupts
-are "scheduled" asynchronously by the AVR interrupt controller. avrOS objects
-such as flags and queues can be used by the handler to signal and pass data to
-the user application code.
+are "scheduled" asynchronously and the thread context is stored on the shared 
+OS stack by the AVR interrupt controller. avrOS objects such as event and 
+queues can be used by the handler to signal and pass data to the user 
+application code.
 
 In addition, the avrOS scheduler uses a finite state machine paradigm. The user
 application and system services register state machines and a set of states.

@@ -44,6 +44,9 @@ avrOS is still in it's sub 1.0 development stage. So there are lots of new
 features and drivers coming. For more information regarding avrOS, refer to
 the [User Manual](./doc/MANUAL.md).
 
+For an example of Raspberry Pi 4 based development environment, see the
+[Raspberry PI 4 model B Development Platform](./doc/PI4_Dev_Station.md) document.
+
 ## Install Development Environment and Build
 
 avrOS is developed on a Linux workstation using the avr-gcc compiler, gnu make,
