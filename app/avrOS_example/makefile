@@ -20,7 +20,7 @@ CLK = 24000000
 # avr programmer (and port if necessary)
 # e.g. PRG = atmelice_updi -or- PRG = serialupdi -P /dev/ttyUSB0
 # The current programmer if the Atmel ICE w/UPDI interface
-PRG = atmelice_updi
+PRG = serialupdi -P /dev/ttyAMA2
 #PRG = serialupdi -P /dev/ttyUSB2
 # fuse values for avr: low, high, and extended
 # these values are from an Arduino Uno (ATMega328P)

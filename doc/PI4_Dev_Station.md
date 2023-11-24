@@ -22,14 +22,16 @@ complete software/hardware development and debug environment.
 5. Leaded (through hole) 100 nF ceramic capacitor [^1]
 6. Leaded (through hole) 10 nF ceramic capacitor [^1]
 7. Leaded (through hole) 1 uF ceramic capacitor [^1]
-8. 3 Digit LED Voltmeter (Optional) - Included this to verify the voltage
+8. Leaded (through hole) 1K ohm 1/4 watt resistor [^2]
+9. 3 Digit LED Voltmeter (Optional) - Included this to verify the voltage
    connected to the power rail on the breadboard.
-9. AVR 6-pin ISP breadboard adaptor (Optional) - Available from [Adafruit](https://www.adafruit.com/product/1465?gclid=CjwKCAjw7c2pBhAZEiwA88pOF1L6DqyZab90Mdl54mq7smjS36Chm8jpSfrgYdEkHAi9WPDGRb-lExoCO34QAvD_BwE)
-10. Raspberry Pi 4 passive heatsink (Optional) - The one in the pictures below is from
+10. AVR 6-pin ISP breadboard adaptor (Optional) - Available from [Adafruit](https://www.adafruit.com/product/1465?gclid=CjwKCAjw7c2pBhAZEiwA88pOF1L6DqyZab90Mdl54mq7smjS36Chm8jpSfrgYdEkHAi9WPDGRb-lExoCO34QAvD_BwE)
+11. Raspberry Pi 4 passive heatsink (Optional) - The one in the pictures below is from
     [Geekworm](https://geekworm.com/products/raspberry-pi-4-11mm-embedded-heatsink-p165-b)
-11. Ultra-Small RPi GPIO Status LED & Terminal Block Breakout Board Module (Optional) - 
-    I included this to make the build more rugged for portibilty. This can be purchased from [Amazon](amazon.com)
-12. M2 Standoffs (Optional) - Used to mount the Pi to the base of the solderless 
+12. Ultra-Small RPi GPIO Status LED & Terminal Block Breakout Board Module (Optional) - 
+    I included this to make the build more rugged for portibilty. This can be 
+    purchased from [Amazon](amazon.com)
+13. M2 Standoffs (Optional) - Used to mount the Pi to the base of the solderless 
     breadboard. There are numerous kits with various sizes of standoffs
     available form [Amazon](amazon.com)
 
@@ -105,6 +107,18 @@ This is what it should look like when you are done.
 
 3. Reboot the Pi and confirm the serial ports are enabled.
 
+   ```console
+   ls -l /dev/ttyAMA*
+   ```
+
+   You should see the following output
+
+   ```console
+   crw-rw---- 1 root dialout 204, 66 Oct 22 11:10 /dev/ttyAMA2
+   crw-rw---- 1 root dialout 204, 67 Oct 22 11:11 /dev/ttyAMA3
+   crw-rw---- 1 root dialout 204, 68 Oct 22 09:06 /dev/ttyAMA4
+   ```
+
 4. Update the avrOS makefile to use the correct serial port for UPDI programming.
    Open the makefile found in the .../avrOS/app/avrOS_example directory with your
    program editor. Find the following lines in the makefile
@@ -135,9 +149,24 @@ This is what it should look like when you are done.
 
    Start GTK Terminal from the Pi accessories menu
 
-   ![]()
+   ![Launch GTK Term](./images/Launch_Term.jpg)
 
-6. From the same avrOS_example directory run the following command to build the
+   Select Configuration | Port from the top menu. In the configuration dialog,
+   set the /dev/ttyAMA3
+
+   ![Config GTK Term](./images/Config_Term.jpg)
+
+   Select Configuration | Save Configuration from the top menu. In this dialog,
+   type the name of the configuration (ie. console) and hit <Enter> to save the
+   configuration so you can load it later
+
+   Do the same for the logging terminal. This time set the port to /dev/ttyAMA4
+   and save the configuration (ie. log)
+
+   Now you can launch two instances of GTK Terminal and load the "console"
+   configuration in one and the "log" configuration in the other
+
+6. From the avrOS_example directory run the following command to build the
    example application, load it into the AVR flash memory, and reset the AVR
 
    ```console
@@ -147,8 +176,12 @@ This is what it should look like when you are done.
    At this point, you should see the user prompt on the console serial terminal
    and the log output on the logging serial terminal.
 
+   ![Console and Log Terminals](./images/Console_Log_Terms.jpg)
+
    For more information regarding building, loading, and running avrOS, check out
    the [User Manual](./MANUAL.md).
 
-[^1] - To simplify purchasing, I suggest buying a leaded ceramic capacitor
+[^1]: To simplify purchasing, I suggest buying a leaded ceramic capacitor
+       kit from [Sparkfun](https://www.sparkfun.com/products/13698), [Digikey](https://www.digikey.com/), [Mouser](https://www.mouser.com/), [Jameco](https://www.jameco.com), or other online source
+[^2]: To simplify purchasing, I suggest buying a leaded resistor
        kit from [Sparkfun](https://www.sparkfun.com/products/13698), [Digikey](https://www.digikey.com/), [Mouser](https://www.mouser.com/), [Jameco](https://www.jameco.com), or other online source
