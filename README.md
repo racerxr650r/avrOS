@@ -58,15 +58,16 @@ environment on a debian based Linux distribution follow the instructions here:
    
    You will find these instructions in ./avrOS/README.md
 
-2. For an automated installation, run the provided install script and then goto step #9.
+2. For an automated installation, run the provided install script(s) and then goto step #9.
    Else if you prefer a manual installation, skip to the next step.
 
-   > :memo: **Note:** This automated script will install additional tools such as minicom, gtkterm, geany, git-cola, meld, and others.
-   I encourage you to review the script before running it.
+   > :memo: **Note:** These automated scripts will install the command line toolchain w/utilities (install_cli_tools.sh),
+   graphical tools such as gtkterm, geany, git-cola, meld, and vscode (install_gui_tools.sh), and/or both the CLI tools
+   and GUI tools (install_all_tools.sh). I encourage you to review these scripts before running them.
 
     ```console
     cd avrOS
-    ./install-tools.sh
+    ./install_all_tools.sh
     ```
        
 3. Install Gnu make, git, avr-gcc Gnu C compiler, and other tools
