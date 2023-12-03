@@ -27,3 +27,6 @@ pushd .
 cd ./app/avrOS_example
 make
 popd
+
+# Setup git username and email address
+./setup_git.sh
