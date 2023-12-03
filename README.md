@@ -58,7 +58,7 @@ environment on a debian based Linux distribution follow the instructions here:
    
    You will find these instructions in ./avrOS/README.md
 
-2. For an automated installation, run the provided install script(s) and then goto step #9.
+2. For an automated installation, run the provided install script(s).
    Else if you prefer a manual installation, skip to the next step.
 
    > :memo: **Note:** These automated scripts will install the command line toolchain w/utilities (install_cli_tools.sh),
@@ -73,7 +73,7 @@ environment on a debian based Linux distribution follow the instructions here:
 3. Install Gnu make, git, avr-gcc Gnu C compiler, and other tools
 
     ```console
-    sudo apt install make git binutils gcc-avr avr-libc flex byacc bison unzip
+    sudo apt install make git binutils gcc-avr avr-libc flex byacc bison unzip avrdude
     ```
     
 4. Download the Microchip Device Family Pack for the Atmel-Dx series from the [Microchip Packs Repository](http://packs.download.atmel.com/)
@@ -92,16 +92,16 @@ environment on a debian based Linux distribution follow the instructions here:
     rm Atmel.AVR-Dx_DFP.2.2.253.atpack
     ```
 
-6. Install AVRDUDE from sources on github
+6. (Optional) Install the latest AVRDUDE from sources on github
 
     Go to this [AVRDUDE github page](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
     for instructions to clone, build, and install it from the latest source
 
-    I recomend this version because the version in the Debian/Ubuntu package
-    repository does not include support for the Atmel Ice and it's UPDI programming
-    interface.
+    > :memo: **Note:** If you are using an older distrobution based on Debian 10 or earlier, you may need
+    to do this because the version the Debian/Ubuntu repositories does not support Atmel Ice and Serial
+    UPDI programming interfaces.
 
-7. Build avrOS example application
+8. Build avrOS example application
 
     Goto the application directory and make the .hex image
 
@@ -110,7 +110,7 @@ environment on a debian based Linux distribution follow the instructions here:
     make
     ```
 
-8. Program the .hex image into the MCU flash [^1] [^2]
+9. Program the .hex image into the MCU flash [^1] [^2]
 
     ```console
     make flash
@@ -118,7 +118,7 @@ environment on a debian based Linux distribution follow the instructions here:
     
     The default programmer defined in the makefile is the Atmel ICE.
 
-9. Setup your git username and email
+10. Setup your git username and email
 
     If you haven't already, you should setup your git username and email address
     using the following commands.
