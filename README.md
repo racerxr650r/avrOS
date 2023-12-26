@@ -56,24 +56,39 @@ environment on a debian based Linux distribution follow the instructions here:
 1. From your "Projects" directory, clone avrOS from github
 
     ```console
+    sudo apt update
+    sudo apt install git
     git clone https://github.com/racerxr650r/avrOS.git
     ```
    
    You will find these instructions in ./avrOS/README.md included in the project
    files from git. In addition, ./.vscode/c_cpp_properties.json configuration file
-   is included with the project. This file will setup the visual studio code C/C++ intellisense to find all the appropriate include directories and files.
+   is included with the project. This file will setup the visual studio code 
+   C/C++ intellisense to find all the appropriate include directories and files.
 
-2. For an automated installation, run the provided install script and then goto step #9.
-   Else if you prefer a manual installation, skip to the next step.
+2. For an automated installation, run the provided install script and you are 
+   done. Else if you prefer a manual installation, skip to the next step.
 
-   > :memo: **Note:** This automated script will install additional tools such as minicom, gtkterm, geany, vscode, git-cola, meld, and others.
-   I encourage you to review the script before running it.
+   > :memo: **Note:** This automated script will install additional tools such
+   as minicom, tree, devcon, and others. I encourage you to review the script
+   before running it.
 
     ```console
     cd avrOS
-    ./install-tools.sh
+    ./install_cli_tools.sh
     ```
-       
+
+   > :memo: **Note:** There are additional scripts that install and configure
+   linux beyond the minimal steps documented here. One additional script
+   (install_gui_tools.sh) installs common GUI development tools such as geany,
+   meld, git-cola, vscode, and others to be run locally for development.
+   Another script (config_remote_pi.sh), will configure Raspberry PI OS
+   to run headless and act as a remote development target. In this mode, I
+   suggest using vscode on a host PC remotely connecting to the Raspberry Pi
+   via WiFi. It's key caching technique makes it in decernible from developing
+   locally. This is how I develop. I found using ssh and vim or neovim is a
+   little slower.
+
 3. Install Gnu make, git, avr-gcc Gnu C compiler, and other tools
 
     ```console
@@ -105,7 +120,25 @@ environment on a debian based Linux distribution follow the instructions here:
     repository does not include support for the Atmel Ice and it's UPDI programming
     interface.
 
-7. Build avrOS example application
+7. Install a serial terminal application such as minicom for command line use
+   or gtkterm for GUI use. You will use one of these applications to connect
+   to the avrOS cli and/or logger. 
+
+   To install minicom
+    ```console
+    sudo apt install minicom
+    ```
+
+    To install GTKTerm
+    ```console
+    sudo apt install gtkterm
+    ```
+
+   > :memo: **Note:** See the [Raspberry PI 4 model B Development Platform](./doc/PI4_Dev_Station.md)
+   document for an example of how to wire this up for the example application
+   using a Raspberry Pi 4 in headless mode.
+
+8. Build avrOS example application
 
     Goto the application directory and make the .hex image
 
@@ -114,15 +147,16 @@ environment on a debian based Linux distribution follow the instructions here:
     make
     ```
 
-8. Program the .hex image into the MCU flash [^1] [^2]
+9. Program the .hex image into the MCU flash [^1] [^2]
 
     ```console
     make flash
     ```
     
-    The default programmer defined in the makefile is the Atmel ICE.
+    The default programmer defined in the makefile is the Atmel ICE. Change
+    this to the appropriate serial port 
 
-9. Setup your git username and email
+10. Setup your git username and email
 
     If you haven't already, you should setup your git username and email address
     using the following commands.

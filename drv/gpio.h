@@ -31,37 +31,37 @@ typedef void (*gpioHandler_t)(PORT_t *port);
 
 typedef enum
 {
-    GPIO_PIN_0 = 0b00000001,
-    GPIO_PIN_1 = 0b00000010,
-    GPIO_PIN_2 = 0b00000100,
-    GPIO_PIN_3 = 0b00001000,
-    GPIO_PIN_4 = 0b00010000,
-    GPIO_PIN_5 = 0b00100000,
-    GPIO_PIN_6 = 0b01000000,
-    GPIO_PIN_7 = 0b10000000        
+	GPIO_PIN_0 = 0b00000001,
+	GPIO_PIN_1 = 0b00000010,
+	GPIO_PIN_2 = 0b00000100,
+	GPIO_PIN_3 = 0b00001000,
+	GPIO_PIN_4 = 0b00010000,
+	GPIO_PIN_5 = 0b00100000,
+	GPIO_PIN_6 = 0b01000000,
+	GPIO_PIN_7 = 0b10000000        
 } gpioPin_t;
 
 typedef enum
 {
-    GPIO_OUTPUT,
-    GPIO_INPUT
+	GPIO_OUTPUT,
+	GPIO_INPUT
 } gpioDirection_t;
 
 typedef struct
 {
-    uint32_t	toggle;
+	uint32_t	toggle;
 }gpioStats_t;
 
 typedef struct  
 {
-    char	*name;
-    PORT_t  *port;
-    uint8_t pin;
-    gpioDirection_t direction;
-    gpioHandler_t   handler;
+	char	*name;
+	PORT_t  *port;
+	uint8_t pin;
+	gpioDirection_t direction;
+	gpioHandler_t   handler;
 
 #ifdef GPIO_STATS
-    gpioStats_t		*stats;
+	gpioStats_t		*stats;
 #endif
 }gpio_t;
 
@@ -69,11 +69,37 @@ typedef struct
 // Adds a new state machine to the list of state machines handled by the FSM manager
 #ifdef GPIO_STATS
 #define ADD_GPIO(gpioName, gpioPort, gpioPin, gpioDirection, ...) \
-        const static gpio_t SECTION(GPIO_TABLE) name = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
+		const static gpio_t SECTION(GPIO_TABLE) name = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
 #else
 #define ADD_GPIO(gpioName, gpioPort, gpioPin, gpioDirection, ...) \
-        const static gpio_t SECTION(GPIO_TABLE) name = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
+		const static gpio_t SECTION(GPIO_TABLE) name = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
 #endif
+
+// Inline Functions -----------------------------------------------------------
+static inline void gpioSet(gpio_t *gpio, uint8_t value)
+{
+	gpio->port->OUTSET = (value & gpio->pin);
+}
+
+static inline void gpioClear(gpio_t *gpio, uint8_t value)
+{
+	gpio->port->OUTCLR = (value & gpio->pin);
+}
+
+static inline void gpioToggle(gpio_t *gpio, uint8_t value)
+{
+	gpio->port->OUTTGL = (value & gpio->pin);
+}
+
+static inline void gpioWrite(gpio_t *gpio, uint8_t value)
+{
+	gpio->port->OUT ^= (value & gpio->pin); 
+}
+
+static inline uint8_t gpioRead(gpio_t *gpio)
+{
+	return(gpio->port->IN & gpio->pin);
+}
 
 // External Functions ---------------------------------------------------------
 

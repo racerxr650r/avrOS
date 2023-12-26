@@ -2,16 +2,38 @@
 ---
 # Raspberry PI 4 model B Development Platform for avrOS
 
-The following instructions describe how to assemble and configure a avrOS
-development environment using a Raspberry Pi Model B and a solderless
-breadboard. By adding an HDMI monitor, keyboard, and mouse, you will have a
-complete software/hardware development and debug environment.
+The following instructions describe how to assemble and configure an avrOS
+development environment using a Raspberry Pi 4 Model B and a solderless
+breadboard.
+
+Running GUI apps natively on the Pi can be a slow and frustrating. So, I use
+a headless Pi configuration along with vscode running on my desktop linux PC
+for the optimal development experience. Since you can buy refurbished business
+class PCs for about the same you would spend on a Pi with case, power
+supply and keyboard, it's a no brainer.
+
+> :memo: **Note:** With the TPM requirement for Windows 11, you can find
+refurbished bussiness class PC's very cheap. I just bought an HP EliteDesk 800
+G3 Mini Business Desktop PC with Intel Quad-Core i5-6500T and 16GB of ram for
+$115. This system runs resource hungry applications like vscode much better
+than a Pi 4.
+
+With this setup, I take advantage of the Pi's WiFi connection. I can take my
+laptop into the house and leave the Pi/breadboard on the bench in my shop.
+
+I connect to the Pi using vscode's remote-SSH feature. The vscode implementation
+uses key caching so the editor is very responsive. I find it to be even more
+responsive than using vim/nvim/micro/nano over ssh.
 
 ## Bill of Materials
 
 1. Raspberry Pi 4 Model B - The PI 4 is required for the additional UART ports.
    Prior models do not have enough ports to support simultaneous console,
-   logging, and UPDI programming ports
+   logging, and UPDI programming ports. If you are gonna use it in headless
+   mode as described here, you can purchase the 1GB ram model for $35, 
+   [Mouser Pi 4 1GB ram](https://www.mouser.com/ProductDetail/Raspberry-Pi/SC01929?qs=T%252BzbugeAwjg1Zb0G7gMcFw%3D%3D).
+   If you want to use the Pi as the host for a GUI development environment then
+   I suggest purchasing the more expensive 8GB model
 2. Solderless Breadboard - In this example, I used a breadboard with metal base
    so I could mount the Raspberry Pi to it and make it more mobile. You can
    find many examples for purchase at [Circuit Specialist](https://www.circuitspecialists.com/collections/breadboards) or [Jameco](https://www.jameco.com/c/Prototyping-Systems-Solderless-Breadboards.html)
@@ -61,9 +83,9 @@ complete software/hardware development and debug environment.
 
  > :memo: **Note:** In the image above, I also connected a 6 pin ISP breadboard adaptor for use with the Atmel ICE
 
- 7. Connect Pi UART 2 to the UPDI pin. Connect the Rx (Pi pin 28) to the UPDI port pin
-    on the AVR (AVR pin 19). Then connect the Tx (Pi pin 27) to a 1K ohm resistor and
-    connect the resistor to the to the UPDI port pin on the AVR (AVR pin 19)
+7. Connect Pi UART 2 to the UPDI pin. Connect the Rx (Pi pin 28) to the UPDI port pin
+   on the AVR (AVR pin 19). Then connect the Tx (Pi pin 27) to a 1K ohm resistor and
+   connect the resistor to the to the UPDI port pin on the AVR (AVR pin 19)
 
 ![UPDI Connected](./images/20231021_162617.jpg)
 
@@ -81,12 +103,17 @@ This is what it should look like when you are done.
 
 ## Configure PI OS (Bookworm)
 
-1. Connect the Pi to video, keyboard, mouse, and power. See this
-   [Getting Started](https://www.raspberrypi.com/documentation/computers/getting-started.html) guide on the [Raspberry Pi website](https://www.raspberrypi.com/) for
-   detailed instruction regarding setting up your Pi and installing the latest
-   version of Raspberry Pi OS.
+1. See this [Getting Started](https://www.raspberrypi.com/documentation/computers/getting-started.html)
+   guide on the [Raspberry Pi website](https://www.raspberrypi.com/) for 
+   detailed instructions regarding setting up your Pi and installing the latest
+   version of Raspberry Pi OS. For headless mode, I use the 64 bit Pi OS Lite.
+   Use the OS customisation in Pi Imager to preconfigure your Raspberry Pi so
+   you don't need to connect a keyboard and monitor to you Pi. Be sure to
+   enable SSH.
 
-   Power up the Pi. If you haven't already done so, clone [avrOS](https://github.com/racerxr650r/avrOS) and install it according to the intructions in [README.md](../README.md)
+   Power up the Pi and login remotely using SSH over ethernet or WiFi. If you
+   haven't already done so, clone [avrOS](https://github.com/racerxr650r/avrOS)
+   and install it according to the intructions in [README.md](../README.md)
 
 2. Edit the configuration file to enable UART2, UART3, and UART4 on the Pi. Open the
    /boot/firmware/config.txt file using an editor (Vim, Nano, Micro etc.). To save the
@@ -95,6 +122,7 @@ This is what it should look like when you are done.
    ```console
    sudo micro /boot/firmware/config.txt
    ```
+   
    Once the file is open, add the following lines to the end of the file.
 
    ```console
@@ -138,33 +166,23 @@ This is what it should look like when you are done.
 
    Save the makefile.
 
-5. Setup GTK Terminal to see/use the avrOS console and logging. GTK terminal is
-   installed by the install_tools.sh script. If you followed the manual
-   instructions to install avrOS, run the following command to install it
+5. Setup minicom to use the avrOS console and logging. minicom is
+   installed by the install_cli_tools.sh script. If you follow the manual
+   instructions to install avrOS, be sure to install minicom.
+
+   To start minicom and connect to the example application CLI, enter the
+   following command
 
    ```console
-   sudo apt update
-   sudo apt install gtkterm
+   minicom -D /dev/ttyAMA3
    ```
 
-   Start GTK Terminal from the Pi accessories menu
+   To start minicom and connect to the example application logger, enter the
+   following command
 
-   ![Launch GTK Term](./images/Launch_Term.jpg)
-
-   Select Configuration | Port from the top menu. In the configuration dialog,
-   set the /dev/ttyAMA3
-
-   ![Config GTK Term](./images/Config_Term.jpg)
-
-   Select Configuration | Save Configuration from the top menu. In this dialog,
-   type the name of the configuration (ie. console) and hit <Enter> to save the
-   configuration so you can load it later
-
-   Do the same for the logging terminal. This time set the port to /dev/ttyAMA4
-   and save the configuration (ie. log)
-
-   Now you can launch two instances of GTK Terminal and load the "console"
-   configuration in one and the "log" configuration in the other
+   ```console
+   minicom -D /dev/ttyAMA4
+   ```
 
 6. From the avrOS_example directory run the following command to build the
    example application, load it into the AVR flash memory, and reset the AVR
@@ -173,13 +191,27 @@ This is what it should look like when you are done.
    make flash
    ```
    
-   At this point, you should see the user prompt on the console serial terminal
-   and the log output on the logging serial terminal.
-
-   ![Console and Log Terminals](./images/Console_Log_Terms.jpg)
+   At this point, you should see the user prompt on the CLI minicom serial
+   terminal session and the log output on the logging serial session.
 
    For more information regarding building, loading, and running avrOS, check out
    the [User Manual](./MANUAL.md).
+
+7. Install vscode on you host PC
+
+   ```console
+   sudo apt install code
+   ```
+
+8. From the vscode extensions menu on the left, find and install the Remote-SSH extension
+
+   > :memo: **Note:** For information about installing and using this feature,
+   checkout the [Remote Development using SSH](https://code.visualstudio.com/docs/remote/ssh)
+   page on the Microsoft site.
+
+Now that you have setup the hardware and your development environment, you can
+start building and running applications. See the [User Manual](MANUAL.md) for
+more information.
 
 [^1]: To simplify purchasing, I suggest buying a leaded ceramic capacitor
        kit from [Sparkfun](https://www.sparkfun.com/products/13698), [Digikey](https://www.digikey.com/), [Mouser](https://www.mouser.com/), [Jameco](https://www.jameco.com), or other online source

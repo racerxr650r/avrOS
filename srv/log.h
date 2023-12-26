@@ -41,21 +41,21 @@ typedef struct
 #define CRITICAL(...)
 #elif LOG_FORMAT == 1
 #define INFO(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s ",sysGetTick(),"INFO"); \
+	fprintf(stderr,FG_GREEN BOLD "\n\r%lu:%s " RESET,sysGetTick(),"INFO"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define WARN(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s ",sysGetTick(),"WARN"); \
+	fprintf(stderr,FG_ORANGE BOLD "\n\r%lu:%s " RESET,sysGetTick(),"WARN"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define ERROR(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s ",sysGetTick(),"ERR "); \
+	fprintf(stderr,FG_RED BOLD "\n\r%lu:%s " RESET,sysGetTick(),"ERR "); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define CRITICAL(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s ",sysGetTick(),"CRIT"); \
+	fprintf(stderr,FG_WHITE BG_RED BOLD "\n\r%lu:%s " RESET,sysGetTick(),"CRIT"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
-	fprintf(stderr,"\n\r+++ System Stopped +++"); \
+	fprintf(stderr,FG_WHITE BG_RED BOLD BLINKING "\n\r+++ System Stopped +++" RESET); \
 	while(1);\
 }while(0)
 #elif LOG_FORMAT == 2

@@ -24,9 +24,9 @@
 
 // Constants ------------------------------------------------------------------
 // Prescaler divisor table
-const uint32_t divisor[] = {2,4,5,16,32,64,1,1,6,10,12,24,48};
+static const uint32_t divisor[] = {2,4,5,16,32,64,1,1,6,10,12,24,48};
 // Internal HF Oscillator frequency table
-const uint32_t oschfFrequency[] = {1000000,2000000,3000000,4000000,0,8000000,12000000,16000000,20000000,24000000};
+static const uint32_t oschfFrequency[] = {1000000,2000000,3000000,4000000,0,8000000,12000000,16000000,20000000,24000000};
 
 // CLI Commands ---------------------------------------------------------------
 #ifdef CPU_CLI

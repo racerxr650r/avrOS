@@ -1,0 +1,13 @@
+# Defaults
+baudrate = 115200
+databits = 8
+parity = none
+stopbits = 1
+
+[cli]
+color = 2
+device = /dev/ttyAMA3
+
+[log]
+color = 3
+device = /dev/ttyAMA4

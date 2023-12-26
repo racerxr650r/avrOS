@@ -45,14 +45,15 @@
 
 #define LOG_FORMAT	1	// Select the format of the log messages
 						// 0 = no messages
-						// 1 = System Tick: Level: Message
-						// 2 = System Tick: Level: Curr State Machine: Curr State: Message
-						// 3 = System Tick: Level: Src Function: Src Line: Message
+						// 1 = Level: Message
+						// 2 = System Tick: Level: Message
+						// 3 = System Tick: Level: Curr State Machine: Curr State: Message
+						// 4 = System Tick: Level: Src Function: Src Line: Message
 
 //#define LOG_SERIAL		// Define to route log messages to (USART) serial port
 
 // Log Constants
-#define LOG_BANNER			"\n\r*** avrOS Logger Starting ***\n\r"
+#define LOG_BANNER		CLEAR_SCREEN CURSOR_HOME RESET FG_CYAN BOLD "\r*** avrOS Logger Starting ***\n\r" RESET
 
 // CLI Config -----------------------------------------------------------------
 #define CLI_SERVICE	// Define to include the CLI state machine
@@ -61,7 +62,7 @@
 #define MAX_CMD_LINE    128
 #define MAX_ARGS        16
 #define REPEAT_SWITCH	'r'
-#define CLI_BANNER		"\n\r+++| avrOS Command Line Interface |+++"
+#define CLI_BANNER		CLEAR_SCREEN CURSOR_HOME RESET FG_GREEN BOLD "\r+++| avrOS Command Line Interface |+++" RESET
 
 // Driver/Service CLI command(s)
 #define UART_CLI	// Uart driver CLI commands
@@ -74,6 +75,7 @@
 #define MEM_CLI		// Memory commands
 #define CPU_CLI		// CPU commands
 #define EVNT_CLI    // Event commands
+#define GPIO_CLI    // GPIO commands
 
 // Service state machines to include ------------------------------------------
 #undef  PCM_SERVICE
@@ -82,7 +84,8 @@
 #define UART_STATS		// Calculate and track uart statistics, requires additional RAM and CPU cycles
 #define QUE_STATS		// Calculate and track queue statistics, requires additional RAM and CPU cycles
 #define MEM_STATS		// Fill the stack region with a pattern to track max stack size
-#define EVNT_STATS      // Calculate and track event stattistics
+#define EVNT_STATS      // Calculate and track event statistics
+#define GPIO_STATS		// Calculate and track GPIO statistics
 
 // System Tick timer
 #define SYS_TICK_TIMER  TCB0

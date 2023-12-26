@@ -93,6 +93,11 @@ int cliClear(int argC, char *argV[])
 	// Set the cursor to Home (upper left of screen)
 	printf(CURSOR_HOME);
 
+	INFO("This is an INFO log");
+	WARN("This is a WARN log");
+	ERROR("This is a WARN log");
+	CRITICAL("This is a CRITICAL log and halt");
+
 	return(0);
 }
 #endif // CLI_CLI
@@ -112,7 +117,7 @@ int cliInit(volatile fsmStateMachine_t *stateMachine)
     // Display the system greeting
 	printf(CLI_BANNER);
 	
-	fsmNextState(stateMachine,cliNewCmd);
+	fsmSetNextState(stateMachine,cliNewCmd);
 
 	return(0);
 }
@@ -120,10 +125,10 @@ int cliInit(volatile fsmStateMachine_t *stateMachine)
 static int cliNewCmd(volatile fsmStateMachine_t *stateMachine)
 {
 	fioWaitInput(stdin);
-	fsmNextState(stateMachine,cliGetKey);
+	fsmSetNextState(stateMachine,cliGetKey);
 	
 	// Display the prompt
-	printf(DISPLAY_PROMPT);
+	printf("\n" DISPLAY_PROMPT);
 	return(0);
 }
 
@@ -136,10 +141,10 @@ static int cliGetKey(volatile fsmStateMachine_t *stateMachine)
 		if(key == ESC)
 		{
 			fioWaitInput(stdin);
-			fsmNextState(stateMachine, cliEscKey);
+			fsmSetNextState(stateMachine, cliEscKey);
 		}
 		else
-			fsmNextState(stateMachine, cliConsumeKey);
+			fsmSetNextState(stateMachine, cliConsumeKey);
 //	}
 
 	return(0);
@@ -150,9 +155,9 @@ static int cliEscKey(volatile fsmStateMachine_t *stateMachine)
 	key = fgetc(stdin);
 
 	if(key == '[' || key == 'O')
-		fsmNextState(stateMachine, cliEscSequence);
+		fsmSetNextState(stateMachine, cliEscSequence);
 	else
-		fsmNextState(stateMachine, cliGetKey);
+		fsmSetNextState(stateMachine, cliGetKey);
 
 	fioWaitInput(stdin);
 	return(0);
@@ -165,17 +170,17 @@ static int cliEscSequence(volatile fsmStateMachine_t *stateMachine)
 	if(key == 'A')
 	{
 		key = KEYCODE_UP;
-		fsmNextState(stateMachine, cliConsumeKey);
+		fsmSetNextState(stateMachine, cliConsumeKey);
 	}
 	else if(key == 'D')
 	{
 		key = KEYCODE_LEFT;
-		fsmNextState(stateMachine, cliConsumeKey);
+		fsmSetNextState(stateMachine, cliConsumeKey);
 	}
 	else
 	{
 		fioWaitInput(stdin);
-		fsmNextState(stateMachine, cliGetKey);
+		fsmSetNextState(stateMachine, cliGetKey);
 	}
 
 	return(0);
@@ -194,9 +199,10 @@ static int cliConsumeKey(volatile fsmStateMachine_t *stateMachine)
 			memcpy(previousCommand,commandLine,lineCounter);
 			previousCommand[lineCounter] = '\0';
 			lineCounter = 0;
-			fsmNextState(stateMachine, cliWaitTxQueue);
+			fsmSetNextState(stateMachine, cliWaitTxQueue);
 			break;
 		case KEYCODE_LEFT:
+		case DEL:
 		case BS:
 			// If there is some line to delete...
 			if(lineCounter>0)
@@ -204,17 +210,17 @@ static int cliConsumeKey(volatile fsmStateMachine_t *stateMachine)
 				// Transmit the key back to the connect computer (ECHO OFF)
 				--lineCounter;
 				commandLine[lineCounter] = 0;
-				printf("\r> %s \b",commandLine);
+				printf(DISPLAY_PROMPT "%s \b",commandLine);
 			}
 			fioWaitInput(stdin);
-			fsmNextState(stateMachine, cliGetKey);
+			fsmSetNextState(stateMachine, cliGetKey);
 			break;
 		case KEYCODE_UP:
 			strcpy(commandLine,previousCommand);
 			lineCounter = strlen(commandLine);
-			printf("\r> %s",commandLine);
+			printf(DISPLAY_PROMPT "%s",commandLine);
 			fioWaitInput(stdin);
-			fsmNextState(stateMachine, cliGetKey);
+			fsmSetNextState(stateMachine, cliGetKey);
 			break;
 		default:
 			// Transmit the key back to the connected computer (ECHO OFF)
@@ -223,7 +229,7 @@ static int cliConsumeKey(volatile fsmStateMachine_t *stateMachine)
 			if(lineCounter<MAX_CMD_LINE-1)
 				++lineCounter;
 			fioWaitInput(stdin);
-			fsmNextState(stateMachine, cliGetKey);
+			fsmSetNextState(stateMachine, cliGetKey);
 			break;
 	}
 	return(0);
@@ -236,9 +242,9 @@ static int cliCallCommand(volatile fsmStateMachine_t *stateMachine)
 
 	// If the repeat command function pointer has been set...
 	if(cmdFuncPtr!=NULL)
-		fsmNextState(stateMachine, cliClearScreen);
+		fsmSetNextState(stateMachine, cliClearScreen);
 	else
-		fsmNextState(stateMachine, cliNewCmd);
+		fsmSetNextState(stateMachine, cliNewCmd);
 
 	return(0);
 }
@@ -252,7 +258,7 @@ static int cliClearScreen(volatile fsmStateMachine_t *stateMachine)
 	{
 		// Clear the entire screen
 		printf(CLEAR_SCREEN);
-		fsmNextState(stateMachine, cliWaitTxQueue);
+		fsmSetNextState(stateMachine, cliWaitTxQueue);
 	}
 	
 	return(0);
@@ -265,8 +271,8 @@ static int cliWaitTxQueue(volatile fsmStateMachine_t *stateMachine)
 	// Wait until the Tx queue is empty...
 	if(uartTxEmpty(uart))
 	{
-		if(fsmPreviousState(stateMachine) == cliConsumeKey)
-			fsmNextState(stateMachine, cliCallCommand);
+		if(fsmGetPreviousState(stateMachine) == cliConsumeKey)
+			fsmSetNextState(stateMachine, cliCallCommand);
 		else
 		{
 			// Set the cursor to Home (upper left of screen)
@@ -274,7 +280,7 @@ static int cliWaitTxQueue(volatile fsmStateMachine_t *stateMachine)
 			// Hide the cursor
 			printf(CURSOR_HIDE);
 			
-			fsmNextState(stateMachine, cliRepeatCommand);
+			fsmSetNextState(stateMachine, cliRepeatCommand);
 		}
 	}
 	
@@ -285,7 +291,7 @@ static int cliRepeatCommand(volatile fsmStateMachine_t *stateMachine)
 {
 	// Attempt to call user command
 	cmdFuncPtr(argC,argV);
-	fsmNextState(stateMachine, cliDisplayEscape);
+	fsmSetNextState(stateMachine, cliDisplayEscape);
 	
 	return(0);
 }
@@ -299,7 +305,7 @@ static int cliDisplayEscape(volatile fsmStateMachine_t *stateMachine)
 	{
 		// Set the cursor to Home (upper left of screen)
 		printf("\n\r<<< Press [Ctrl-C] to return to command prompt >>>");
-		fsmNextState(stateMachine, cliWaitTxQueue);
+		fsmSetNextState(stateMachine, cliWaitTxQueue);
 
 		// Get the next keystroke
 		if(!uartRxEmpty(uart))
@@ -312,7 +318,7 @@ static int cliDisplayEscape(volatile fsmStateMachine_t *stateMachine)
 				cmdFuncPtr = NULL;
 				// Unhide the cursor
 				printf(CURSOR_UNHIDE);
-				fsmNextState(stateMachine, cliNewCmd);
+				fsmSetNextState(stateMachine, cliNewCmd);
 			}
 		}
 	}
@@ -359,7 +365,7 @@ int cliCallFunction(char *commandLine)
           if(!strcmp(argV[0],currentCommand->commandStr))
           {
 			  // If this is the initial scan cycle of this state...
-			  if(fsmInitialCall())
+			  if(fsmIsInitialCall())
 				  INFO("CLI command %s",currentCommand->commandStr);
 
 			  // If the repeat flag was found and this command is repeatable...
