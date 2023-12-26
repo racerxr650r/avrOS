@@ -66,16 +66,16 @@ environment on a debian based Linux distribution follow the instructions here:
    is included with the project. This file will setup the visual studio code 
    C/C++ intellisense to find all the appropriate include directories and files.
 
-2. For an automated installation, run the provided install script and you are 
-   done. Else if you prefer a manual installation, skip to the next step.
+2. For an automated installation, run the provided install script(s).
+   Else if you prefer a manual installation, skip to the next step.
 
-   > :memo: **Note:** This automated script will install additional tools such
-   as minicom, tree, devcon, and others. I encourage you to review the script
-   before running it.
+   > :memo: **Note:** These automated scripts will install the command line toolchain w/utilities (install_cli_tools.sh),
+   graphical tools such as gtkterm, geany, git-cola, meld, and vscode (install_gui_tools.sh), and/or both the CLI tools
+   and GUI tools (install_all_tools.sh). I encourage you to review these scripts before running them.
 
     ```console
     cd avrOS
-    ./install_cli_tools.sh
+    ./install_all_tools.sh
     ```
 
    > :memo: **Note:** There are additional scripts that install and configure
@@ -92,7 +92,7 @@ environment on a debian based Linux distribution follow the instructions here:
 3. Install Gnu make, git, avr-gcc Gnu C compiler, and other tools
 
     ```console
-    sudo apt install make git binutils gcc-avr avr-libc flex byacc bison unzip
+    sudo apt install make git binutils gcc-avr avr-libc flex byacc bison unzip avrdude
     ```
     
 4. Download the Microchip Device Family Pack for the Atmel-Dx series from the [Microchip Packs Repository](http://packs.download.atmel.com/)
@@ -111,32 +111,14 @@ environment on a debian based Linux distribution follow the instructions here:
     rm Atmel.AVR-Dx_DFP.2.2.253.atpack
     ```
 
-6. Install AVRDUDE from sources on github
+6. (Optional) Install the latest AVRDUDE from sources on github
 
     Go to this [AVRDUDE github page](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
     for instructions to clone, build, and install it from the latest source
 
-    I recomend this version because the version in the Debian/Ubuntu package
-    repository does not include support for the Atmel Ice and it's UPDI programming
-    interface.
-
-7. Install a serial terminal application such as minicom for command line use
-   or gtkterm for GUI use. You will use one of these applications to connect
-   to the avrOS cli and/or logger. 
-
-   To install minicom
-    ```console
-    sudo apt install minicom
-    ```
-
-    To install GTKTerm
-    ```console
-    sudo apt install gtkterm
-    ```
-
-   > :memo: **Note:** See the [Raspberry PI 4 model B Development Platform](./doc/PI4_Dev_Station.md)
-   document for an example of how to wire this up for the example application
-   using a Raspberry Pi 4 in headless mode.
+    > :memo: **Note:** If you are using an older distrobution based on Debian 10 or earlier, you may need
+    to do this because the version the Debian/Ubuntu repositories does not support Atmel Ice and Serial
+    UPDI programming interfaces.
 
 8. Build avrOS example application
 
