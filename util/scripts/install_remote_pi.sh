@@ -1,13 +1,32 @@
 #! /bin/bash
-# This script installs a fre utilities and updates configurations to make a
+# This script installs utilities and updates configurations to make a
 # raspberry pi more useful in remote development mode
 #
-# Note: This script 
-sudo apt update
-wget https://github.com/ClementTsang/bottom/releases/download/0.9.6/bottom_0.9.6_arm64.deb
-sudo apt install -y ./bottom_0.9.6_arm64.deb
-sduo apt install -y tio tmux xterm
+# Note: This script assumes that the $AVROSHOME environment variable has been set
+#
+# Note: This script replaces the Bash shell configuration script
+#
+if [ -z "${AVROSHOME}"]; then
+    echo "Set AVROSHOME environment variable before running this script"
+    echo "Goto the avrOS root directory and the run this command: export AVROSHOME=$(pwd)"
+else
+    # Install the command line tools
+    $AVROSHOME/util/scripts/install_cli_tools.sh
 
-cp --backup -f qconfig/.tioconfig ~
-cp --backup -f config/.bashrc ~
-cp --backup -f config/.tmux.conf ~
+    # Install Bottom (btm) system status tool
+    sudo apt update
+    wget https://github.com/ClementTsang/bottom/releases/download/0.9.6/bottom_0.9.6_arm64.deb
+    sudo apt install -y ./bottom_0.9.6_arm64.deb
+
+    # Copy the config files for bash, tio, and tmux to user home
+    cp --backup -f $AVROSHOME/util/scripts/config/.bashrc ~
+    cp --backup -f $AVROSHOME/util/scripts/config/.tioconfig ~
+    cp --backup -f $AVROSHOME/util/scripts/config/.tmux.conf ~
+
+    # Update /boot/config.txt to support serial console and uarts 2, 3, and 4
+    sudo echo '[all]' >> /boot/config.txt
+    grep -qxF 'enable_uart=1' /boot/config.txt || sudo echo 'enable_uart=1' >> /boot/config.txt
+    grep -qxF 'dtoverlay=uart2' /boot/config.txt || sudo echo 'dtoverlay=uart2' >> /boot/config.txt
+    grep -qxF 'dtoverlay=uart3' /boot/config.txt || sudo echo 'dtoverlay=uart3' >> /boot/config.txt
+    grep -qxF 'dtoverlay=uart4' /boot/config.txt || sudo echo 'dtoverlay=uart4' >> /boot/config.txt
+fi

@@ -106,7 +106,7 @@ This is what it should look like when you are done.
 1. See this [Getting Started](https://www.raspberrypi.com/documentation/computers/getting-started.html)
    guide on the [Raspberry Pi website](https://www.raspberrypi.com/) for 
    detailed instructions regarding setting up your Pi and installing the latest
-   version of Raspberry Pi OS. For headless mode, I use the 64 bit Pi OS Lite.
+   version of Raspberry Pi OS. For headless mode, use the 64 bit Pi OS Lite.
    Use the OS customisation in Pi Imager to preconfigure your Raspberry Pi so
    you don't need to connect a keyboard and monitor to you Pi. Be sure to
    enable SSH.
@@ -115,23 +115,27 @@ This is what it should look like when you are done.
    haven't already done so, clone [avrOS](https://github.com/racerxr650r/avrOS)
    and install it according to the intructions in [README.md](../README.md)
 
-2. Edit the configuration file to enable UART2, UART3, and UART4 on the Pi. Open the
-   /boot/firmware/config.txt file using an editor (Vim, Nano, Micro etc.). To save the
-   file you will need to have root permission. So, open the editor like this
+2. Edit the configuration file to enable serial console, UART2, UART3, and UART4
+   on the Pi. Open the /boot/firmware/config.txt file using an editor (Vim,
+   Nano, Micro etc.). To save the file, you will need to have root permission.
+   So, open the editor like this
 
    ```console
-   sudo micro /boot/firmware/config.txt
+   sudo micro /boot/config.txt
    ```
    
    Once the file is open, add the following lines to the end of the file.
 
    ```console
+   [all]
+   enable_uart=1
    dtoverlay=uart2
    dtoverlay=uart3
    dtoverlay=uart4
    ```
 
-   Save the file and close the editor.
+   Save the file and close the editor. `enable_uart=1` is optional here. It
+   enables the Linux serial console on the default uart
 
 3. Reboot the Pi and confirm the serial ports are enabled.
 
@@ -164,25 +168,48 @@ This is what it should look like when you are done.
    PRG = serialupdi -P /dev/ttyAMA2
    ```
 
-   Save the makefile.
+   Save the makefile
 
-5. Setup minicom to use the avrOS console and logging. minicom is
-   installed by the install_cli_tools.sh script. If you follow the manual
-   instructions to install avrOS, be sure to install minicom.
-
-   To start minicom and connect to the example application CLI, enter the
-   following command
+5. Install Tio command line serial console application for the avrOS
+   command line interface and logger
 
    ```console
-   minicom -D /dev/ttyAMA3
+   sudo apt update
+   sudo apt install tio
    ```
-
-   To start minicom and connect to the example application logger, enter the
-   following command
+   
+   Open a command line editor such as micro with the ~/.tioconfig file and add
+   the following lines
 
    ```console
-   minicom -D /dev/ttyAMA4
+   # Defaults
+   baudrate = 115200
+   databits = 8
+   parity = none
+   stopbits = 1
+
+   [cli]
+   color = 2
+   device = /dev/ttyAMA3
+
+   [log]
+   color = 3
+   device = /dev/ttyAMA4
    ```
+
+   After saving the .tioconfig file to your home directory, you can enter the
+   following commands at the command line
+
+   ```console
+   tio cli
+   ```
+   or
+   ```console
+   tio log
+   ```
+
+   to connect to the avrOS command line and logger respectively. <Cntrl-t>-q
+   to exit.
 
 6. From the avrOS_example directory run the following command to build the
    example application, load it into the AVR flash memory, and reset the AVR
@@ -197,13 +224,15 @@ This is what it should look like when you are done.
    For more information regarding building, loading, and running avrOS, check out
    the [User Manual](./MANUAL.md).
 
-7. Install vscode on you host PC
+7. (Optional) If using the Pi as a remote headless development station, install
+   vscode on you host PC
 
    ```console
+   sduo apt update
    sudo apt install code
    ```
 
-8. From the vscode extensions menu on the left, find and install the Remote-SSH extension
+   From the vscode extensions menu on the left, find and install the Remote-SSH extension
 
    > :memo: **Note:** For information about installing and using this feature,
    checkout the [Remote Development using SSH](https://code.visualstudio.com/docs/remote/ssh)

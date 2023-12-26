@@ -66,34 +66,37 @@ environment on a debian based Linux distribution follow the instructions here:
    is included with the project. This file will setup the visual studio code 
    C/C++ intellisense to find all the appropriate include directories and files.
 
-2. For an automated installation, run the provided install script(s).
-   Else if you prefer a manual installation, skip to the next step.
+2. If you prefer a manual installation, skip to the next step.
+   
+   For an automated installation, first set the $AVROSHOME environment variable
+   with the following commands
+   
+   ```console
+   cd avrOS
+   export AVROSHOME=$(pwd)
+   ```
 
-   > :memo: **Note:** These automated scripts will install the command line toolchain w/utilities (install_cli_tools.sh),
-   graphical tools such as gtkterm, geany, git-cola, meld, and vscode (install_gui_tools.sh), and/or both the CLI tools
-   and GUI tools (install_all_tools.sh). I encourage you to review these scripts before running them.
+   Then run the applicable install script(s) found in the $AVROSHOME/util/scripts
+   directory. The following table describes each of these scripts
 
-    ```console
-    cd avrOS
-    ./install_all_tools.sh
-    ```
+   | Script               | Description                                     |
+   |----------------------|-------------------------------------------------|
+   | install_cli_tools.sh | Installs the required command line tools (gcc, binutils, avrdude, tio, Microchip Device Family Pack, etc.), builds the example application, and sets up git |
+   | install_gui_tools.sh | Installs a set of helpful GUI development tools (geany, git-cola, meld, gtkterm, and vscode) |
+   | install_all_tools.sh | Installs both the CLI and GUI tools mentioned above |
+   | install_remote_pi.sh | Installs the command line tools (plus btm), sets up configurations for tio, tmux, and bash, and configures the /boot/config.txt to enable serial console and uarts 2, 3, and 4. This script should only be run on a Raspberry Pi intended for headless remote development. See the [Raspberry PI 4 model B Development Platform](./doc/PI4_Dev_Station.md) document for more details |
+   | install_avrdude.sh   | Downloads, boulds, and installs avrdude from the latest version on github |
+   | setup_git.sh         | Prompts and configures the username and email for git. install_cli_tools.sh calls this script |
 
-   > :memo: **Note:** There are additional scripts that install and configure
-   linux beyond the minimal steps documented here. One additional script
-   (install_gui_tools.sh) installs common GUI development tools such as geany,
-   meld, git-cola, vscode, and others to be run locally for development.
-   Another script (config_remote_pi.sh), will configure Raspberry PI OS
-   to run headless and act as a remote development target. In this mode, I
-   suggest using vscode on a host PC remotely connecting to the Raspberry Pi
-   via WiFi. It's key caching technique makes it in decernible from developing
-   locally. This is how I develop. I found using ssh and vim or neovim is a
-   little slower.
+   > :memo: **Note:** These automated scripts will install additional software
+     software packages and possibly update config files. I encourage you to
+     review these scripts before running any of them.
 
-3. Install Gnu make, git, avr-gcc Gnu C compiler, and other tools
+3. Install Gnu make, git, avr-gcc Gnu C compiler, and other CLI tools
 
-    ```console
-    sudo apt install make git binutils gcc-avr avr-libc flex byacc bison unzip avrdude
-    ```
+   ```console
+   sudo apt install make git binutils gcc-avr avr-libc flex byacc bison unzip avrdude
+   ```
     
 4. Download the Microchip Device Family Pack for the Atmel-Dx series from the [Microchip Packs Repository](http://packs.download.atmel.com/)
 
@@ -103,37 +106,79 @@ environment on a debian based Linux distribution follow the instructions here:
 
 5. Extract the `Atmel.AVR-Dx_DFP.2.2.253.atpack` file locally and copy it to the `/usr/lib/gcc/avr/5.4.0` directory
 
-    ```console
-    mkdir ./Atmel.AVR-Dx_DFP.2.2.253
-    unzip -d Atmel.AVR-Dx_DFP.2.2.253/ Atmel.AVR-Dx_DFP.2.2.253.atpack
-    sudo cp -R Atmel.AVR-Dx_DFP.2.2.253/ /usr/lib/gcc/avr/5.4.0
-    rm -rf Atmel.AVR-Dx_DFP.2.2.253
-    rm Atmel.AVR-Dx_DFP.2.2.253.atpack
-    ```
+   ```console
+   mkdir ./Atmel.AVR-Dx_DFP.2.2.253
+   unzip -d Atmel.AVR-Dx_DFP.2.2.253/ Atmel.AVR-Dx_DFP.2.2.253.atpack
+   sudo cp -R Atmel.AVR-Dx_DFP.2.2.253/ /usr/lib/gcc/avr/5.4.0
+   rm -rf Atmel.AVR-Dx_DFP.2.2.253
+   rm Atmel.AVR-Dx_DFP.2.2.253.atpack
+   ```
 
 6. (Optional) Install the latest AVRDUDE from sources on github
 
-    Go to this [AVRDUDE github page](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
-    for instructions to clone, build, and install it from the latest source
+   Go to this [AVRDUDE github page](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
+   for instructions to clone, build, and install it from the latest source
 
-    > :memo: **Note:** If you are using an older distrobution based on Debian 10 or earlier, you may need
-    to do this because the version the Debian/Ubuntu repositories does not support Atmel Ice and Serial
-    UPDI programming interfaces.
+   > :memo: **Note:** If you are using an older distrobution based on Debian 10 or earlier, you may need
+   to do this because the version the Debian/Ubuntu repositories does not support Atmel Ice and Serial
+   UPDI programming interfaces.
+
+7. (Optional) Install Tio command line serial console application for the avrOS
+   command line interface and logger
+
+   ```console
+   sudo apt update
+   sudo apt install tio
+   ```
+   
+   If this is on a Raspberry Pi 4 and uarts 2, 3, and 4 have been wired up as noted
+   in the [Raspberry PI 4 model B Development Platform](./doc/PI4_Dev_Station.md) document,
+   open a command line editor such as micro with the ~/.tioconfig file and add
+   the following lines
+
+   ```console
+   # Defaults
+   baudrate = 115200
+   databits = 8
+   parity = none
+   stopbits = 1
+
+   [cli]
+   color = 2
+   device = /dev/ttyAMA3
+
+   [log]
+   color = 3
+   device = /dev/ttyAMA4
+   ```
+
+   After saving the .tioconfig file to your home directory, you can enter the
+   following commands at the command line
+
+   ```console
+   tio cli
+   ```
+   or
+   ```console
+   tio log
+   ```
+
+   to connect to the avrOS command line and logger respectively
 
 8. Build avrOS example application
 
-    Goto the application directory and make the .hex image
+   Goto the application directory and make the .hex image
 
-    ```console
-    cd avrOS/app/avrOS_example
-    make
-    ```
+   ```console
+   cd avrOS/app/avrOS_example
+   make
+   ```
 
 9. Program the .hex image into the MCU flash [^1] [^2]
 
-    ```console
-    make flash
-    ```
+   ```console
+   make flash
+   ```
     
     The default programmer defined in the makefile is the Atmel ICE. Change
     this to the appropriate serial port 
