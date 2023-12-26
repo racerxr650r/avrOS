@@ -7,7 +7,6 @@
                 "${workspaceFolder}/**"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/avr-gcc",
             "cStandard": "c99",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-gcc-x64",
@@ -15,7 +14,8 @@
                 "-mmcu=avr128da28",
                 "-B/usr/lib/gcc/avr/5.4.0/Atmel.AVR-Dx_DFP.2.2.253/gcc/dev/avr128da28",
                 "-I/usr/lib/gcc/avr/5.4.0/Atmel.AVR-Dx_DFP.2.2.253/include"
-            ]
+            ],
+            "compilerPath": "/usr/bin/avr-gcc"
         }
     ],
     "version": 4

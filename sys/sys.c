@@ -21,8 +21,8 @@
  */
 #include "../avrOS.h"
 
-volatile uint32_t	tickOvrflw = 0; 
-uint32_t			tickDivisor;
+static volatile uint32_t	tickOvrflw = 0; 
+static uint32_t				tickDivisor;
 
 // Command line interface -----------------------------------------------------
 #ifdef TICK_CLI

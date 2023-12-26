@@ -65,3 +65,6 @@ avrOS.tags
 
 # Git token file
 gh_token.txt
+
+# Doxygen generated files
+/doc/api/**/*

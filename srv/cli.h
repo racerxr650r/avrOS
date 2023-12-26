@@ -78,7 +78,7 @@ struct cliCommand_struct
 #define KEYCODE_LEFT        0x13
 #define KEYCODE_RIGHT       0x14
 
-#define DISPLAY_PROMPT      "\n\r> "
+#define DISPLAY_PROMPT      FG_GREEN "\r> " RESET
 
 #define CLEAR_SCREEN        "\e[2J"
 #define CURSOR_HOME         "\e[H"
@@ -93,7 +93,45 @@ struct cliCommand_struct
 #define FF                  '\f'    // Formfeed/New Page
 #define CR                  '\r'    // Carriage Return
 #define ESC                 '\e'    // Escape Character
-#define DEL
+#define DEL                 '\x07f'
+
+#define RESET               "\e[0m"
+#define BOLD                "\e[1m"
+#define NOT_BOLD            "\e[22m"
+#define DIM                 "\e[2m"
+#define NOT_DIM             "\e[22m"
+#define ITALIC              "\e[3m"
+#define NOT_ITALIC          "\e[23m"
+#define UNDERLINE           "\e[4m"
+#define NOT_UNDERLINE       "\e[24m"
+#define BLINKING            "\e[5m"
+#define NOT_BLINKING        "\e[25m"
+#define INVERSE             "\e[7m"
+#define NOT_INVERSE         "\e[27m"
+#define HIDDEN              "\e[8m"
+#define NOT_HIDDEN          "\e[28m"
+#define STRIKETHROUGH       "\e[9m"
+#define NOT_STRIKETHOUGH    "\e[29m"
+
+#define FG_BLACK            "\e[30m"
+#define FG_RED              "\e[31m"
+#define FG_GREEN            "\e[32m"
+#define FG_ORANGE           "\e[33m"
+#define FG_BLUE             "\e[34m"
+#define FG_PURPLE           "\e[35m"
+#define FG_CYAN             "\e[36m"
+#define FG_WHITE            "\e[37m"
+#define FG_DEFAULT          "\e[39m"
+
+#define BG_BLACK            "\e[40m"
+#define BG_RED              "\e[41m"
+#define BG_GREEN            "\e[42m"
+#define BG_ORANGE           "\e[43m"
+#define BG_BLUE             "\e[44m"
+#define BG_PURPLE           "\e[45m"
+#define BG_CYAN             "\e[46m"
+#define BG_WHITE            "\e[47m"
+#define BG_DEFAULT          "\e[49m"
 
 // External Functions----------------------------------------------------------
 //extern int cliInit(volatile fsmStateMachine_t stateMachine);

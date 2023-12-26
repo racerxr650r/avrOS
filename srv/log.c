@@ -40,7 +40,7 @@ static int logROM(volatile fsmStateMachine_t *stateMachine)
 
 	// Wait until the stderr output queue is empty and then go to next state
     fioWaitOutput(stderr);
-	fsmNextState(stateMachine,logRAM);
+	fsmSetNextState(stateMachine,logRAM);
 
 	return(0);
 }
@@ -61,7 +61,7 @@ int logInit(volatile fsmStateMachine_t *stateMachine)
 
 	// Wait until the stderr output queue is empty and then go to next state
     fioWaitOutput(stderr);
-    fsmNextState(stateMachine,logROM);
+    fsmSetNextState(stateMachine,logROM);
 
 	return(0);
 }
