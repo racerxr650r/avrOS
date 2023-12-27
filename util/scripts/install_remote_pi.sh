@@ -14,19 +14,23 @@ else
     $AVROSHOME/util/scripts/install_cli_tools.sh
 
     # Install Bottom (btm) system status tool
+    echo "Installing Bottom (btm) system status tool"
     sudo apt update
     wget https://github.com/ClementTsang/bottom/releases/download/0.9.6/bottom_0.9.6_arm64.deb
     sudo apt install -y ./bottom_0.9.6_arm64.deb
+    rm bottom_0.9.6_arm64.deb
 
     # Copy the config files for bash, tio, and tmux to user home
+    echo "Copying Bash, Tio, and Tmux configs to user home"
     cp --backup -f $AVROSHOME/util/scripts/config/.bashrc ~
     cp --backup -f $AVROSHOME/util/scripts/config/.tioconfig ~
     cp --backup -f $AVROSHOME/util/scripts/config/.tmux.conf ~
 
     # Update /boot/config.txt to support serial console and uarts 2, 3, and 4
-    sudo echo '[all]' >> /boot/config.txt
-    grep -qxF 'enable_uart=1' /boot/config.txt || sudo echo 'enable_uart=1' >> /boot/config.txt
-    grep -qxF 'dtoverlay=uart2' /boot/config.txt || sudo echo 'dtoverlay=uart2' >> /boot/config.txt
-    grep -qxF 'dtoverlay=uart3' /boot/config.txt || sudo echo 'dtoverlay=uart3' >> /boot/config.txt
-    grep -qxF 'dtoverlay=uart4' /boot/config.txt || sudo echo 'dtoverlay=uart4' >> /boot/config.txt
+    echo "Modifying /boot/config.txt to support serial console and uarts 2, 3, and 4"
+    echo "[all]" | sudo tee -a /boot/config.txt
+    grep -qxF 'enable_uart=1' /boot/config.txt || echo 'enable_uart=1' | sudo tee -a /boot/config.txt
+    grep -qxF 'dtoverlay=uart2' /boot/config.txt || echo 'dtoverlay=uart2' | sudo tee -a /boot/config.txt
+    grep -qxF 'dtoverlay=uart3' /boot/config.txt || echo 'dtoverlay=uart3' | sudo tee -a /boot/config.txt
+    grep -qxF 'dtoverlay=uart4' /boot/config.txt || echo 'dtoverlay=uart4' | sudo tee -a /boot/config.txt
 fi

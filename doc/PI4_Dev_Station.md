@@ -97,9 +97,18 @@ responsive than using vim/nvim/micro/nano over ssh.
    to the AVR UART 1 Rx pin (AVR pin 3). Then connext the Rx pin (Pi pin 21) to the
    AVR UART 1 Tx pin (AVR pin 2)
 
+This is what it should look like when you are done
+
 ![All Connected](./images/20231021_165040.jpg)
 
-This is what it should look like when you are done.
+This is an example built using a Raspberry Pi prototyping hat, RS-232 serial
+adapter for the Linux serial console interface, and a zif socket to make
+programming devices easier. I can connect to this one via the serial console
+or SSH over WiFi/ethernet. It has headers for all of the AVR-DA I/O pins, 5v
+power, and 3.3 volt power so it can also be used in conjunction with a
+breadboard for prototyping
+
+![Compact Build](./images/20231227_141036.jpg)
 
 ## Configure PI OS (Bookworm)
 
@@ -208,7 +217,7 @@ This is what it should look like when you are done.
    tio log
    ```
 
-   to connect to the avrOS command line and logger respectively. <Cntrl-t>-q
+   to connect to the avrOS command line and logger respectively. Control-t q
    to exit.
 
 6. From the avrOS_example directory run the following command to build the
@@ -228,7 +237,7 @@ This is what it should look like when you are done.
    vscode on you host PC
 
    ```console
-   sduo apt update
+   sudo apt update
    sudo apt install code
    ```
 
