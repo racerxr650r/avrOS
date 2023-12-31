@@ -42,6 +42,8 @@ static void fsmLstPrint(FILE *file, volatile fsmStateMachine_t *list);
 // CLI Commands ---------------------------------------------------------------
 #ifdef FSM_CLI
 ADD_COMMAND("fsm",fsmCmd,true);
+ADD_COMMAND("fsmStop",fsmStopCmd);
+ADD_COMMAND("fsmStart",fsmStartCmd);
 #endif // FSM_CLI
 
 static int fsmCmd(int argc, char *argv[])
@@ -73,10 +75,6 @@ static int fsmCmd(int argc, char *argv[])
 	return(0);
 }
 
-#ifdef FSM_CLI
-ADD_COMMAND("fsmStop",fsmStopCmd);
-#endif // FSM_CLI
-
 static int fsmStopCmd(int argc, char *argv[])
 {
 	// If command line includes a name of a state machine...
@@ -90,10 +88,6 @@ static int fsmStopCmd(int argc, char *argv[])
 	return(-1);
 }
 
-#ifdef FSM_CLI
-ADD_COMMAND("fsmStart",fsmStartCmd);
-#endif // FSM_CLI
-
 static int fsmStartCmd(int argc, char *argv[])
 {
   // If command line includes a name of a state machine...
@@ -102,7 +96,10 @@ static int fsmStartCmd(int argc, char *argv[])
     volatile fsmStateMachine_t	*stateMachine = fsmGetStateMachine(argv[1]);
 	
     if(stateMachine->currState == NULL && stateMachine != NULL)
-      return(fsmSetNextState(stateMachine,stateMachine->stateMachineDescr->initHandler));
+	{
+		fsmHandler_t init = stateMachine->stateMachineDescr->handler.fsmHandler;
+    	return(fsmSetNextState(stateMachine,init));
+	}
   }
   return(-1);
 }
@@ -255,9 +252,13 @@ void fsmInit()
 			else
 			{
 				// Call the initializer
+				stateMachineDescr->handler.initHandler(stateMachineDescr);
 			}
 		}
 	} // End of critical section
+
+	// Enable global interrupts
+	sei();
 }
 
 // Get the scan cycle count
@@ -291,16 +292,42 @@ void* fsmGetInstance(volatile fsmStateMachine_t *stateMachine)
 	return(stateMachine->stateMachineDescr->instance);
 }
 
+// Get the state machine instance
+void* initGetInstance(const fsmStateMachineDescr_t *stateMachineDescr)
+{
+	return(stateMachineDescr->instance);
+}
+
 // Initial call to the current state?
 bool fsmIsInitialCall()
 {
 	return(currStateMachine->initialCall);
 }
 
+// Get the name of the current state machine state
+const char* fsmGetCurrentStateName(volatile fsmStateMachine_t *stateMachine)
+{
+#ifdef FSM_STATS
+	return(stateMachine->currStateName);
+#else
+	return(NULL);
+#endif
+}
+
 // Get pointer to the current state machine state (function)
 fsmHandler_t fsmGetCurrentState(volatile fsmStateMachine_t *stateMachine)
 {
 	return(stateMachine->currState);
+}
+
+// Get the name of the previous state machine state
+const char* fsmGetPreviousStateName(volatile fsmStateMachine_t *stateMachine)
+{
+#ifdef FSM_STATS
+	return(stateMachine->prevStateName);
+#else
+	return(NULL);
+#endif
 }
 
 // Get pointer to the previous state
@@ -310,11 +337,29 @@ fsmHandler_t fsmGetPreviousState(volatile fsmStateMachine_t *stateMachine)
 }
 
 // Set the next state of the given state machine
-int fsmSetNextState(volatile fsmStateMachine_t *stateMachine,
-					fsmHandler_t handler)
+int fsmSetNextStateBasic(volatile fsmStateMachine_t *stateMachine,
+						fsmHandler_t handler)
 {
 	if(stateMachine)
 		stateMachine->nextState = handler;
+	else
+		return(-1);
+
+	return(0);
+}
+
+// Set the next state of the given state machine
+int fsmSetNextStateVerbose(volatile fsmStateMachine_t *stateMachine,
+							fsmHandler_t handler,
+							const char *name)
+{
+	if(stateMachine)
+	{
+		stateMachine->nextState = handler;
+#ifdef FSM_STATS
+		stateMachine->nextStateName = name;
+#endif
+	}
 	else
 		return(-1);
 
@@ -393,6 +438,11 @@ void fsmDispatch(void)
 				currStateMachine->currState = currStateMachine->nextState;
 				currStateMachine->nextState = NULL;
 				currStateMachine->initialCall = true;
+#ifdef FSM_STATS
+				currStateMachine->prevStateName = currStateMachine->currStateName;
+				currStateMachine->currStateName = currStateMachine->nextStateName;
+				currStateMachine->nextStateName = NULL;
+#endif
 			}
 
 			// If the current state is valid..

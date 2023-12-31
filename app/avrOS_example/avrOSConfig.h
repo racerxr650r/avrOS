@@ -43,28 +43,27 @@
 						// 3 = warning, error, and critical messages
 						// 4 = info, warning, error, and critical messages
 
-#define LOG_FORMAT	1	// Select the format of the log messages
+#define LOG_FORMAT	3	// Select the format of the log messages
 						// 0 = no messages
 						// 1 = Level: Message
 						// 2 = System Tick: Level: Message
 						// 3 = System Tick: Level: Curr State Machine: Curr State: Message
 						// 4 = System Tick: Level: Src Function: Src Line: Message
-
-//#define LOG_SERIAL		// Define to route log messages to (USART) serial port
-
 // Log Constants
 #define LOG_BANNER		CLEAR_SCREEN CURSOR_HOME RESET FG_CYAN BOLD "\r*** avrOS Logger Starting ***\n\r" RESET
+#define DISPLAY_PROMPT	FG_GREEN "\ravrOS> " RESET
 
 // CLI Config -----------------------------------------------------------------
-#define CLI_SERVICE	// Define to include the CLI state machine
-
 // CLI constants
 #define MAX_CMD_LINE    128
 #define MAX_ARGS        16
 #define REPEAT_SWITCH	'r'
 #define CLI_BANNER		CLEAR_SCREEN CURSOR_HOME RESET FG_GREEN BOLD "\r+++| avrOS Command Line Interface |+++" RESET
 
+// Global CLI enable
+#define CLI
 // Driver/Service CLI command(s)
+#ifdef CLI
 #define UART_CLI	// Uart driver CLI commands
 #define QUE_CLI		// Queue service commands
 #define FSM_CLI		// Finite State Machine service commands
@@ -76,11 +75,25 @@
 #define CPU_CLI		// CPU commands
 #define EVNT_CLI    // Event commands
 #define GPIO_CLI    // GPIO commands
+#else
+#undef UART_CLI		// Uart driver CLI commands
+#undef QUE_CLI		// Queue service commands
+#undef FSM_CLI		// Finite State Machine service commands
+#undef CLI_CLI		// Command line interface service commands
+#undef TICK_CLI		// System tick commands
+#undef CPU_CLI		// CPU commands
+#undef TMR_CLI		// Timer commands
+#undef MEM_CLI		// Memory commands
+#undef CPU_CLI		// CPU commands
+#undef EVNT_CLI		// Event commands
+#undef GPIO_CLI		// GPIO commands
+#endif
 
 // Service state machines to include ------------------------------------------
 #undef  PCM_SERVICE
 
 // Driver/Service Statistics
+#define FSM_STATS	    // Include string names of state machines and states
 #define UART_STATS		// Calculate and track uart statistics, requires additional RAM and CPU cycles
 #define QUE_STATS		// Calculate and track queue statistics, requires additional RAM and CPU cycles
 #define MEM_STATS		// Fill the stack region with a pattern to track max stack size
@@ -89,12 +102,5 @@
 
 // System Tick timer
 #define SYS_TICK_TIMER  TCB0
-
-/*#undef WIN_STDOUT  // Stream STDOUT to root window
-#undef WIN_STDERR  // Stream STDERR to status popup window (toggled by pressing F12 function key
-#define SRL_STDERR	// Enable file stream/stdio to serial port
-#define	SRL_STDOUT  // Stream STDOUT to serial port
-#undef STDERR
-#undef STDOUT*/
 
 #endif /* AVROSCONFIG_H_ */

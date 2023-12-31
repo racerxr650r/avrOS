@@ -42,12 +42,12 @@ static int cliDisplayEscape(volatile fsmStateMachine_t *stateMachine);
 //static FILE				cliSTDOUT = FDEV_SETUP_STREAM(uartPutChar, NULL, _FDEV_SETUP_WRITE);
 
 // Command line state machine globals
-#ifdef CLI_SERVICE
+//#ifdef CLI_SERVICE
 static char				key;
 static char				commandLine[MAX_CMD_LINE];
 static char				previousCommand[MAX_CMD_LINE];
 static int				lineCounter = 0;
-#endif // CLI_SERVICE
+//#endif // CLI_SERVICE
 static char*			argV[MAX_ARGS];
 static int				argC;
 static commandHandler_t	cmdFuncPtr = NULL;
@@ -61,8 +61,12 @@ extern void *__stop_CLI_CMDS;
 // Command Help
 // Displays the registered command tokens in the system
 #ifdef CLI_CLI
+// Command help
 ADD_COMMAND("help",cliHelp);
 ADD_COMMAND("?",cliHelp);
+// Command clear
+ADD_COMMAND("clear",cliClear);
+#endif // CLI_CLI
 
 int cliHelp(int argC, char *argV[])
 {
@@ -78,9 +82,6 @@ int cliHelp(int argC, char *argV[])
 	return(0);
 }
 
-// Command Clear
-ADD_COMMAND("clear",cliClear);
-
 int cliClear(int argC, char *argV[])
 {
 	// The UNUSED macro prevents the compiler from warning about unused variables
@@ -89,18 +90,11 @@ int cliClear(int argC, char *argV[])
 	UNUSED(argV);
 	
 	// Clear the entire screen	
-	printf(CLEAR_SCREEN);
 	// Set the cursor to Home (upper left of screen)
-	printf(CURSOR_HOME);
-
-	INFO("This is an INFO log");
-	WARN("This is a WARN log");
-	ERROR("This is a WARN log");
-	CRITICAL("This is a CRITICAL log and halt");
+	printf(CLEAR_SCREEN CURSOR_HOME);
 
 	return(0);
 }
-#endif // CLI_CLI
 
 // CLI State Machine ----------------------------------------------------------
 
@@ -109,6 +103,8 @@ int cliInit(volatile fsmStateMachine_t *stateMachine)
 {
 	cliInstance_t *cliInstance = (cliInstance_t*)fsmGetInstance(stateMachine);
 	FILE          *inFile = cliInstance->inFile, *outFile = cliInstance->outFile;
+	
+	INFO("Init CLI");
 	
 	// Setup stdout so stdout.h functions like printf output the CLI associated
 	stdout = outFile;
@@ -378,11 +374,23 @@ int cliCallFunction(char *commandLine)
 			  else
 			  {
 				// Call the command handler function
-				return(currentCommand->funcPtr(argC,argV));
+				int ret = currentCommand->funcPtr(argC,argV);
+				// If the command returns an error...
+				if(ret)
+				{
+					printf(FG_RED "Command Error Code: %d" FG_DEFAULT,ret);
+					WARN("CLI Command Error Code: %d",ret);
+				}
+				// else no error returned...
+				else
+					printf(FG_GREEN "OK" FG_DEFAULT);
+				
+				return(ret);
 			  }
           }
     }
 
-    printf("\n\rCommand not found");
+    printf(FG_ORANGE "Command not found" FG_DEFAULT);
+	WARN("CLI command " BOLD ITALIC "%s" RESET " not found",argV[0]);
     return(-1);
 }

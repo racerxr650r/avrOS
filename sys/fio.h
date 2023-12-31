@@ -1,7 +1,7 @@
 /*
  * fio.h
  *
- * Type and macros to augment file stream io
+ * Type and macros to implement file stream io
  *
  * Created: 7/14/2023 4:14:29 PM
  * Author: john anderson

@@ -78,7 +78,8 @@ else
 #    PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
     export TERM=xterm-256color
     export PS1="$GREEN\u$nc@$YELLOW\H$nc:$BLUE\w$nc\\n$CYAN\$$nc "
-    resize
+    echo '<--To add a new Wifi network call nmtui-->'
+    resize >> /dev/null
 fi
 unset color_prompt force_color_prompt
 

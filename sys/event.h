@@ -88,6 +88,7 @@ inline const char* evntGetName(volatile event_t *event)
 extern volatile event_t* evntGetEvent(char *name);
 extern int evntReset(volatile event_t *event);
 extern int evntEnable(volatile event_t *event, int8_t trigger, evntHandler_t handler, volatile fsmStateMachine_t *stateMachine);
+extern int evntWait(volatile event_t *event, int8_t trigger);
 extern int evntDisable(volatile event_t *event);
 extern int evntTrigger(volatile event_t *event, int8_t trigger);
 extern int evntDispatch(void);

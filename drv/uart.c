@@ -148,14 +148,12 @@ int uartCmd(int argc, char *argv[])
 // Initialize a given USART to operate as a UART with the given operating
 // parameters.
 // Return: 0 - No error, -1 - Invalid USART specified
-int uartInit(volatile fsmStateMachine_t *stateMachine)
+int uartInit(const fsmStateMachineDescr_t *stateMachineDescr)
 {
-    UART_t      *uartInstance = (UART_t *)fsmGetInstance(stateMachine);
+    UART_t      *uartInstance = (UART_t *)initGetInstance(stateMachineDescr);
     USART_t		*usartRegs = uartInstance->usartRegs;
     int8_t		ret = 0;
     uint32_t	freq = cpuGetFrequency();
-
-//	INFO("Initializing UART instance %s",uartInstance->name);
 
 #ifdef UART_STATS
     // Zero out the interface stats
@@ -163,8 +161,8 @@ int uartInit(volatile fsmStateMachine_t *stateMachine)
 #endif	
 
     // Start critical section of code
-    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-    {
+ //   ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+ //   {
         // If the CPU frequency is calculable...
         if(freq)
             usartRegs->BAUD = (uint16_t)((freq/uartInstance->baud)<<2);
@@ -214,13 +212,11 @@ int uartInit(volatile fsmStateMachine_t *stateMachine)
             // Enable the Tx, Rx, and standard Rx mode (16 over samples)
             usartRegs->CTRLB |= USART_RXEN_bm | USART_TXEN_bm | USART_RXMODE_NORMAL_gc;
         }
-    }
+//    }
     
     // Enable global interrupts
-    sei();
+ //   sei();
     
-    // Stop the statemachine upon completion of initialization
-    fsmStop(stateMachine);	
     return(ret);
 }
 

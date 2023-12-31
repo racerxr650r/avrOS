@@ -55,6 +55,11 @@ struct STATE_MACHINE_DESCR_TYPE;
 typedef int (*fsmHandler_t)(volatile struct STATE_MACHINE_TYPE *state);
 
 /**----------------------------------------------------------------------------
+ * Initialization handler function pointer type
+ */
+typedef int (*initHandler_t)(const struct STATE_MACHINE_DESCR_TYPE *state);
+
+/**----------------------------------------------------------------------------
  * State machine status type
  * 
  * This data is stored in RAM and updated as the state machine progresses
@@ -63,6 +68,11 @@ typedef int (*fsmHandler_t)(volatile struct STATE_MACHINE_TYPE *state);
  */
 typedef struct STATE_MACHINE_TYPE
 {
+#ifdef FSM_STATS	
+	const char									*currStateName;
+	const char									*prevStateName;
+	const char									*nextStateName;
+#endif
 	bool									initialCall;		///< Initial call to current state status
 	fsmHandler_t							prevState;			///< Previous state function pointer
 	fsmHandler_t							currState;			///< Current state function pointer
@@ -82,11 +92,18 @@ typedef struct STATE_MACHINE_DESCR_TYPE
 {
 	const char					*name;			///< Name of the state machine
 	volatile fsmStateMachine_t	*stateMachine;	///< Pointer to the state machine status
-	fsmHandler_t				initHandler;	///< Function pointer to the intial state
+//	fsmHandler_t				initHandler;	///< Function pointer to the intial state
+	union
+	{
+		fsmHandler_t 			fsmHandler;
+		initHandler_t			initHandler;
+	}handler;
 	fsmPriority_t				priority;		///< Priority of the state machine
 	void						*instance;		///< Pointer to additional data required by the state machine
 } fsmStateMachineDescr_t;
 
+// Finite State Machine Macros ------------------------------------------------
+#ifdef FSM_STATS
 /**
  * Add state machine to the application
  * 
@@ -96,7 +113,7 @@ typedef struct STATE_MACHINE_DESCR_TYPE
 		int smInitHandler(volatile fsmStateMachine_t *stateMachine); \
 		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr); \
 		volatile fsmStateMachine_t stateMachineName = {.prevState = NULL, .currState = NULL, .nextState = smInitHandler, .stateMachineDescr = &CONCAT(stateMachineName,_descr) }; \
-		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = &stateMachineName, .initHandler = smInitHandler, .priority = smPriority, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
+		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = &stateMachineName, .handler.fsmHandler = smInitHandler, .priority = smPriority, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
 
 /**
  * Add an initializer to the application
@@ -108,9 +125,28 @@ typedef struct STATE_MACHINE_DESCR_TYPE
  * @param smPriority		Priority of the state machine, type fsmPriority_t
  * @param ...				(Optional) pointer to additional data needed by the state machine, type void*
 */
-#define ADD_INITIALIZER(stateMachineName, smInitHandler, smPriority, ...)	\
+#define ADD_INITIALIZER(stateMachineName, smHandler, ...)	\
+		int smHandler(const fsmStateMachineDescr_t *stateMachineDescr); \
+		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = NULL, .handler.initHandler = smHandler, .priority = 0, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
+
+#define fsmSetNextState(stateMachine, stateName) \
+		fsmSetNextStateVerbose(stateMachine, stateName, #stateName)
+
+// !FSM_STATS
+#else
+#define ADD_STATE_MACHINE(stateMachineName, smInitHandler, smPriority, ...)	\
 		int smInitHandler(volatile fsmStateMachine_t *stateMachine); \
-		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = NULL, .initHandler = smInitHandler, .priority = smPriority, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
+		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr); \
+		volatile fsmStateMachine_t stateMachineName = {.prevState = NULL, .currState = NULL, .nextState = smInitHandler, .stateMachineDescr = &CONCAT(stateMachineName,_descr) }; \
+		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .stateMachine = &stateMachineName, .initHandler = smInitHandler, .priority = smPriority, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
+
+#define ADD_INITIALIZER(stateMachineName, smHandler, ...)	\
+		int smHandler(const fsmStateMachineDescr_t *stateMachineDescr); \
+		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .stateMachine = NULL, .handler.initHandler = smHandler, .priority = 0, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
+
+#define fsmSetNextState(stateMachine, stateName) \
+		fsmSetNextStateBasic(stateMachine, stateName);
+#endif
 
 // Exported Functions --------------------------------------------------------
 /**----------------------------------------------------------------------------
@@ -136,15 +172,21 @@ const char* fsmGetCurrentStateMachineName();
  */
 volatile fsmStateMachine_t* fsmGetCurrentStateMachine();
 /******************************************************************************
- * @brief Get the state machine instance
+ * Get the state machine instance
  *
- * @details Returns a pointer to the state machine instance. The instance is state
+ * Returns a pointer to the state machine instance. The instance is state
  * machine specific information that is provided when the state machine is
  * added using the ADD_STATEMACHINE() macro
- * 
- * @param stateMachine [in] Pointer to the given state machine
  */
 void* fsmGetInstance(volatile fsmStateMachine_t *stateMachine);	///< Pointer to the state machine
+/******************************************************************************
+ * Get the state machine instance
+ *
+ * Returns a pointer to the state machine instance. The instance is state
+ * machine specific information that is provided when the state machine is
+ * added using the ADD_STATEMACHINE() macro
+ */
+void* initGetInstance(const fsmStateMachineDescr_t *stateMachineDescr);	///< Pointer to the state machine descriptor
 /**----------------------------------------------------------------------------
  * Initial call to the current state?
  *
@@ -159,6 +201,20 @@ bool fsmIsInitialCall();
  * state
  */
 fsmHandler_t fsmGetCurrentState(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
+/******************************************************************************
+ * Get the name of the current state machine state (function)
+ *
+ * Returns a pointer to the string name of the given state machine's current
+ * state
+ */
+const char* fsmGetCurrentStateName(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
+/******************************************************************************
+ * Get the name of the previous state machine state (function)
+ *
+ * Returns a pointer to the string name of the given state machine's previous
+ * state
+ */
+const char* fsmGetPreviousStateName(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
 /**----------------------------------------------------------------------------
  * Get pointer to the previous state
  *
@@ -172,8 +228,18 @@ fsmHandler_t fsmGetPreviousState(volatile fsmStateMachine_t *stateMachine);	///<
  * is called by the state machine manager it will call the function provided by
  * the handler parameter
  */
-int fsmSetNextState(volatile fsmStateMachine_t *stateMachine,	///< [in] Pointer to state machine
-					fsmHandler_t handler);						///< [in] Pointer to function implmenting the next state
+int fsmSetNextStateBasic(volatile fsmStateMachine_t *stateMachine,	///< [in] Pointer to state machine
+						fsmHandler_t handler);						///< [in] Pointer to function implmenting the next state
+/**----------------------------------------------------------------------------
+ * Set the next state of the given state machine
+ * 
+ * Sets the next state of the state machine. The next time this state machine
+ * is called by the state machine manager it will call the function provided by
+ * the handler parameter
+ */
+int fsmSetNextStateVerbose(volatile fsmStateMachine_t *stateMachine,	///< [in] Pointer to state machine
+							fsmHandler_t handler,						///< [in] Pointer to function implmenting the next state
+							const char *name);								///< [in] String containing the name of the next state
 /**----------------------------------------------------------------------------
  * Initialize the Finite State Manager
  *

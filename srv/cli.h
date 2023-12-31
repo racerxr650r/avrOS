@@ -78,8 +78,6 @@ struct cliCommand_struct
 #define KEYCODE_LEFT        0x13
 #define KEYCODE_RIGHT       0x14
 
-#define DISPLAY_PROMPT      FG_GREEN "\r> " RESET
-
 #define CLEAR_SCREEN        "\e[2J"
 #define CURSOR_HOME         "\e[H"
 #define CURSOR_HIDE         "\e[?25l"
@@ -134,9 +132,7 @@ struct cliCommand_struct
 #define BG_DEFAULT          "\e[49m"
 
 // External Functions----------------------------------------------------------
-//extern int cliInit(volatile fsmStateMachine_t stateMachine);
 extern int cliCallFunction(char *commandLine);
-//extern int cliReceiveFunc(fsmStateMachine_t *state);
 
 #endif /* __CLI_H */
 

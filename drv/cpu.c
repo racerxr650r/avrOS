@@ -39,6 +39,8 @@ int cpuResetCmd(int argC, char *argV[])
 	UNUSED(argC);
 	UNUSED(argV);
 
+	INFO("Reset CPU");
+
 	cpuReset();
 	return(0);
 }

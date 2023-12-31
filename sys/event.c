@@ -98,6 +98,16 @@ int evntEnable(volatile event_t *event, int8_t trigger, evntHandler_t handler, v
     return(ret);
 }
 
+int evntWait(volatile event_t *event, int8_t trigger)
+{
+	// Start critical section of code
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		evntEnable(event, trigger, fsmReady, fsmGetCurrentStateMachine());
+		fsmWait(fsmGetCurrentStateMachine());
+	} // End of critical section
+}
+
 int evntDisable(volatile event_t *event)
 {
     event->handler = NULL;
@@ -120,12 +130,6 @@ int evntTrigger(volatile event_t *event, int8_t signal)
             // Set the signal and put the event in the queue
             event->signal = signal;
             quePutPtr(&evntQue,(void *)event);
-
-            // TODO: Remove this
-            //event->handler(event->stateMachine);
-            // Disarm the event
-            //event->handler = NULL;
-            //event->stateMachine = NULL;
 
             ret = EVENT_TRIGGERED;
         }

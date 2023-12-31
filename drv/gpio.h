@@ -27,7 +27,9 @@
 #include "avrOS.h"
 
 // Data Types -----------------------------------------------------------------
-typedef void (*gpioHandler_t)(PORT_t *port);
+struct GPIO_TYPE;
+
+typedef void (*gpioHandler_t)(struct GPIO_TYPE *gpio);
 
 typedef enum
 {
@@ -52,9 +54,11 @@ typedef struct
 	uint32_t	toggle;
 }gpioStats_t;
 
-typedef struct  
+typedef struct GPIO_TYPE
 {
+#ifdef GPIO_STATS
 	char	*name;
+#endif
 	PORT_t  *port;
 	uint8_t pin;
 	gpioDirection_t direction;
@@ -69,38 +73,61 @@ typedef struct
 // Adds a new state machine to the list of state machines handled by the FSM manager
 #ifdef GPIO_STATS
 #define ADD_GPIO(gpioName, gpioPort, gpioPin, gpioDirection, ...) \
-		const static gpio_t SECTION(GPIO_TABLE) name = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
+		const static gpio_t SECTION(GPIO_TABLE) gpioName = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)}; \
+		ADD_INITIALIZER(gpioName ## _GPIO,gpioInit,(void *)&gpioName);
 #else
 #define ADD_GPIO(gpioName, gpioPort, gpioPin, gpioDirection, ...) \
-		const static gpio_t SECTION(GPIO_TABLE) name = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
+		const static gpio_t SECTION(GPIO_TABLE) gpioName = {.port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)}; \
+		ADD_INITIALIZER(gpioName ## _GPIO,gpioInit,(void *)&gpioName);
 #endif
 
-// Inline Functions -----------------------------------------------------------
-static inline void gpioSet(gpio_t *gpio, uint8_t value)
-{
-	gpio->port->OUTSET = (value & gpio->pin);
-}
-
-static inline void gpioClear(gpio_t *gpio, uint8_t value)
-{
-	gpio->port->OUTCLR = (value & gpio->pin);
-}
-
-static inline void gpioToggle(gpio_t *gpio, uint8_t value)
-{
-	gpio->port->OUTTGL = (value & gpio->pin);
-}
-
-static inline void gpioWrite(gpio_t *gpio, uint8_t value)
-{
-	gpio->port->OUT ^= (value & gpio->pin); 
-}
-
-static inline uint8_t gpioRead(gpio_t *gpio)
-{
-	return(gpio->port->IN & gpio->pin);
-}
-
-// External Functions ---------------------------------------------------------
+// External Functions -----------------------------------------------------------
+/**------------------------------------------------------------------------------
+ * Sets the corresponding output pin(s)
+ * 
+ * Sets the output pins corresponding to value using the OUTSET register. If one 
+ * or more pins in value are not part of this gpio, those pins are not set
+ */
+void gpioSetOutput(gpio_t *gpio, uint8_t value);
+/**------------------------------------------------------------------------------
+ * Clears the corresponding output pin(s)
+ * 
+ * Clears the output pins corresponding to value using the OUTCLR register. If
+ * one or more pins in value are not part of this gpio, those pins are not
+ * cleared
+ */
+void gpioClearOutput(gpio_t *gpio, uint8_t value);
+/**------------------------------------------------------------------------------
+ * Toggles the corresponding output pin(s)
+ * 
+ * Toggles the output pins corresponding to value using the OUTTGL register. If
+ * one or more pins in value are not part of this gpio, those pins are not
+ * toggled 
+ */
+void gpioToggleOutput(gpio_t *gpio, uint8_t value);
+/**------------------------------------------------------------------------------
+ * Writes the corresponding output pin(s)
+ * 
+ * Writes to the port OUT register. Before doing so, value is anded with the gpio
+ * bit mask. Therefore, other pins on the same port that are not part of the gpio
+ * are not affected
+ */
+void gpioWriteOutput(gpio_t *gpio, uint8_t value);
+/**------------------------------------------------------------------------------
+ * Reads the corresponding input pins(s)
+ * 
+ * Returns the current content of the IN register for the gpio port. The value is
+ * anded with the gpio pin bit mask, so pins that are not part of this gpio will
+ * always be zero
+ */
+uint8_t gpioReadInput(gpio_t *gpio);
+/**------------------------------------------------------------------------------
+ * Reads the corresponding output pins(s)
+ * 
+ * Returns the current content of the OUT register for the gpio port. The value
+ * is anded with the gpio pin bit mask, so pins that are not part of this gpio
+ * will always be zero
+ */
+uint8_t gpioReadOutput(gpio_t *gpio);
 
 #endif /* UART_H_ */

@@ -41,19 +41,19 @@ typedef struct
 #define CRITICAL(...)
 #elif LOG_FORMAT == 1
 #define INFO(fmt_str,...)	do{\
-	fprintf(stderr,FG_GREEN BOLD "\n\r%lu:%s " RESET,sysGetTick(),"INFO"); \
+	fprintf(stderr,FG_GREEN BOLD "\n\r%s: " RESET,"INFO"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define WARN(fmt_str,...)	do{\
-	fprintf(stderr,FG_ORANGE BOLD "\n\r%lu:%s " RESET,sysGetTick(),"WARN"); \
+	fprintf(stderr,FG_ORANGE BOLD "\n\r%s: " RESET,"WARN"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define ERROR(fmt_str,...)	do{\
-	fprintf(stderr,FG_RED BOLD "\n\r%lu:%s " RESET,sysGetTick(),"ERR "); \
+	fprintf(stderr,FG_RED BOLD "\n\r%s: " RESET,"ERR "); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define CRITICAL(fmt_str,...)	do{\
-	fprintf(stderr,FG_WHITE BG_RED BOLD "\n\r%lu:%s " RESET,sysGetTick(),"CRIT"); \
+	fprintf(stderr,FG_WHITE BG_RED BOLD "\n\r%s: " RESET,sysGetTick(),"CRIT"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 	fprintf(stderr,FG_WHITE BG_RED BOLD BLINKING "\n\r+++ System Stopped +++" RESET); \
 	while(1);\
@@ -78,6 +78,25 @@ typedef struct
 	while(1);\
 }while(0)
 #elif LOG_FORMAT == 3
+#define INFO(fmt_str,...)	do{\
+	fprintf(stderr,FG_GREEN BOLD "\n\r%lu:%s:%s:%s: " RESET,sysGetTick(),"INFO",fsmGetCurrentStateMachineName(),fsmGetCurrentStateName(fsmGetCurrentStateMachine())); \
+	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
+}while(0)
+#define WARN(fmt_str,...)	do{\
+	fprintf(stderr,FG_ORANGE BOLD "\n\r%lu:%s:%s:%s: " RESET,sysGetTick(),"WARN",fsmGetCurrentStateMachineName(),fsmGetCurrentStateName(fsmGetCurrentStateMachine())); \
+	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
+}while(0)
+#define ERROR(fmt_str,...)	do{\
+	fprintf(stderr,FG_RED BOLD "\n\r%lu:%s:%s:%s: " RESET,sysGetTick(),"ERR ",fsmGetCurrentStateMachineName(),fsmGetCurrentStateName(fsmGetCurrentStateMachine())); \
+	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
+}while(0)
+#define CRITICAL(fmt_str,...)	do{\
+	fprintf(stderr,FG_WHITE BG_RED BOLD "\n\r%lu:%s:%s:%s: " RESET,sysGetTick(),"CRIT",fsmGetCurrentStateMachineName(),fsmGetCurrentStateName(fsmGetCurrentStateMachine())); \
+	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
+	fprintf(stderr,FG_WHITE BG_RED BOLD BLINKING "\n\r+++ System Stopped +++" RESET); \
+	while(1);\
+}while(0)
+#elif LOG_FORMAT == 4
 #define INFO(fmt_str,...)	do{\
 	fprintf(stderr,"\n\r%lu:%s:%s:%d: ",sysGetTick(),"INFO",__FUNCTION__,__LINE__); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
@@ -115,8 +134,5 @@ typedef struct
 #undef CRITICAL
 #define CRITICAL(...)
 #endif
-
-// External Functions----------------------------------------------------------
-//int logInit(fsmStateMachine_t *stateMachine);
 
 #endif /* LOG_H_ */
