@@ -5,7 +5,7 @@
 **avrOS** - _Operating Environment for AVR DA_, is a scalable operating environment 
 including drivers for the AVR DA family of microcontrollers. It uses macros, a 
 custom linker script, and the linker to build the system tables (state machines,
-states, drivers, services, CLI callbacks, Flags, Queues, and Timers) at compile/link 
+states, drivers, services, CLI callbacks, Events, Queues, and Timers) at compile/link 
 time. There is no need to edit a single source file containing all these system
 tables. Application code defining these objects can be distributed across several
 source files. In addition, these tables reside in FLASH where possible and the
@@ -17,71 +17,41 @@ avrOS is organized into 7 directories counting the root directory; ./, ./app,
 ./docs, ./drv, ./srv, ./sys, and ./util
 
 ```console
-.
+avrOS
 ├── app
 │   └── avrOS_example
-│       ├── avrOSConfig.h
-│       ├── avrOS.x
-│       ├── main.c
-│       └── makefile
 ├── doc
-│   ├── avrOS.gif
-│   ├── avrOS.xcf
-│   └── MANUAL.md
+│   └── images
 ├── drv
-│   ├── cpu.c
-│   ├── cpu.h
-│   ├── dac.c
-│   ├── dac.h
-│   ├── mem.c
-│   ├── mem.h
-│   ├── uart.c
-│   └── uart.h
 ├── srv
-│   ├── cli.c
-│   ├── cli.h
-│   ├── log.c
-│   ├── log.h
-│   └── pcm.c
 ├── sys
-│   ├── fsm.c
-│   ├── fsm.h
-│   ├── queue.c
-│   ├── queue.h
-│   ├── sys.c
-│   ├── sys.h
-│   ├── tmr.c
-│   └── tmr.h
-├── util
-|   └── wav2c
-|       └── wav2c.c
-├── avrOS.h
-├── LICENSE
-└── README.md
+└── util
+    └── wav2c
 ```
-Root contains the avrOS.h header file. 
+**.../avrOS** Root contains the avrOS.h header file. 
 
-**./app/avrOS_example** contains the makefile, avrOSConfig.h, main.c, and avrOS.x
+**avrOS/app/avrOS_example** contains the makefile, avrOSConfig.h, main.c, and avrOS.x
 files. The avrOSConfig.h file selects the components to be included in the
 build. The avrOS.x file is a linker script. The main.c file contains the main()
 entry point and the user application state machine and system objects.
 
-**./doc** contains relavent documents and graphic files. This includes the document
+**avrOS/doc** contains relavent documents and graphic files. This includes the document
 you are reading now and the avrOS logo graphic files.
 
-**./drv** contains the device drivers.
+**avrOS/drv** contains the device drivers.
 
-**./srv** contains the system services such as the CLI manager and Logging.
+**avrOS/srv** contains the system services such as the CLI manager and Logging.
 
-**./sys** contains the source files that implement system initialization, the
+**avrOS/sys** contains the source files that implement system initialization, the
 finite state machine manager, and the OS objects (flags and queues). 
 
-**./util** contains host utility programs.
+**avrOS
+/util** contains host utility programs.
 
 ## avrOS Application Directory
 
-The ./app directory contains a sub-directory for each application. These
-directories should contain at least the following files.
+The avrOS/app directory contains a sub-directory for each application. The
+app directory should contain at least the following files.
 
 **avrConfig.h** configures the system, driver, and service files to be
 included with your application. It's self documenting with a signficant
@@ -108,14 +78,14 @@ The loop then repeats.
 
 ## Building avrOS Application
 
-An application is built from the ./app/application_name directory. avrOS
-comes with a ./app/avrOS_example directory and application code example.
+An application is built from the avrOS/app/application_name directory. avrOS
+comes with a avrOS/app/avrOS_example directory and application code example.
 `make all` from the command line in the application directory will build the
 application .hex file. When building the application, the makefile creates a
 ./build directory in the application directory. It's here you will find the
 .hex file and the other generated object files.
 
-The `make clean` command will delete the ./build directory and it's contents
+The `make clean` command will delete the avrOS/build directory and it's contents
 
 To create your own application, make a new directory in ./app directory. Then,
 copy the makefile, avrOS.x, avrConfig.h, and main.c files from the
@@ -155,7 +125,7 @@ avrOS provides the following system objects and functions:
 
 * Finite State Machine manager (fsm)
 * Memory usage API (mem)
-* Flags API (flg)
+* Events API (evnt)
 * Queues API (que)
 * Timers API (tmr)
 
@@ -216,18 +186,25 @@ test and handle the condition when not enough RAM is available.
 
 ## avrOS Theory of Operation
 
+avrOS uses an Automata-based programming paradigm. The system scheduler relies
+on a cooperative multitasking implementation of the application code. It
+implements a finite state machine manager. Instead of threads, it manages a
+number of state machines and their states.
+
 To use RAM as efficiently as possible, avrOS implements a form of cooperative
 multitasking. This requires that the application code does not block or busy
 wait. Instead it will check the status of various variables or objects to 
-detemine if it should do something, do it, and then return. By doing this,
-avrOS is able to use a single stack for all the system threads and interrupt 
-contexts.
+detemine if it should do something, do it, change state if applicable, notify
+the OS that it will wait on an OS event if applicable, and then return. 
+By doing this, avrOS is able to efficiently use a single stack for all the 
+system threads and interrupt contexts.
 
 avrOS does not implement threading. The AVR microcontrollers have a very rich
 set of interrupts to handle asynchronous events. Handlers for these interrupts
-are "scheduled" asynchronously by the AVR interrupt controller. avrOS objects
-such as flags and queues can be used by the handler to signal and pass data to
-the user application code.
+are "scheduled" asynchronously and the thread context is stored on the shared 
+OS stack by the AVR interrupt controller. avrOS objects such as events and 
+queues can be used by the handler to signal and pass data to the user 
+application code.
 
 In addition, the avrOS scheduler uses a finite state machine paradigm. The user
 application and system services register state machines and a set of states.

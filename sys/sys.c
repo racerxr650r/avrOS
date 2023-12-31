@@ -21,8 +21,8 @@
  */
 #include "../avrOS.h"
 
-volatile uint32_t	tickOvrflw = 0; 
-uint32_t			tickDivisor;
+static volatile uint32_t	tickOvrflw = 0; 
+static uint32_t				tickDivisor;
 
 // Command line interface -----------------------------------------------------
 #ifdef TICK_CLI
@@ -85,6 +85,17 @@ bool sysInit()
 	// Initialize the fsm scheduler
 	fsmInit();
 	
+	/*INFO("Start sys tick %lu MHz",tickDivisor);
+	INFO("CPU clock %d MHz",CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_1M_gc?1: \
+							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_2M_gc?2: \
+							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_3M_gc?3: \
+							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_4M_gc?4: \
+							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_8M_gc?8: \
+							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_12M_gc?12: \
+							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_16M_gc?16: \
+							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_20M_gc?20: \
+							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_24M_gc?24:0);*/
+	
 	return(true);
 }
 
@@ -92,7 +103,7 @@ void sysInitTick()
 {
 	TCB_t		*tcb = &SYS_TICK_TIMER;
 	uint32_t	freq = cpuGetFrequency();
-	
+
 	switch(freq)
 	{
 		case FREQ_1_MHZ:

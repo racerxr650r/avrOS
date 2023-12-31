@@ -20,7 +20,8 @@ CLK = 24000000
 # avr programmer (and port if necessary)
 # e.g. PRG = atmelice_updi -or- PRG = serialupdi -P /dev/ttyUSB0
 # The current programmer if the Atmel ICE w/UPDI interface
-PRG = serialupdi -P /dev/ttyUSB2
+PRG = serialupdi -P /dev/ttyAMA2
+#PRG = serialupdi -P /dev/ttyUSB2
 # fuse values for avr: low, high, and extended
 # these values are from an Arduino Uno (ATMega328P)
 # see http://www.engbedded.com/fusecalc/ for other MCUs and options
@@ -52,7 +53,8 @@ CPPFLAGS =
 LINKFLAGS = -Wl,-Map="$(OutputFileName).map" -Wl,--start-group -Wl,-lm -Wl,--end-group -Wl,--gc-sections -mmcu=avr128da28 -B $(DFP)/gcc/dev/$(MCU) -Wl,-T avrOS.x 
 
 # executables
-AVRDUDE = /usr/local/bin/avrdude -c $(PRG) -p $(MCU)
+#AVRDUDE = /usr/local/bin/avrdude -c $(PRG) -p $(MCU)
+AVRDUDE = /usr/bin/avrdude -c $(PRG) -p $(MCU)
 OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
 SIZE    = avr-size --format=avr -B $(DFP)/gcc/dev/$(MCU) --mcu=$(MCU)

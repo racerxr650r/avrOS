@@ -45,7 +45,7 @@ int pcmInit(fsmStateMachine_t *stateMachine)
 	// Initialize the DAC
 	dacInit(VREF_REFSEL_VDD_gc,DAC_MID);
 	// Goto the idle state
-	fsmNextState(stateMachine,pcmIdle);
+	fsmSetNextState(stateMachine,pcmIdle);
 	return(0);
 }
 
@@ -53,7 +53,7 @@ static int pcmIdle(fsmStateMachine_t *stateMachine)
 {
 	// If there is a pcm stream queued...
 	if(pcmLength)
-		fsmNextState(stateMachine, pcmUpdate);
+		fsmSetNextState(stateMachine, pcmUpdate);
 		
 	return(0);
 }
@@ -86,7 +86,7 @@ static int pcmUpdate(fsmStateMachine_t *stateMachine)
 	// Decrement the data stream counter
 	--pcmLength;
 	// Goto the wait for next update state
-	fsmNextState(stateMachine, pcmWait);
+	fsmSetNextState(stateMachine, pcmWait);
 	return(0);
 }
 
@@ -97,14 +97,14 @@ static int pcmWait(fsmStateMachine_t *stateMachine)
 	{
 		// If there is more data in the stream...
 		if(pcmLength)
-			fsmNextState(stateMachine, pcmUpdate);
+			fsmSetNextState(stateMachine, pcmUpdate);
 		// Else there is no more data...
 		else
 		{
 			// "zero" the DAC output
 			dacOutput(0);
 			// Goto idle and wait for the next pcm audio stream
-			fsmNextState(stateMachine, pcmIdle);
+			fsmSetNextState(stateMachine, pcmIdle);
 		}
 	}
 	return(0);

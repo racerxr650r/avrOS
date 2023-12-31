@@ -40,12 +40,11 @@ static int logROM(volatile fsmStateMachine_t *stateMachine)
 
 	// Wait until the stderr output queue is empty and then go to next state
     fioWaitOutput(stderr);
-	fsmNextState(stateMachine,logRAM);
+	fsmSetNextState(stateMachine,logRAM);
 
 	return(0);
 }
 
-// External Functions ----------------------------------------------------------
 int logInit(volatile fsmStateMachine_t *stateMachine)
 {
 	logInstance_t *logInstance = (logInstance_t*)fsmGetInstance(stateMachine);
@@ -55,13 +54,15 @@ int logInit(volatile fsmStateMachine_t *stateMachine)
 	stderr = outFile;
 
 	// Hide the cursor
-	fprintf(stderr,"\e[?25l");
+	fprintf(stderr,CURSOR_HIDE);
 	// Display the system greeting
 	fprintf(stderr,LOG_BANNER);
 
+	INFO("Init LOG");
+	
 	// Wait until the stderr output queue is empty and then go to next state
     fioWaitOutput(stderr);
-    fsmNextState(stateMachine,logROM);
+    fsmSetNextState(stateMachine,logROM);
 
 	return(0);
 }

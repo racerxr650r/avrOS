@@ -206,7 +206,13 @@ SECTIONS
     *(EVNT_TABLE)
     __stop_EVNT_TABLE = . ;
   } AT> text_window
-  UART_TABLE ADDR(EVNT_TABLE) + SIZEOF (EVNT_TABLE) :
+  GPIO_TABLE ADDR(EVNT_TABLE) + SIZEOF (EVNT_TABLE) :
+  {
+    __start_GPIO_TABLE = . ;
+    *(GPIO_TABLE)
+    __stop_GPIO_TABLE = . ;
+  } AT> text_window
+  UART_TABLE ADDR(GPIO_TABLE) + SIZEOF (GPIO_TABLE) :
   {
 	__start_UART_TABLE = . ;
 	*(UART_TABLE)

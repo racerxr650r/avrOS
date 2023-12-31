@@ -131,14 +131,14 @@ void memRomStatus(FILE *file)
 	uint16_t memOsTable = memOsTableSize();
 	uint16_t memConstRomFree = memConstRom - (memRodata+memOsTable);
 
-	fprintf(file,"Program ROM: %6lu\n\r",memProgRom);
-	fprintf(file,"       text: %6u (%2d.%02d%%)\n\r",memText,percentWhole(memText,memProgRom),percentPlaces(memText,memProgRom));
-	fprintf(file,"       free: %6lu (%2d.%02d%%)\n\n\r",memProgRomFree,percentWhole(memProgRomFree,memProgRom),percentPlaces(memProgRomFree,memProgRom));
+	fprintf(file,FG_CYAN "\n\rProgram ROM:" RESET " %6lu\n\r",memProgRom);
+	fprintf(file,FG_CYAN "       text:" RESET " %6u (%2d.%02d%%)\n\r",memText,percentWhole(memText,memProgRom),percentPlaces(memText,memProgRom));
+	fprintf(file,FG_CYAN "       free:" RESET " %6lu (%2d.%02d%%)\n\n\r",memProgRomFree,percentWhole(memProgRomFree,memProgRom),percentPlaces(memProgRomFree,memProgRom));
 	
-	fprintf(file,"  Const ROM: %6u\n\r",memConstRom);
-	fprintf(file,"     rodata: %6u (%2d.%02d%%)\n\r",memRodata,percentWhole(memRodata,memConstRom),percentPlaces(memRodata,memConstRom));
-	fprintf(file,"  os tables: %6u (%2d.%02d%%)\n\r",memOsTable,percentWhole(memOsTable,memConstRom),percentPlaces(memOsTable,memConstRom));
-	fprintf(file,"       free: %6u (%2d.%02d%%)\n\r",memConstRomFree,percentWhole(memConstRomFree,memConstRom),percentPlaces(memConstRomFree,memConstRom));
+	fprintf(file,FG_CYAN "  Const ROM:" RESET " %6u\n\r",memConstRom);
+	fprintf(file,FG_CYAN "     rodata:" RESET " %6u (%2d.%02d%%)\n\r",memRodata,percentWhole(memRodata,memConstRom),percentPlaces(memRodata,memConstRom));
+	fprintf(file,FG_CYAN "  os tables:" RESET " %6u (%2d.%02d%%)\n\r",memOsTable,percentWhole(memOsTable,memConstRom),percentPlaces(memOsTable,memConstRom));
+	fprintf(file,FG_CYAN "       free:" RESET " %6u (%2d.%02d%%)\n\r",memConstRomFree,percentWhole(memConstRomFree,memConstRom),percentPlaces(memConstRomFree,memConstRom));
 }
 
 void memRamStatus(FILE *file)
@@ -150,12 +150,12 @@ void memRamStatus(FILE *file)
 	uint16_t memStackMax = memStackSizeMax();
 	uint16_t memFree = memFreeSize();
 
-	fprintf(file,"        RAM: %6u\n\r",memRam);
-	fprintf(file,"       data: %6u (%2d.%02d%%)\n\r",memData,percentWhole(memData,memRam),percentPlaces(memData,memRam));
-	fprintf(file,"       heap: %6u (%2d.%02d%%)\n\r",memHeap,percentWhole(memHeap,memRam),percentPlaces(memHeap,memRam));
-	fprintf(file," curr stack: %6u (%2d.%02d%%)\n\r",memStack,percentWhole(memStack,memRam),percentPlaces(memStack,memRam));
+	fprintf(file,FG_CYAN "\n\r        RAM:" RESET " %6u\n\r",memRam);
+	fprintf(file,FG_CYAN "       data:" RESET " %6u (%2d.%02d%%)\n\r",memData,percentWhole(memData,memRam),percentPlaces(memData,memRam));
+	fprintf(file,FG_CYAN "       heap:" RESET " %6u (%2d.%02d%%)\n\r",memHeap,percentWhole(memHeap,memRam),percentPlaces(memHeap,memRam));
+	fprintf(file,FG_CYAN " curr stack:" RESET " %6u (%2d.%02d%%)\n\r",memStack,percentWhole(memStack,memRam),percentPlaces(memStack,memRam));
 #ifdef MEM_STATS	
-	fprintf(file,"  max stack: %6u (%2d.%02d%%)\n\r",memStackMax,percentWhole(memStackMax,memRam),percentPlaces(memStackMax,memRam));
+	fprintf(file,FG_CYAN "  max stack:" RESET " %6u (%2d.%02d%%)\n\r",memStackMax,percentWhole(memStackMax,memRam),percentPlaces(memStackMax,memRam));
 #endif	
-	fprintf(file,"       free: %6u (%2d.%02d%%)\n\r",memFree,percentWhole(memFree,memRam),percentPlaces(memFree,memRam));
+	fprintf(file,FG_CYAN "       free:" RESET " %6u (%2d.%02d%%)\n\r",memFree,percentWhole(memFree,memRam),percentPlaces(memFree,memRam));
 }
