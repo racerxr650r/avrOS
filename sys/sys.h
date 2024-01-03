@@ -24,22 +24,17 @@
 #define SYS_H_
 
 // Constants ------------------------------------------------------------------
-#define FREQ_1_MHZ	1000000
-#define FREQ_2_MHZ	2000000
-#define FREQ_3_MHZ	3000000
-#define FREQ_4_MHZ	4000000
-#define FREQ_8_MHZ	8000000
-#define FREQ_12_MHZ	12000000
-#define FREQ_16_MHZ	16000000
-#define FREQ_20_MHZ	20000000
-#define FREQ_24_MHZ	24000000
+#define SYS_TIMER_TCB0  0x0B00
+#define SYS_TIMER_TCB1  0x0B10
+#define SYS_TIMER_TCB2  0x0B20
 
-#define TICK_TOP		60000
+#define EVENT_TYPE_TICK  EVENT_TYPE_1
 
 // External Functions ---------------------------------------------------------
 bool sysInit();
-void sysInitTick();
-uint32_t sysGetTick();
+void sysSetTickFreq(uint16_t sysTickFreq);
+uint16_t sysGetTickFreq();
+uint32_t sysGetTickCount();
 void sysSleep();
 
 #endif /* SYS_H_ */

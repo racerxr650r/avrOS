@@ -38,6 +38,7 @@ volatile static fsmStateMachine_t* fsmGetStateMachine(const char *name);
 static int fsmLstAdd(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm);
 static int fsmLstRemove(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm);
 static void fsmLstPrint(FILE *file, volatile fsmStateMachine_t *list);
+static void initTablePrint(FILE *file);
 
 // CLI Commands ---------------------------------------------------------------
 #ifdef FSM_CLI
@@ -52,12 +53,15 @@ static int fsmCmd(int argc, char *argv[])
 	// Include these only if the function does not use the argc and argv parameters
 	UNUSED(argc);
 	UNUSED(argv);
+
+	printf(BOLD UNDERLINE FG_BLUE "Device Initializers:\n\r" RESET);
+	initTablePrint(stdout);
 	
-	printf("Ready:\n\r");
+	printf(BOLD UNDERLINE FG_BLUE "Ready Queue:\n\r" RESET);
 	fsmLstPrint(stdout, Ready);
-	printf("Wait:\n\r");
+	printf(BOLD UNDERLINE FG_BLUE "Wait Queue:\n\r" RESET);
 	fsmLstPrint(stdout, Wait);
-	printf("Stopped:\n\r");
+	printf(BOLD UNDERLINE FG_BLUE "Stopped Queue:\n\r" RESET);
 	fsmLstPrint(stdout, Stopped);
 
 	// Walk the table of state machines
@@ -209,12 +213,15 @@ static int fsmLstRemove(volatile fsmStateMachine_t **list, volatile fsmStateMach
 static void fsmLstPrint(FILE *file, volatile fsmStateMachine_t *list)
 {
 	volatile fsmStateMachine_t *curr = list;
-	
-    while(curr)
-	{
-		fprintf(file, "    %s %d\n\r", curr->stateMachineDescr->name, curr->stateMachineDescr->priority);
-		curr = curr->next;
-	}
+
+	if(curr==NULL)
+		fprintf(file,"\t<none>\n\r");
+	else
+		while(curr)
+		{
+			fprintf(file, "\t%-20sPriority:%4d Ticks:%6lu\n\r", curr->stateMachineDescr->name, curr->stateMachineDescr->priority,curr->ticks);
+			curr = curr->next;
+		}
 }
 
 volatile static fsmStateMachine_t *fsmGetStateMachine(const char *name)
@@ -229,6 +236,16 @@ volatile static fsmStateMachine_t *fsmGetStateMachine(const char *name)
   return(NULL);
 }
 
+static void initTablePrint(FILE *file)
+{
+	// Walk the table of state machines backwards
+  	fsmStateMachineDescr_t *descr = (fsmStateMachineDescr_t *)&__stop_FSM_TABLE-1;
+  
+	for(; descr >= (fsmStateMachineDescr_t *)&__start_FSM_TABLE; --descr)
+		if(descr->stateMachine == NULL)
+			fprintf(file,"\t%s\n\r",descr->name);
+}
+
 // External Functions ----------------------------------------------------------
 // Initialize the state machine manager
 void fsmInit()
@@ -236,9 +253,10 @@ void fsmInit()
 	// Start critical section of code
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-		// Walk the table of state machines
-		fsmStateMachineDescr_t *stateMachineDescr = (fsmStateMachineDescr_t *)&__start_FSM_TABLE;
-		for(; stateMachineDescr < (fsmStateMachineDescr_t *)&__stop_FSM_TABLE; ++stateMachineDescr)
+		// Walk the table of state machines backwards so the initializers are
+		// in the order they were added in the source files
+		fsmStateMachineDescr_t *stateMachineDescr = (fsmStateMachineDescr_t *)&__stop_FSM_TABLE-1;
+		for(; stateMachineDescr >= (fsmStateMachineDescr_t *)&__start_FSM_TABLE; --stateMachineDescr)
 		{
 			volatile fsmStateMachine_t	*stateMachine = stateMachineDescr->stateMachine;
 
@@ -413,6 +431,41 @@ int fsmReady(volatile fsmStateMachine_t *stateMachine)
 	return(ret);
 }
 
+// Update the tick counters of the state machines in the Wait queue
+void fsmUpdateWaitTicks()
+{
+	volatile fsmStateMachine_t *smCurrent = Wait;
+
+	// Start critical section of code
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		while(smCurrent)
+		{
+			if(smCurrent->ticks)
+			{
+				--smCurrent->ticks;
+				if(!smCurrent->ticks)
+					fsmReady(smCurrent);
+			}
+			smCurrent = smCurrent->next;
+		}
+	}
+}
+
+// Set the state machine to sit in the wait queue for x ticks
+void fsmWaitTicks(volatile fsmStateMachine_t*stateMachine, uint32_t ticks)
+{
+	stateMachine->ticks = ticks;
+	fsmWait(stateMachine);
+}
+
+// Set the state machine to sit in the wait queue for x milliseconds
+void fsmWaitMilliseconds(volatile fsmStateMachine_t*stateMachine, uint16_t ms)
+{
+	uint16_t freq = sysGetTickFreq();
+
+	fsmWaitTicks(stateMachine,(freq/1000)*ms);
+}
 
 // Finite State Machine Dispatcher. This function steps through the state machine table and calls the current state function for each
 void fsmDispatch(void)

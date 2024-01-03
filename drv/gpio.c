@@ -95,15 +95,16 @@ static int gpioCmd(int argc, char *argv[])
 		
 		if(argc<2 || (argc==2 && !strcmp(gpio->name,argv[1])))
 		{
-			printf("\t%s port: %c pins: 0x%02x direction: %s interrupt: %s",gpio->name,port,gpio->pin,direction,interrupt);
+			printf(BOLD FG_BLUE UNDERLINE "%-16s",gpio->name);
+			printf(" port: %c pins: 0x%02x direction: %3s interrupt: %3s\n\r" RESET,port,gpio->pin,direction,interrupt);
 
 			if(gpio->direction == GPIO_OUTPUT)
-				printf(" value: 0x%02x\n\r",gpioReadOutput(gpio));
+				printf("\tvalue: 0x%02x\n\r",gpioReadOutput(gpio));
 			else
-				printf(" value: 0x%02x\n\r",gpioReadInput(gpio));
+				printf("\tvalue: 0x%02x\n\r",gpioReadInput(gpio));
 
 #ifdef GPIO_STATS
-			printf("\tStuff\n\r");
+			//printf("\tStuff\n\r");
 #endif
 			ret = 0;
 		}
@@ -296,22 +297,22 @@ int gpioInit(const fsmStateMachineDescr_t *stateMachineDescr)
 }
 
 // External functions ---------------------------------------------------------
-void gpioSetOutput(gpio_t *gpio, uint8_t value)
+void gpioSetOutput(const gpio_t *gpio, uint8_t value)
 {
 	gpio->port->OUTSET = (value & gpio->pin);
 }
 
-void gpioClearOutput(gpio_t *gpio, uint8_t value)
+void gpioClearOutput(const gpio_t *gpio, uint8_t value)
 {
 	gpio->port->OUTCLR = (value & gpio->pin);
 }
 
-void gpioToggleOutput(gpio_t *gpio, uint8_t value)
+void gpioToggleOutput(const gpio_t *gpio, uint8_t value)
 {
 	gpio->port->OUTTGL = (value & gpio->pin);
 }
 
-void gpioWriteOutput(gpio_t *gpio, uint8_t value)
+void gpioWriteOutput(const gpio_t *gpio, uint8_t value)
 {
 	uint8_t tmp = gpio->port->OUT;
 
@@ -320,12 +321,12 @@ void gpioWriteOutput(gpio_t *gpio, uint8_t value)
 	gpio->port->OUT = value | tmp; 
 }
 
-uint8_t gpioReadInput(gpio_t *gpio)
+uint8_t gpioReadInput(const gpio_t *gpio)
 {
 	return(gpio->port->IN & gpio->pin);
 }
 
-uint8_t gpioReadOutput(gpio_t *gpio)
+uint8_t gpioReadOutput(const gpio_t *gpio)
 {
 	return(gpio->port->OUT & gpio->pin);
 }

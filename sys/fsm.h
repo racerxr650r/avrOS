@@ -69,14 +69,15 @@ typedef int (*initHandler_t)(const struct STATE_MACHINE_DESCR_TYPE *state);
 typedef struct STATE_MACHINE_TYPE
 {
 #ifdef FSM_STATS	
-	const char									*currStateName;
-	const char									*prevStateName;
-	const char									*nextStateName;
+	const char								*currStateName;
+	const char								*prevStateName;
+	const char								*nextStateName;
 #endif
 	bool									initialCall;		///< Initial call to current state status
 	fsmHandler_t							prevState;			///< Previous state function pointer
 	fsmHandler_t							currState;			///< Current state function pointer
 	fsmHandler_t							nextState;			///< Next state function pointer
+	uint32_t								ticks;				///< Tick count for system tick wait
 	volatile struct STATE_MACHINE_TYPE    	*next;				///< Next pointer used for the SM queues
 	const struct STATE_MACHINE_DESCR_TYPE 	*stateMachineDescr;	///< Pointer to the state machine descriptor
 } fsmStateMachine_t;
@@ -247,7 +248,7 @@ int fsmSetNextStateVerbose(volatile fsmStateMachine_t *stateMachine,	///< [in] P
  * walks the const table of state machines and builds the ready queue for first
  * call of fsmDispatch() in the application main loop.
  */
-void	fsmInit();
+void fsmInit();
 /**----------------------------------------------------------------------------
  * Move the given state machine to the ready queue
  *
@@ -255,7 +256,7 @@ void	fsmInit();
  * the finite state machine manager. The ready queue contains the state
  * machines that are ready to the be scheduled (called)
  */
-int		fsmReady(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
+int	fsmReady(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
 /**----------------------------------------------------------------------------
  * Move the given state machine to the wait queue
  * 
@@ -263,7 +264,7 @@ int		fsmReady(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to st
  * finite state machine manager. The wait queue contains state machines that
  * are waiting on a timer or event
  */
-int		fsmWait(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
+int	fsmWait(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
 /**----------------------------------------------------------------------------
  * Move the given state machine to the stopped queue
  * 
@@ -272,7 +273,22 @@ int		fsmWait(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to sta
  * that have stopped execution. These state machines will not run again, unless
  * fsmReady() is called for that state machine
  */
-int		fsmStop(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
+int	fsmStop(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
+/**----------------------------------------------------------------------------
+ * Update the state machines in the wait queue wating on the system timer
+ * 
+ */
+void fsmUpdateWaitTicks();								///< [in] Pointer to state machine
+/**----------------------------------------------------------------------------
+ * Set the state machine to sit in the wait queue for x ticks
+ * 
+ */
+void fsmWaitTicks(volatile fsmStateMachine_t*stateMachine, uint32_t ticks);	///< [in] Pointer to state machine
+/**----------------------------------------------------------------------------
+ * Set the state machine to sit in the wait queue for x milliseconds
+ * 
+ */
+void fsmWaitMilliseconds(volatile fsmStateMachine_t*stateMachine, uint16_t ms);	///< [in] Pointer to state machine
 /**----------------------------------------------------------------------------
  * Execute the state machines in the ready queue
  * 

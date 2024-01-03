@@ -55,14 +55,14 @@ typedef struct QUE_DESCRIPTOR_TYPE
                   const static queDescriptor_t CONCAT(queName,_descr); \
                   static volatile queue_t    queName = {.head = queSz, .tail = 0, .descr = &CONCAT(queName,_descr)}; \
                   static volatile queStats_t CONCAT(queName,_stats) = {.in = 0, .out = 0, .underflow = 0, .overflow = 0, .max = 0}; \
-                  ADD_EVENT(queName ## _event); \
-                  const static queDescriptor_t SECTION(QUE_TABLE) CONCAT(queName,_descr) = {.name = #queName, .queue = &queName, .buffer = CONCAT(queName,_buffer), .stats = &CONCAT(queName,_stats), .event = &CONCAT(queName,_event), .capacity = queSz, .sizeOfElement = queSzElement};
+                  ADD_EVENT(queName ## _evnt); \
+                  const static queDescriptor_t SECTION(QUE_TABLE) CONCAT(queName,_descr) = {.name = #queName, .queue = &queName, .buffer = CONCAT(queName,_buffer), .stats = &CONCAT(queName,_stats), .event = &CONCAT(queName,_evnt), .capacity = queSz, .sizeOfElement = queSzElement};
 #else
 #define ADD_QUEUE(queName, queSzElement, queSz)	\
                   static uint8_t			CONCAT(queName,_buffer)[queSz*queSzElement]; \
                   volatile static queue_t	CONCAT(queName,_state) = {.head = queSz, .tail = 0}; \
-                  ADD_EVENT(queName ## _event); \
-                  const static queDescriptor_t SECTION(QUE_TABLE) queName = {.name = #queName, .queue = &CONCAT(queName,_state), .buffer = CONCAT(queName,_buffer), .event = &CONCAT(queName,_event), .capacity = queSz, .sizeOfElement = queSzElement};
+                  ADD_EVENT(queName ## _evnt); \
+                  const static queDescriptor_t SECTION(QUE_TABLE) queName = {.name = #queName, .queue = &CONCAT(queName,_state), .buffer = CONCAT(queName,_buffer), .event = &CONCAT(queName,_evnt) .capacity = queSz, .sizeOfElement = queSzElement};
 #endif
 
 // External Functions ---------------------------------------------------------
@@ -112,7 +112,8 @@ static inline uint32_t queGetUnderflow(volatile queue_t *que)
 	return(que->descr->stats->underflow);
 }
 #endif
-extern uint8_t queGetSize(volatile queue_t *que);
+
+extern uint16_t queGetSize(volatile queue_t *que);
 extern bool queGet(volatile queue_t *que, void *element);
 static inline bool queGetByte(volatile queue_t *que, uint8_t *byte)
 {

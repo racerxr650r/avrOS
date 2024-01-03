@@ -60,8 +60,9 @@ struct cliCommand_struct
 };
 
 // This macro adds a new instance of a CLI
-#define ADD_CLI(cliName, cliInFile, cliOutFile) \
-        const static cliInstance_t cliName = { .name = #cliName, .inFile = cliInFile, .outFile = cliOutFile }; \
+#define ADD_CLI(cliName, cliFile) \
+        static FILE cliFile; \
+        const static cliInstance_t cliName = { .name = #cliName, .inFile = &cliFile, .outFile = &cliFile }; \
         ADD_STATE_MACHINE(cliName ## _SM,cliInit,FSM_SRV | 0x3f, (void *)&cliName);
 
 // This macro adds a command string and a function to the cli table

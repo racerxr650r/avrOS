@@ -88,7 +88,7 @@ typedef struct GPIO_TYPE
  * Sets the output pins corresponding to value using the OUTSET register. If one 
  * or more pins in value are not part of this gpio, those pins are not set
  */
-void gpioSetOutput(gpio_t *gpio, uint8_t value);
+void gpioSetOutput(const gpio_t *gpio, uint8_t value);
 /**------------------------------------------------------------------------------
  * Clears the corresponding output pin(s)
  * 
@@ -96,7 +96,7 @@ void gpioSetOutput(gpio_t *gpio, uint8_t value);
  * one or more pins in value are not part of this gpio, those pins are not
  * cleared
  */
-void gpioClearOutput(gpio_t *gpio, uint8_t value);
+void gpioClearOutput(const gpio_t *gpio, uint8_t value);
 /**------------------------------------------------------------------------------
  * Toggles the corresponding output pin(s)
  * 
@@ -104,7 +104,7 @@ void gpioClearOutput(gpio_t *gpio, uint8_t value);
  * one or more pins in value are not part of this gpio, those pins are not
  * toggled 
  */
-void gpioToggleOutput(gpio_t *gpio, uint8_t value);
+void gpioToggleOutput(const gpio_t *gpio, uint8_t value);
 /**------------------------------------------------------------------------------
  * Writes the corresponding output pin(s)
  * 
@@ -112,7 +112,7 @@ void gpioToggleOutput(gpio_t *gpio, uint8_t value);
  * bit mask. Therefore, other pins on the same port that are not part of the gpio
  * are not affected
  */
-void gpioWriteOutput(gpio_t *gpio, uint8_t value);
+void gpioWriteOutput(const gpio_t *gpio, uint8_t value);
 /**------------------------------------------------------------------------------
  * Reads the corresponding input pins(s)
  * 
@@ -120,7 +120,7 @@ void gpioWriteOutput(gpio_t *gpio, uint8_t value);
  * anded with the gpio pin bit mask, so pins that are not part of this gpio will
  * always be zero
  */
-uint8_t gpioReadInput(gpio_t *gpio);
+uint8_t gpioReadInput(const gpio_t *gpio);
 /**------------------------------------------------------------------------------
  * Reads the corresponding output pins(s)
  * 
@@ -128,6 +128,6 @@ uint8_t gpioReadInput(gpio_t *gpio);
  * is anded with the gpio pin bit mask, so pins that are not part of this gpio
  * will always be zero
  */
-uint8_t gpioReadOutput(gpio_t *gpio);
+uint8_t gpioReadOutput(const gpio_t *gpio);
 
 #endif /* UART_H_ */

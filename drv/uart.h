@@ -29,29 +29,37 @@
 // Data Types -----------------------------------------------------------------
 typedef struct
 {
-    uint32_t	txBytes,rxBytes,txQueueOverflow,rxBufferOverflow,rxQueueOverflow,frameError,parityError;
+	uint32_t	txBytes;
+	uint32_t	rxBytes;
+	uint32_t	txQueueOverflow;
+	uint32_t	rxBufferOverflow;
+	uint32_t	rxQueueOverflow;
+	uint32_t	frameError;
+	uint32_t	parityError;
 }UartStats_t;
 
 typedef struct
 {
 #ifdef UART_STATS
-    char			 *name;
+	char			 *name;			///< Name of the UART instance
 #endif
-    const FILE*		 file;
-    USART_t			 *usartRegs;
-    uint32_t		 baud;
-    USART_PMODE_t	 parity;
-    USART_CHSIZE_t	 dataBits;
-    USART_SBMODE_t	 stopBits;
-    volatile queue_t *txQueue,*rxQueue;
+	const FILE*		 file;			///< Stream I/O file pointer for the buffered device
+	USART_t			 *usartRegs;	///< USART device
+	uint16_t		 baud;			///< Baud rate / 100
+	USART_PMODE_t	 parity;		///< Parity
+	USART_CHSIZE_t	 dataBits;		///< Data bits
+	USART_SBMODE_t	 stopBits;		///< Stop bits
+	volatile queue_t *txQueue;		///< Transmit Queue
+	volatile queue_t *rxQueue;		///< Transmit Queue
 #ifdef UART_STATS
-    UartStats_t		*stats;
+	UartStats_t		*stats;			///< Device statistics
 #endif
 }UART_t;
 
-#define UART_FILE(uart)   uart.file
 
 // Uart Macros ----------------------------------------------------------------
+#define UART_FILE_PTR(uartName)	CONCAT(uartName,_file)
+
 #ifdef UART_STATS
 // Verbose version of the UART_ADD macros. These versions of the macros save
 // the name of the UART and create statistics that can be used by the
@@ -73,14 +81,14 @@ typedef struct
  * table. This initialization will be called during execution of sysInit().
 */
 #define ADD_UART_RW(usartName, usartReg, uartBaud, uartParity, uartDataBits, uartStopBits, txQueueSize, rxQueueSize) \
-                ADD_QUEUE(usartName ## _TxQue,sizeof(uint8_t),txQueueSize); \
-                ADD_QUEUE(usartName ## _RxQue,sizeof(uint8_t),rxQueueSize); \
-                static UartStats_t CONCAT(usartName,_stats); \
-                const static UART_t SECTION(UART_TABLE) usartName; \
-                const static fioBuffers_t CONCAT(usartName,_buffers) = {.input = &CONCAT(usartName,_RxQue), .output = &CONCAT(usartName,_TxQue)}; \
-                static FILE CONCAT(usartName,_file) = {.buf = (char *) &CONCAT(usartName,_buffers), .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_RW, .udata = (void *)&usartName }; \
-                const static UART_t SECTION(UART_TABLE) usartName = { .name = #usartName, .file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = uartBaud, .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = &CONCAT(usartName,_TxQue), .rxQueue = &CONCAT(usartName,_RxQue), .stats = &CONCAT(usartName,_stats)}; \
-                ADD_INITIALIZER(usartName ## _SM,uartInit,(void *)&usartName);
+				ADD_QUEUE(usartName ## _TxQue,sizeof(uint8_t),txQueueSize); \
+				ADD_QUEUE(usartName ## _RxQue,sizeof(uint8_t),rxQueueSize); \
+				static UartStats_t CONCAT(usartName,_stats); \
+				const static UART_t SECTION(UART_TABLE) usartName; \
+				const static fioBuffers_t CONCAT(usartName,_buffers) = {.input = &CONCAT(usartName,_RxQue), .output = &CONCAT(usartName,_TxQue)}; \
+				static FILE CONCAT(usartName,_file) = {.buf = (char *) &CONCAT(usartName,_buffers), .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_RW, .udata = (void *)&usartName }; \
+				const static UART_t SECTION(UART_TABLE) usartName = { .name = #usartName, .file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = (uartBaud/100), .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = &CONCAT(usartName,_TxQue), .rxQueue = &CONCAT(usartName,_RxQue), .stats = &CONCAT(usartName,_stats)}; \
+				ADD_INITIALIZER(usartName,uartInit,(void *)&usartName);
 /**----------------------------------------------------------------------------
  * Adds a Send only UART to the system
  * 
@@ -98,13 +106,13 @@ typedef struct
  * initialization will be called during execution of sysInit().
 */
 #define ADD_UART_WRITE(usartName, usartReg, uartBaud, uartParity, uartDataBits, uartStopBits, txQueueSize) \
-                ADD_QUEUE(usartName ## _TxQue,sizeof(uint8_t),txQueueSize); \
-                static UartStats_t CONCAT(usartName,_stats); \
-                const static UART_t SECTION(UART_TABLE) usartName; \
-                const static fioBuffers_t CONCAT(usartName,_buffers) = {.input = NULL, .output = &CONCAT(usartName,_TxQue)}; \
-                static FILE CONCAT(usartName,_file) = {.buf = (char *) &CONCAT(usartName,_buffers), .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_WRITE, .udata = (void *)&usartName }; \
-                const static UART_t SECTION(UART_TABLE) usartName = { .name = #usartName, .file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = uartBaud, .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = &CONCAT(usartName,_TxQue), .rxQueue = NULL, .stats = &CONCAT(usartName,_stats)}; \
-                ADD_INITIALIZER(usartName ## _SM,uartInit,(void *)&usartName);
+				ADD_QUEUE(usartName ## _TxQue,sizeof(uint8_t),txQueueSize); \
+				static UartStats_t CONCAT(usartName,_stats); \
+				const static UART_t SECTION(UART_TABLE) usartName; \
+				const static fioBuffers_t CONCAT(usartName,_buffers) = {.input = NULL, .output = &CONCAT(usartName,_TxQue)}; \
+				static FILE CONCAT(usartName,_file) = {.buf = (char *) &CONCAT(usartName,_buffers), .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_WRITE, .udata = (void *)&usartName }; \
+				const static UART_t SECTION(UART_TABLE) usartName = { .name = #usartName, .file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = (uartBaud/100), .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = &CONCAT(usartName,_TxQue), .rxQueue = NULL, .stats = &CONCAT(usartName,_stats)}; \
+				ADD_INITIALIZER(usartName,uartInit,(void *)&usartName);
 /**----------------------------------------------------------------------------
  * Adds a receive only UART to the system
  * 
@@ -122,12 +130,12 @@ typedef struct
  * during execution of sysInit().
 */
 #define ADD_UART_READ(usartName, usartReg, uartBaud, uartParity, uartDataBits, uartStopBits, rxQueueSize) \
-                ADD_QUEUE(usartName ## _RxQue,sizeof(uint8_t),rxQueueSize); \
-                static UartStats_t CONCAT(usartName,_stats); \
-                const static UART_t SECTION(UART_TABLE) usartName; \
-                static FILE CONCAT(usartName,_file) = { .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_READ, .udata = (void *)&usartName }; \
-                const static UART_t SECTION(UART_TABLE) usartName = { .name = #usartName, .file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = uartBaud, .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = NULL, .rxQueue = &CONCAT(usartName,_RxQue), .stats = &CONCAT(usartName,_stats)}; \
-                ADD_INITIALIZER(usartName ## _SM,uartInit,(void *)&usartName);
+				ADD_QUEUE(usartName ## _RxQue,sizeof(uint8_t),rxQueueSize); \
+				static UartStats_t CONCAT(usartName,_stats); \
+				const static UART_t SECTION(UART_TABLE) usartName; \
+				static FILE CONCAT(usartName,_file) = { .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_READ, .udata = (void *)&usartName }; \
+				const static UART_t SECTION(UART_TABLE) usartName = { .name = #usartName, .file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = (uartBaud/100), .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = NULL, .rxQueue = &CONCAT(usartName,_RxQue), .stats = &CONCAT(usartName,_stats)}; \
+				ADD_INITIALIZER(usartName,uartInit,(void *)&usartName);
 /**----------------------------------------------------------------------------
  * Adds a raw UART to the system
  * 
@@ -143,9 +151,9 @@ typedef struct
  * will be called during execution of sysInit().
 */
 #define ADD_UART_RAW(usartName, usartReg, uartBaud, uartParity, uartDataBits, uartStopBits) \
-                static UartStats_t CONCAT(usartName,_stats); \
-                const static UART_t SECTION(UART_TABLE) usartName = { .name = #usartName, .file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = uartBaud, .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = NULL, .rxQueue = NULL, .stats = &CONCAT(usartName,_stats)}; \
-                ADD_INITIALIZER(usartName ## _SM,uartInit,(void *)&usartName);
+				static UartStats_t CONCAT(usartName,_stats); \
+				const static UART_t SECTION(UART_TABLE) usartName = { .name = #usartName, .file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = (uartBaud/100), .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = NULL, .rxQueue = NULL, .stats = &CONCAT(usartName,_stats)}; \
+				ADD_INITIALIZER(usartName,uartInit,(void *)&usartName);
 #else
 #define ADD_UART(usartReg, txQueue, rxQueue)	const static UART_t SECTION(UART_TABLE) uartName = { .usart = &usartReg, .txQueue = &txQueue, .rxQueue = &rxQueue};
 #endif

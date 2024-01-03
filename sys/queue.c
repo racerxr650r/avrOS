@@ -37,7 +37,7 @@ static int queCmd(int argc, char *argv[])
 	{
 		if(argc<2 || (argc==2 && !strcmp(descr->name,argv[1])))
 		{
-			printf("Queue: %s\n\r",descr->name);
+			printf(BOLD UNDERLINE FG_BLUE "%-20s Capacity: %d\n\r" RESET,descr->name,descr->capacity);
 			printf("\tIn:%8lu\tOut:%8lu\tMax:%8lu\n\r",descr->stats->in,descr->stats->out,descr->stats->max);
 			printf("\tOverflow:%8lu\tUnderflow:%8lu\n\r",descr->stats->overflow,descr->stats->underflow);
 		}
@@ -46,10 +46,10 @@ static int queCmd(int argc, char *argv[])
 }
 
 // External functions ************************************************
-uint8_t queGetSize(volatile queue_t *que)
+uint16_t queGetSize(volatile queue_t *que)
 {
 	const queDescriptor_t *descr = que->descr;
-	uint8_t			ret;
+	uint16_t			ret;
 	
 	if(queIsEmpty(que))
 		ret = 0;
@@ -154,7 +154,7 @@ bool quePut(volatile queue_t *que, void *element)
 				
 #ifdef QUE_STATS
 				// If the current capacity of queueue exceeds the previous max, update the max
-				uint8_t	size = queGetSize(que);
+				uint16_t	size = queGetSize(que);
 				if(size>descr->stats->max)
 					descr->stats->max = size;
 #endif			

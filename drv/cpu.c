@@ -24,13 +24,14 @@
 
 // Constants ------------------------------------------------------------------
 // Prescaler divisor table
-static const uint32_t divisor[] = {2,4,5,16,32,64,1,1,6,10,12,24,48};
+static const uint8_t divisor[] = {2,4,5,16,32,64,1,1,6,10,12,24,48};
 // Internal HF Oscillator frequency table
-static const uint32_t oschfFrequency[] = {1000000,2000000,3000000,4000000,0,8000000,12000000,16000000,20000000,24000000};
+static const uint16_t oschfFrequency[] = {1000,2000,3000,4000,0,8000,12000,16000,20000,24000};
 
 // CLI Commands ---------------------------------------------------------------
 #ifdef CPU_CLI
 ADD_COMMAND("reset",cpuResetCmd);
+#endif // CPU_CLI
 
 int cpuResetCmd(int argC, char *argV[])
 {
@@ -44,7 +45,6 @@ int cpuResetCmd(int argC, char *argV[])
 	cpuReset();
 	return(0);
 }
-#endif // CPU_CLI
 
 // CPU Clock control functions ------------------------------------------------
 // Enable or Disable the CPU/Peripheral clock output to external pin
@@ -73,11 +73,11 @@ void cpuSetOSCHF(CLKCTRL_FRQSEL_t frequency, bool prescalerEnable, CLKCTRL_PDIV_
 }
 
 // Calculate the CPU frequency using the Clock Controller settings. Note: If an external clock is being used, this function will return 0
-uint32_t cpuGetFrequency()
+uint16_t cpuGetFrequency()
 {
 	uint8_t				clkSelect = CLKCTRL.MCLKCTRLA&CLKCTRL_CLKSEL_gm; 	// Get the clock select from the Clock Control Register A
 	uint8_t				pdiv = (CLKCTRL.MCLKCTRLB&CLKCTRL_PDIV_gm)>>CLKCTRL_PDIV_gp;
-	uint32_t			freq = 0;
+	uint16_t			freq = 0;
 	
 	// If internal HF clock is enabled...
 	if(clkSelect == CLKCTRL_CLKSEL_OSCHF_gc)
@@ -91,12 +91,12 @@ uint32_t cpuGetFrequency()
 	// Else if the internal or external 32KHz clock is enabled...
 	else if(clkSelect == CLKCTRL_CLKSEL_OSC32K_gc || clkSelect == CLKCTRL_CLKSEL_XOSC32K_gc)
 	{
-		freq = 32000;
+		freq = 32;
 	}
 	
 	// Factor the prescaler divisor
 	if((CLKCTRL.MCLKCTRLB&CLKCTRL_PEN_bp) && (pdiv<=sizeof(divisor)))
-		freq = freq/divisor[pdiv];
+		freq = freq/(uint16_t)divisor[pdiv];
 	
 	return(freq);
 }
