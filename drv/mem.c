@@ -22,7 +22,8 @@
 // Includes -------------------------------------------------------------------
 #include "../avrOS.h"
 
-// Internal function prototypes ----------------------------------------------
+// Globals --------------------------------------------------------------------
+static uint8_t fillPattern[] = {0xde,0xad,0xbe,0xef};
 
 // CLI Commands ---------------------------------------------------------------
 #ifdef MEM_CLI
@@ -49,24 +50,7 @@ int romCmd(int argc, char *argv[])
 }
 #endif // MEM_CLI
 
-// Internal Functions --------------------------------------------------------
-
 // External Functions ---------------------------------------------------------
-static uint8_t fillPattern[] = {0xde,0xad,0xbe,0xef};
-
-// Return the whole portion of the percentage representing the ratio provided
-int percentWhole(uint32_t den, uint32_t div)
-{
-	return((int)(den*100/div));
-}
-
-// Return the digits right of the decimal point of the percentage representing
-// the ratio provided (Who needs bloated floating point libs?)
-int percentPlaces(uint32_t den, uint32_t div)
-{
-	return((int)((den*100%div)*100/div));
-}
-
 // Fill the stack area of RAM with a pattern so we can detect a max size for the stack
 void memStackFill()
 {

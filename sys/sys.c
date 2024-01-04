@@ -151,13 +151,17 @@ bool sysInit()
 	// Initialize the fsm scheduler
 	fsmInit();
 	
-//	logRom();
-//	logNewLine();
-//	fioBusyWaitOutput(stderr);
-//	logRam();
-//	fioBusyWaitOutput(stderr);
+	uint32_t memProgRom = memProgramRomSize();
+	uint16_t memProgRomUsed = memTextSize();
+	uint16_t memConstRom = memConstRomSize();
+	uint16_t memConstRomUsed = memRodataSize()+memOsTableSize();
+	uint16_t memRam = memRamSize();
+	uint16_t memRamUsed = memDataSize()+memHeapSize();
 	INFO("CPU clock %d MHz",cpuGetFrequency()/1000);	
 	INFO("Start sys tick %u Hz",SYS_TICK_FREQ);
+	INFO("Program ROM used: %2d.%02d%%",percentWhole(memProgRomUsed,memProgRom),percentPlaces(memProgRomUsed,memProgRom));
+	INFO("Const ROM used: %2d.%02d%%",percentWhole(memConstRomUsed,memConstRom),percentPlaces(memConstRomUsed,memConstRom));
+	INFO("RAM used: %2d.%02d%%",percentWhole(memRamUsed,memRam),percentPlaces(memRamUsed,memRam));
 
 	return(true);
 }

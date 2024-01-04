@@ -88,11 +88,18 @@
 #define ROM_STR_G(var_name,str)			char const var_name[] PROGMEM = {str}
 
 
-// External globals ***********************************************************
-//extern const char newLine;
-//extern char const winContextStr[], srlContextStr[];
+// Inline functions *********************************************************
+// Return the whole portion of the percentage representing the ratio provided
+static inline int percentWhole(uint32_t den, uint32_t div)
+{
+	return((int)(den*100/div));
+}
 
-// External functions *********************************************************
-//extern uint16_t freeRam(void);
+// Return the digits right of the decimal point of the percentage representing
+// the ratio provided (Who needs bloated floating point libs?)
+static inline int percentPlaces(uint32_t den, uint32_t div)
+{
+	return((int)((den*100%div)*100/div));
+}
 
 #endif /* AVROS_H_ */
