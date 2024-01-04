@@ -37,6 +37,7 @@ static char initString[] = {"Init"};
 volatile static fsmStateMachine_t* fsmGetStateMachine(const char *name);
 static int fsmLstAdd(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm);
 static int fsmLstRemove(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm);
+static bool fsmListFind(volatile fsmStateMachine_t *list, volatile fsmStateMachine_t *sm);
 static void fsmLstPrint(FILE *file, volatile fsmStateMachine_t *list);
 static void initTablePrint(FILE *file);
 
@@ -45,34 +46,47 @@ static void initTablePrint(FILE *file);
 ADD_COMMAND("fsm",fsmCmd,true);
 static int fsmCmd(int argc, char *argv[])
 {
-	// The UNUSED macro prevents the compiler from warning about unused variables
-	// Include these only if the function does not use the argc and argv parameters
-	UNUSED(argc);
-	UNUSED(argv);
+	int ret = 0;
 
-	printf(BOLD UNDERLINE FG_BLUE "Device Initializers:\n\r" RESET);
-	initTablePrint(stdout);
-	
-	printf(BOLD UNDERLINE FG_BLUE "Ready Queue:\n\r" RESET);
-	fsmLstPrint(stdout, Ready);
-	printf(BOLD UNDERLINE FG_BLUE "Wait Queue:\n\r" RESET);
-	fsmLstPrint(stdout, Wait);
-	printf(BOLD UNDERLINE FG_BLUE "Stopped Queue:\n\r" RESET);
-	fsmLstPrint(stdout, Stopped);
-
-	// Walk the table of state machines
-/*	fsmStateMachineDescr_t *descr = (fsmStateMachineDescr_t *)&__start_FSM_TABLES;
-	for(; descr < (fsmStateMachineDescr_t *)&__stop_FSM_TABLES; ++descr)
+	if(argc == 1)
 	{
-		// If no State Machine given, or the specified State Machine is this one...
-		if(argc<2 || (argc==2 && !strcmp(descr->name,argv[1])))
+		printf(BOLD UNDERLINE FG_BLUE "Device Initializers:\n\r" RESET);
+		initTablePrint(stdout);
+		
+		printf(BOLD UNDERLINE FG_BLUE "Ready Queue:\n\r" RESET);
+		fsmLstPrint(stdout, Ready);
+		printf(BOLD UNDERLINE FG_BLUE "Wait Queue:\n\r" RESET);
+		fsmLstPrint(stdout, Wait);
+		printf(BOLD UNDERLINE FG_BLUE "Stopped Queue:\n\r" RESET);
+		fsmLstPrint(stdout, Stopped);
+	}
+	else if((argc == 2) && (argv[1] != NULL))
+	{
+		volatile fsmStateMachine_t *stateMachine = fsmGetStateMachine(argv[1]);
+		
+		if(stateMachine!=NULL)
 		{
-			// Display the State Machine Name
-			printf("State Machine: %s\n\r",descr->name);
+			printf(BOLD UNDERLINE FG_BLUE "%-20s Priority:%4d Instance: %s\n\r" RESET,	stateMachine->stateMachineDescr->name,
+																					stateMachine->stateMachineDescr->priority,
+																					stateMachine->stateMachineDescr->instance!=NULL?"Yes":"No");
+			printf("Prev State: %-20s Curr State: %-20s Next State: %-20s\n\r",	stateMachine->prevStateName,
+																				stateMachine->currStateName,
+																				stateMachine->nextStateName);
+			printf("Initial State: %s Ticks: %7lu\n\r",stateMachine->initialCall==true?"Yes":"No",stateMachine->ticks);
+			printf("Run State: ");
+			if(fsmListFind(Ready,stateMachine) == true)
+				printf("Ready");
+			else if(fsmListFind(Wait,stateMachine) == true)
+				printf("Waiting");
+			else if(fsmListFind(Stopped,stateMachine) == true)
+				printf("Stopped");
+			printf("\n\r");
 		}
-	}*/
+		else
+			ret = -1;
+	}
 
-	return(0);
+	return(ret);
 }
 
 ADD_COMMAND("fsmStop",fsmStopCmd);
@@ -97,10 +111,24 @@ static int fsmStartCmd(int argc, char *argv[])
   {
     volatile fsmStateMachine_t	*stateMachine = fsmGetStateMachine(argv[1]);
 	
-    if(stateMachine->currState == NULL && stateMachine != NULL)
+    if(stateMachine != NULL)
+		return(fsmReady(stateMachine));
+  }
+  return(-1);
+}
+
+ADD_COMMAND("fsmReset",fsmResetCmd);
+static int fsmResetCmd(int argc, char *argv[])
+{
+  // If command line includes a name of a state machine...
+  if((argc == 2) && (argv[1] != NULL))
+  {
+    volatile fsmStateMachine_t	*stateMachine = fsmGetStateMachine(argv[1]);
+	
+    if(stateMachine != NULL)
 	{
-		fsmHandler_t init = stateMachine->stateMachineDescr->handler.fsmHandler;
-    	return(fsmSetNextState(stateMachine,init));
+		stateMachine->nextState = stateMachine->stateMachineDescr->handler.fsmHandler;
+		return(0);
 	}
   }
   return(-1);
@@ -209,6 +237,16 @@ static int fsmLstRemove(volatile fsmStateMachine_t **list, volatile fsmStateMach
 	return(ret);
 }
 
+static bool fsmListFind(volatile fsmStateMachine_t *list, volatile fsmStateMachine_t *stateMachine)
+{
+	while(list)
+	{
+		if(list == stateMachine)
+			return(true);
+		list = list->next;
+	}
+	return(false);
+}
 static void fsmLstPrint(FILE *file, volatile fsmStateMachine_t *list)
 {
 	volatile fsmStateMachine_t *curr = list;
@@ -416,6 +454,10 @@ int fsmReady(volatile fsmStateMachine_t *stateMachine)
 	{
 		if(!(ret = fsmLstRemove(&Wait,stateMachine)))
 			fsmLstAdd(&Ready,stateMachine);
+		else if(!(ret = fsmLstRemove(&Stopped,stateMachine)))
+			fsmLstAdd(&Ready,stateMachine);
+		else
+			ret = -1;
 	} // End critical section
 	
 	return(ret);
