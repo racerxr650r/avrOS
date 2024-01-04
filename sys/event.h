@@ -64,8 +64,8 @@ typedef struct EVENT_TYPE
 	evntType_t        				type, filter;
 	volatile fsmStateMachine_t 		*stateMachine;
 	evntHandler_t     				handler;
-	const struct EVENT_DESCR_TYPE 	*descr;
 #ifdef EVNT_STATS
+	const struct EVENT_DESCR_TYPE 	*descr;
 	evntStats_t       	stats;
 #endif
 }event_t;
@@ -85,15 +85,8 @@ typedef struct EVENT_DESCR_TYPE
 #else
 #define ADD_EVENT(evntName)	\
 		volatile static event_t	evntName; \
-		const static evntDescriptor_t SECTION(EVNT_TABLE) CONCAT(evntName,_descr) = {.name = #evntName, .status = &evntName}; \
-		volatile static event_t	evntName = {.type = EVENT_TYPE_NONE, .filter = EVENT_TYPE_ALL, .stateMachine = NULL, .handler = NULL, .descr = &CONCAT(evntName,_descr)};
+		volatile static event_t	evntName = {.type = EVENT_TYPE_NONE, .filter = EVENT_TYPE_ALL, .stateMachine = NULL, .handler = NULL};
 #endif
-
-// Inline functions ------------------------------------------------------------
-inline const char* evntGetName(volatile event_t *event)
-{
-	return(event->descr->name);
-}
 
 // External Functions ----------------------------------------------------------
 volatile event_t* evntGetEvent(char *name);

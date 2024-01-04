@@ -98,12 +98,14 @@ static void isrUsartRXC(UART_t *uart)
     
     if(error == USART_RXCIF_bm)
     {
-        bool queued = quePutByte(uart->rxQueue,uart->usartRegs->RXDATAL);
 #ifdef UART_STATS
+        bool queued = quePutByte(uart->rxQueue,uart->usartRegs->RXDATAL);
         if(queued)
             ++uart->stats->rxBytes;
         else
             ++uart->stats->rxQueueOverflow;
+#else
+        quePutByte(uart->rxQueue,uart->usartRegs->RXDATAL);
 #endif
     }
 #ifdef UART_STATS
@@ -372,10 +374,12 @@ uint8_t uartRxCapacity(const UART_t *uart)
     return(queGetCapacity(uart->rxQueue));
 }
 
+//#ifdef QUE_STATS
 uint8_t uartRxMax(const UART_t *uart)
 {
     return(queGetMaxSize(uart->rxQueue));
 }
+//#endif
 
 bool uartTxEmpty(const UART_t *uart)
 {
@@ -397,10 +401,12 @@ uint8_t uartTxCount(const UART_t *uart)
     return(queGetCapacity(uart->txQueue));
 }
 
+//#ifdef QUE_STATS
 uint8_t uartTxMax(const UART_t *uart)
 {
     return(queGetMaxSize(uart->txQueue));
 }
+//#endif
 
 char* uartName(const UART_t *uart)
 {

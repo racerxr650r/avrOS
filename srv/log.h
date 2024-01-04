@@ -32,16 +32,9 @@ typedef struct
 				static FILE logFile; \
 				const static logInstance_t logName = { .name = #logName, .outFile = &logFile }; \
 				ADD_INITIALIZER(logName, logInit, (void *)&logName);
-//                ADD_STATE_MACHINE(logName ## _SM,logInit,FSM_SYS | 0x01, (void *)&logName);
-		
 
 // LOG message macros ---------------------------------------------------------
-#if LOG_FORMAT == 0
-#define INFO(...)
-#define WARN(...)
-#define ERROR(...)
-#define CRITICAL(...)
-#elif LOG_FORMAT == 1
+#if LOG_FORMAT == 1
 #define INFO(fmt_str,...)	do{\
 	fprintf(stderr,FG_GREEN BOLD "\n\r%s: " RESET,"INFO"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \

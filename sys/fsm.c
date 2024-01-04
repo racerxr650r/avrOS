@@ -43,10 +43,6 @@ static void initTablePrint(FILE *file);
 // CLI Commands ---------------------------------------------------------------
 #ifdef FSM_CLI
 ADD_COMMAND("fsm",fsmCmd,true);
-ADD_COMMAND("fsmStop",fsmStopCmd);
-ADD_COMMAND("fsmStart",fsmStartCmd);
-#endif // FSM_CLI
-
 static int fsmCmd(int argc, char *argv[])
 {
 	// The UNUSED macro prevents the compiler from warning about unused variables
@@ -79,6 +75,7 @@ static int fsmCmd(int argc, char *argv[])
 	return(0);
 }
 
+ADD_COMMAND("fsmStop",fsmStopCmd);
 static int fsmStopCmd(int argc, char *argv[])
 {
 	// If command line includes a name of a state machine...
@@ -92,6 +89,7 @@ static int fsmStopCmd(int argc, char *argv[])
 	return(-1);
 }
 
+ADD_COMMAND("fsmStart",fsmStartCmd);
 static int fsmStartCmd(int argc, char *argv[])
 {
   // If command line includes a name of a state machine...
@@ -107,6 +105,7 @@ static int fsmStartCmd(int argc, char *argv[])
   }
   return(-1);
 }
+#endif // FSM_CLI
 
 // Internal Functions ----------------------------------------------------------
 static int fsmLstAdd(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm)
@@ -219,7 +218,8 @@ static void fsmLstPrint(FILE *file, volatile fsmStateMachine_t *list)
 	else
 		while(curr)
 		{
-			fprintf(file, "\t%-20sPriority:%4d Ticks:%6lu\n\r", curr->stateMachineDescr->name, curr->stateMachineDescr->priority,curr->ticks);
+			fprintf(file, "\t%-20s", curr->stateMachineDescr->name);
+			fprintf(file, "Priority:%4d Ticks:%6lu\n\r", curr->stateMachineDescr->priority,curr->ticks);
 			curr = curr->next;
 		}
 }
@@ -325,11 +325,7 @@ bool fsmIsInitialCall()
 // Get the name of the current state machine state
 const char* fsmGetCurrentStateName(volatile fsmStateMachine_t *stateMachine)
 {
-#ifdef FSM_STATS
 	return(stateMachine->currStateName);
-#else
-	return(NULL);
-#endif
 }
 
 // Get pointer to the current state machine state (function)
@@ -341,11 +337,7 @@ fsmHandler_t fsmGetCurrentState(volatile fsmStateMachine_t *stateMachine)
 // Get the name of the previous state machine state
 const char* fsmGetPreviousStateName(volatile fsmStateMachine_t *stateMachine)
 {
-#ifdef FSM_STATS
 	return(stateMachine->prevStateName);
-#else
-	return(NULL);
-#endif
 }
 
 // Get pointer to the previous state
@@ -374,9 +366,7 @@ int fsmSetNextStateVerbose(volatile fsmStateMachine_t *stateMachine,
 	if(stateMachine)
 	{
 		stateMachine->nextState = handler;
-#ifdef FSM_STATS
 		stateMachine->nextStateName = name;
-#endif
 	}
 	else
 		return(-1);
@@ -491,11 +481,9 @@ void fsmDispatch(void)
 				currStateMachine->currState = currStateMachine->nextState;
 				currStateMachine->nextState = NULL;
 				currStateMachine->initialCall = true;
-#ifdef FSM_STATS
 				currStateMachine->prevStateName = currStateMachine->currStateName;
 				currStateMachine->currStateName = currStateMachine->nextStateName;
 				currStateMachine->nextStateName = NULL;
-#endif
 			}
 
 			// If the current state is valid..

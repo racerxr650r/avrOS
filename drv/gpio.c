@@ -79,8 +79,6 @@ static void isrInput(PORT_t *port)
 // Command Line Interface -----------------------------------------------------
 #ifdef GPIO_CLI
 ADD_COMMAND("gpio",gpioCmd,true);
-#endif
-
 static int gpioCmd(int argc, char *argv[])
 {
 	int ret = -1;
@@ -112,10 +110,7 @@ static int gpioCmd(int argc, char *argv[])
 	return(ret);
 }
 
-#ifdef GPIO_CLI
 ADD_COMMAND("gpioSet",gpioSetCmd);
-#endif
-
 static int gpioSetCmd(int argc, char *argv[])
 {
 	int ret = -1;
@@ -137,10 +132,7 @@ static int gpioSetCmd(int argc, char *argv[])
 	return(ret);
 }
 
-#ifdef GPIO_CLI
 ADD_COMMAND("gpioClr",gpioClrCmd);
-#endif
-
 static int gpioClrCmd(int argc, char *argv[])
 {
 	int ret = -1;
@@ -162,10 +154,7 @@ static int gpioClrCmd(int argc, char *argv[])
 	return(ret);
 }
 
-#ifdef GPIO_CLI
 ADD_COMMAND("gpioTgl",gpioTglCmd);
-#endif
-
 static int gpioTglCmd(int argc, char *argv[])
 {
 	int ret = -1;
@@ -187,10 +176,7 @@ static int gpioTglCmd(int argc, char *argv[])
 	return(ret);
 }
 
-#ifdef GPIO_CLI
 ADD_COMMAND("gpioWrOut",gpioWrCmd);
-#endif
-
 static int gpioWrCmd(int argc, char *argv[])
 {
 	int ret = -1;
@@ -212,10 +198,7 @@ static int gpioWrCmd(int argc, char *argv[])
 	return(ret);
 }
 
-#ifdef GPIO_CLI
 ADD_COMMAND("gpioRdIn",gpioRdInCmd,true);
-#endif
-
 static int gpioRdInCmd(int argc, char *argv[])
 {
 	int ret = -1;
@@ -237,10 +220,7 @@ static int gpioRdInCmd(int argc, char *argv[])
 	return(ret);
 }
 
-#ifdef GPIO_CLI
 ADD_COMMAND("gpioRdOut",gpioRdOutCmd);
-#endif
-
 static int gpioRdOutCmd(int argc, char *argv[])
 {
 	int ret = -1;
@@ -261,6 +241,8 @@ static int gpioRdOutCmd(int argc, char *argv[])
 	}
 	return(ret);
 }
+#endif // GPIO_CLI
+
 // Internal functions -------------------------------------------------------------
 
 // Initialize a given gpio port to the given parameters

@@ -27,7 +27,6 @@
 // CLI Commands ---------------------------------------------------------------
 #ifdef MEM_CLI
 ADD_COMMAND("ram",ramCmd,true);
-#endif
 int ramCmd(int argc, char *argv[])
 {
 	UNUSED(argc);
@@ -38,9 +37,7 @@ int ramCmd(int argc, char *argv[])
 	return(0);
 }
 
-#ifdef MEM_CLI
 ADD_COMMAND("rom",romCmd,true);
-#endif
 int romCmd(int argc, char *argv[])
 {
 	UNUSED(argc);
@@ -50,6 +47,7 @@ int romCmd(int argc, char *argv[])
 	
 	return(0);
 }
+#endif // MEM_CLI
 
 // Internal Functions --------------------------------------------------------
 
@@ -154,8 +152,6 @@ void memRamStatus(FILE *file)
 	fprintf(file,BOLD FG_BLUE "       data:" RESET " %6u (%2d.%02d%%)\n\r",memData,percentWhole(memData,memRam),percentPlaces(memData,memRam));
 	fprintf(file,BOLD FG_BLUE "       heap:" RESET " %6u (%2d.%02d%%)\n\r",memHeap,percentWhole(memHeap,memRam),percentPlaces(memHeap,memRam));
 	fprintf(file,BOLD FG_BLUE " curr stack:" RESET " %6u (%2d.%02d%%)\n\r",memStack,percentWhole(memStack,memRam),percentPlaces(memStack,memRam));
-#ifdef MEM_STATS
 	fprintf(file,BOLD FG_BLUE "  max stack:" RESET " %6u (%2d.%02d%%)\n\r",memStackMax,percentWhole(memStackMax,memRam),percentPlaces(memStackMax,memRam));
-#endif	
 	fprintf(file,BOLD FG_BLUE "       free:" RESET " %6u (%2d.%02d%%)\n\r",memFree,percentWhole(memFree,memRam),percentPlaces(memFree,memRam));
 }

@@ -5,9 +5,10 @@
 # targets:
 #   all:       compiles the source code
 #   test:      tests the isp connection to the mcu
+#   terminal:  opens an avrdude terminal connected to the MCU
 #   flash:     writes compiled elf file to the mcu's flash memory
 #   fuses:     writes the fuse bytes to the MCU
-#   lock_bits: 
+#   lock_bits: writes the lock_bits register
 #   disasm:    disassembles the code for debugging
 #   clean:     removes all .hex, .elf, and .o files in the source code and library directories
 
@@ -23,15 +24,9 @@ CLK = 24000000
 # The current programmer if the Atmel ICE w/UPDI interface
 PRG = serialupdi -P /dev/ttyAMA2
 #PRG = serialupdi -P /dev/ttyUSB2
-# fuse values for avr: low, high, and extended
-# these values are from an Arduino Uno (ATMega328P)
-# see http://www.engbedded.com/fusecalc/ for other MCUs and options
-LFU = 0xFF
-HFU = 0xDE
-EFU = 0x05
 # program source files (not including external libraries)
 SRC = $(PRJ).c
-# Device Family Pack directory
+# Device Family Pack directory (update this if you update the DFP)
 DFP = /usr/lib/gcc/avr/5.4.0/Atmel.AVR-Dx_DFP.2.2.253
 # where to look for external libraries (consisting of .c/.cpp files and .h files)
 # e.g. EXT = ../../EyeToSee ../../YouSART

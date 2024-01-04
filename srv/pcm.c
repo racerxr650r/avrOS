@@ -27,9 +27,6 @@ static uint8_t *pcmData, pcmRLEValue;
 static uint16_t pcmLength = 0, pcmRLECount;
 static uint32_t	pcmDelay = 0;
 
-// OS Objects -----------------------------------------------------------------
-ADD_TIMER(pcmTimer);
-
 // PCM State Machine ----------------------------------------------------------
 #ifdef PCM_SERVICE
 // Create instance of the pcm state machine

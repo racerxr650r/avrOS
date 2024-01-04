@@ -155,7 +155,30 @@ typedef struct
 				const static UART_t SECTION(UART_TABLE) usartName = { .name = #usartName, .file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = (uartBaud/100), .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = NULL, .rxQueue = NULL, .stats = &CONCAT(usartName,_stats)}; \
 				ADD_INITIALIZER(usartName,uartInit,(void *)&usartName);
 #else
-#define ADD_UART(usartReg, txQueue, rxQueue)	const static UART_t SECTION(UART_TABLE) uartName = { .usart = &usartReg, .txQueue = &txQueue, .rxQueue = &rxQueue};
+#define ADD_UART_RW(usartName, usartReg, uartBaud, uartParity, uartDataBits, uartStopBits, txQueueSize, rxQueueSize) \
+				ADD_QUEUE(usartName ## _TxQue,sizeof(uint8_t),txQueueSize); \
+				ADD_QUEUE(usartName ## _RxQue,sizeof(uint8_t),rxQueueSize); \
+				const static UART_t SECTION(UART_TABLE) usartName; \
+				const static fioBuffers_t CONCAT(usartName,_buffers) = {.input = &CONCAT(usartName,_RxQue), .output = &CONCAT(usartName,_TxQue)}; \
+				static FILE CONCAT(usartName,_file) = {.buf = (char *) &CONCAT(usartName,_buffers), .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_RW, .udata = (void *)&usartName }; \
+				const static UART_t SECTION(UART_TABLE) usartName = { file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = (uartBaud/100), .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = &CONCAT(usartName,_TxQue), .rxQueue = &CONCAT(usartName,_RxQue)}; \
+				ADD_INITIALIZER(usartName,uartInit,(void *)&usartName);
+#define ADD_UART_WRITE(usartName, usartReg, uartBaud, uartParity, uartDataBits, uartStopBits, txQueueSize) \
+				ADD_QUEUE(usartName ## _TxQue,sizeof(uint8_t),txQueueSize); \
+				const static UART_t SECTION(UART_TABLE) usartName; \
+				const static fioBuffers_t CONCAT(usartName,_buffers) = {.input = NULL, .output = &CONCAT(usartName,_TxQue)}; \
+				static FILE CONCAT(usartName,_file) = {.buf = (char *) &CONCAT(usartName,_buffers), .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_WRITE, .udata = (void *)&usartName }; \
+				const static UART_t SECTION(UART_TABLE) usartName = { .file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = (uartBaud/100), .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = &CONCAT(usartName,_TxQue), .rxQueue = NULL}; \
+				ADD_INITIALIZER(usartName,uartInit,(void *)&usartName);
+#define ADD_UART_READ(usartName, usartReg, uartBaud, uartParity, uartDataBits, uartStopBits, rxQueueSize) \
+				ADD_QUEUE(usartName ## _RxQue,sizeof(uint8_t),rxQueueSize); \
+				const static UART_t SECTION(UART_TABLE) usartName; \
+				static FILE CONCAT(usartName,_file) = { .put = uartPutChar, .get = uartGetChar, .flags = _FDEV_SETUP_READ, .udata = (void *)&usartName }; \
+				const static UART_t SECTION(UART_TABLE) usartName = { .file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = (uartBaud/100), .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = NULL, .rxQueue = &CONCAT(usartName,_RxQue)}; \
+				ADD_INITIALIZER(usartName,uartInit,(void *)&usartName);
+#define ADD_UART_RAW(usartName, usartReg, uartBaud, uartParity, uartDataBits, uartStopBits) \
+				const static UART_t SECTION(UART_TABLE) usartName = { .file = &CONCAT(usartName,_file), .usartRegs = &usartReg, .baud = (uartBaud/100), .parity = uartParity, .dataBits = uartDataBits, .stopBits = uartStopBits, .txQueue = NULL, .rxQueue = NULL}; \
+				ADD_INITIALIZER(usartName,uartInit,(void *)&usartName);
 #endif
 
 // External Functions ---------------------------------------------------------

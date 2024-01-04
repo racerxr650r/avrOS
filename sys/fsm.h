@@ -68,11 +68,9 @@ typedef int (*initHandler_t)(const struct STATE_MACHINE_DESCR_TYPE *state);
  */
 typedef struct STATE_MACHINE_TYPE
 {
-#ifdef FSM_STATS	
 	const char								*currStateName;
 	const char								*prevStateName;
 	const char								*nextStateName;
-#endif
 	bool									initialCall;		///< Initial call to current state status
 	fsmHandler_t							prevState;			///< Previous state function pointer
 	fsmHandler_t							currState;			///< Current state function pointer
@@ -93,7 +91,6 @@ typedef struct STATE_MACHINE_DESCR_TYPE
 {
 	const char					*name;			///< Name of the state machine
 	volatile fsmStateMachine_t	*stateMachine;	///< Pointer to the state machine status
-//	fsmHandler_t				initHandler;	///< Function pointer to the intial state
 	union
 	{
 		fsmHandler_t 			fsmHandler;
@@ -104,7 +101,6 @@ typedef struct STATE_MACHINE_DESCR_TYPE
 } fsmStateMachineDescr_t;
 
 // Finite State Machine Macros ------------------------------------------------
-#ifdef FSM_STATS
 /**
  * Add state machine to the application
  * 
@@ -113,9 +109,8 @@ typedef struct STATE_MACHINE_DESCR_TYPE
 #define ADD_STATE_MACHINE(stateMachineName, smInitHandler, smPriority, ...)	\
 		int smInitHandler(volatile fsmStateMachine_t *stateMachine); \
 		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr); \
-		volatile fsmStateMachine_t stateMachineName = {.prevState = NULL, .currState = NULL, .nextState = smInitHandler, .stateMachineDescr = &CONCAT(stateMachineName,_descr) }; \
+		volatile fsmStateMachine_t stateMachineName = {.currStateName = NULL, .prevStateName = NULL, .nextStateName = NULL, .initialCall = false, .prevState = NULL, .currState = NULL, .nextState = smInitHandler, .ticks = 0, .next = NULL, .stateMachineDescr = &CONCAT(stateMachineName,_descr)}; \
 		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = &stateMachineName, .handler.fsmHandler = smInitHandler, .priority = smPriority, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
-
 /**
  * Add an initializer to the application
  * 
@@ -129,25 +124,25 @@ typedef struct STATE_MACHINE_DESCR_TYPE
 #define ADD_INITIALIZER(stateMachineName, smHandler, ...)	\
 		int smHandler(const fsmStateMachineDescr_t *stateMachineDescr); \
 		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = NULL, .handler.initHandler = smHandler, .priority = 0, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
-
+// Define fsmSetNextState to use fsmSetNextStateVerbose
 #define fsmSetNextState(stateMachine, stateName) \
 		fsmSetNextStateVerbose(stateMachine, stateName, #stateName)
 
 // !FSM_STATS
-#else
+/*#else
 #define ADD_STATE_MACHINE(stateMachineName, smInitHandler, smPriority, ...)	\
 		int smInitHandler(volatile fsmStateMachine_t *stateMachine); \
 		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr); \
-		volatile fsmStateMachine_t stateMachineName = {.prevState = NULL, .currState = NULL, .nextState = smInitHandler, .stateMachineDescr = &CONCAT(stateMachineName,_descr) }; \
-		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .stateMachine = &stateMachineName, .initHandler = smInitHandler, .priority = smPriority, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
+		volatile fsmStateMachine_t stateMachineName = {.currStateName = NULL, .prevStateName = NULL, .nextStateName = NULL, .initialCall = false, .prevState = NULL, .currState = NULL, .nextState = smInitHandler, .ticks = 0, .next = NULL, .stateMachineDescr = &CONCAT(stateMachineName,_descr)}; \
+		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = &stateMachineName, .handler.fsmHandler = smInitHandler, .priority = smPriority, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
 
 #define ADD_INITIALIZER(stateMachineName, smHandler, ...)	\
 		int smHandler(const fsmStateMachineDescr_t *stateMachineDescr); \
-		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .stateMachine = NULL, .handler.initHandler = smHandler, .priority = 0, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
-
+		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = NULL, .handler.initHandler = smHandler, .priority = 0, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
+// Define fsmSetNextState to use fsmSetNextStateBasic
 #define fsmSetNextState(stateMachine, stateName) \
-		fsmSetNextStateBasic(stateMachine, stateName);
-#endif
+		fsmSetNextStateBasic(stateMachine, stateName)
+#endif*/
 
 // Exported Functions --------------------------------------------------------
 /**----------------------------------------------------------------------------

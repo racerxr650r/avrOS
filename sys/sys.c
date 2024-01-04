@@ -142,10 +142,8 @@ bool sysInit()
 	// Setup the internal CPU clock source
 	cpuSetOSCHF(CPU_SPEED,false,0);
 
-#ifdef MEM_STATS	
 	// Fill the stack area with pattern to detect max stack size
 	memStackFill();
-#endif	
 
 	// Initialize the system tick counter
 	sysInitTick((TCB_t *)SYS_TICK_TIMER, SYS_TICK_FREQ);
@@ -153,11 +151,11 @@ bool sysInit()
 	// Initialize the fsm scheduler
 	fsmInit();
 	
-	logRom();
-	logNewLine();
-	fioBusyWaitOutput(stderr);
-	logRam();
-	fioBusyWaitOutput(stderr);
+//	logRom();
+//	logNewLine();
+//	fioBusyWaitOutput(stderr);
+//	logRam();
+//	fioBusyWaitOutput(stderr);
 	INFO("CPU clock %d MHz",cpuGetFrequency()/1000);	
 	INFO("Start sys tick %u Hz",SYS_TICK_FREQ);
 

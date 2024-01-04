@@ -64,7 +64,6 @@
 						// 4 = info, warning, error, and critical messages
 
 #define LOG_FORMAT	3	// Select the format of the log messages
-						// 0 = no messages
 						// 1 = Level: Message
 						// 2 = System Tick: Level: Message
 						// 3 = System Tick: Level: Curr State Machine: Curr State: Message
@@ -90,15 +89,9 @@
 											  // USART_CHSIZE_9BITH_gc = Character size: 9 bit read high byte first
 #define CLI_STOP_BITS USART_SBMODE_1BIT_gc	  // USART_SBMODE_1BIT_gc = 1 stop bit
 											  // USART_SBMODE_2BIT_gc = 2 stop bits
-// CLI constants
-#define MAX_CMD_LINE    128
-#define MAX_ARGS        16
-#define REPEAT_SWITCH	'r'
-#define CLI_BANNER		CLEAR_SCREEN CURSOR_HOME RESET FG_GREEN BOLD "\r+++| avrOS Command Line Interface |+++" RESET
-
 // Global CLI enable
-#undef CLI
-// Driver/Service CLI command(s)
+#define CLI
+// Enable Driver/Service CLI command(s)
 #ifdef CLI
 #define UART_CLI	// Uart driver CLI commands
 #define QUE_CLI		// Queue service commands
@@ -110,6 +103,12 @@
 #define CPU_CLI		// CPU commands
 #define EVNT_CLI    // Event commands
 #define GPIO_CLI    // GPIO commands
+// Enabling stats also includes string names used by associated CLI commands
+#define FSM_STATS	    // Include string names of state machines and states
+#define UART_STATS		// Calculate and track uart statistics, requires additional RAM and CPU cycles
+#define QUE_STATS		// Calculate and track queue statistics, requires additional RAM and CPU cycles
+#define EVNT_STATS      // Calculate and track event statistics
+#define GPIO_STATS		// Calculate and track GPIO statistics
 #else
 #undef UART_CLI		// Uart driver CLI commands
 #undef QUE_CLI		// Queue service commands
@@ -121,15 +120,18 @@
 #undef CPU_CLI		// CPU commands
 #undef EVNT_CLI		// Event commands
 #undef GPIO_CLI		// GPIO commands
+// Enabling stats also includes string names used by associated CLI commands
+#undef FSM_STATS	    // Include string names of state machines and states
+#undef UART_STATS		// Calculate and track uart statistics, requires additional RAM and CPU cycles
+#undef QUE_STATS		// Calculate and track queue statistics, requires additional RAM and CPU cycles
+#undef EVNT_STATS      // Calculate and track event statistics
+#undef GPIO_STATS		// Calculate and track GPIO statistics
 #endif
 
-// Enable Driver/Service Statistics -------------------------------------------
-// Enabling stats also includes string names used by associated CLI commands
-#define FSM_STATS	    // Include string names of state machines and states
-#define UART_STATS		// Calculate and track uart statistics, requires additional RAM and CPU cycles
-#define QUE_STATS		// Calculate and track queue statistics, requires additional RAM and CPU cycles
-#define MEM_STATS		// Fill the stack region with a pattern to track max stack size
-#define EVNT_STATS      // Calculate and track event statistics
-#define GPIO_STATS		// Calculate and track GPIO statistics
+// CLI constants
+#define MAX_CMD_LINE    128
+#define MAX_ARGS        16
+#define REPEAT_SWITCH	'r'
+#define CLI_BANNER		CLEAR_SCREEN CURSOR_HOME RESET FG_GREEN BOLD "\r+++| avrOS Command Line Interface |+++" RESET
 
 #endif /* AVROSCONFIG_H_ */
