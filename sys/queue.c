@@ -27,8 +27,6 @@ extern void *__start_QUE_TABLE,*__stop_QUE_TABLE;
 // Command line interface -----------------------------------------------------
 #ifdef QUE_CLI
 ADD_COMMAND("que",queCmd,true);
-#endif
-
 static int queCmd(int argc, char *argv[])
 {
 	// Walk the table of queues
@@ -37,19 +35,19 @@ static int queCmd(int argc, char *argv[])
 	{
 		if(argc<2 || (argc==2 && !strcmp(descr->name,argv[1])))
 		{
-			printf("Queue: %s\n\r",descr->name);
-			printf("\tIn:%8lu\tOut:%8lu\tMax:%8lu\n\r",descr->stats->in,descr->stats->out,descr->stats->max);
-			printf("\tOverflow:%8lu\tUnderflow:%8lu\n\r",descr->stats->overflow,descr->stats->underflow);
+			printf(BOLD UNDERLINE FG_BLUE "%-20s Capacity: %8d Max:%8d\n\r" RESET,descr->name,descr->capacity,descr->queue->max);
+			printf("\tIn:%8lu\tOut:%8lu\tOverflow:%8lu\n\r",descr->queue->stats.in,descr->queue->stats.out,descr->queue->stats.overflow);
 		}
 	}
 	return(0);
 }
+#endif // QUE_CLI
 
 // External functions ************************************************
-uint8_t queGetSize(volatile queue_t *que)
+uint16_t queGetSize(volatile queue_t *que)
 {
 	const queDescriptor_t *descr = que->descr;
-	uint8_t			ret;
+	uint16_t			ret;
 	
 	if(queIsEmpty(que))
 		ret = 0;
@@ -80,7 +78,7 @@ bool queGet(volatile queue_t *que, void *element)
 			memcpy(element,&(descr->buffer[que->head*descr->sizeOfElement]),descr->sizeOfElement);
 			// *ch = que->buffer[queue->head];
 #ifdef QUE_STATS
-			++descr->stats->out;
+			++descr->queue->stats.out;
 #endif
 			// If the buffer was previously full...
 			if(que->tail == descr->capacity)
@@ -104,11 +102,6 @@ bool queGet(volatile queue_t *que, void *element)
 
 			ret = true;
 		}
-#ifdef QUE_STATS
-		else
-			++descr->stats->underflow;
-#endif
-		
 	} // End of critical section
 	return(ret);
 }
@@ -131,7 +124,7 @@ bool quePut(volatile queue_t *que, void *element)
 				memcpy(&(descr->buffer[que->tail*descr->sizeOfElement]),element,descr->sizeOfElement);
 				//que->buffer[queue->tail] = ch;
 #ifdef QUE_STATS
-				++descr->stats->in;
+				++descr->queue->stats.in;
 #endif			
 				// If the buffer was previously empty...
 				if(que->head == descr->capacity)
@@ -152,19 +145,17 @@ bool quePut(volatile queue_t *que, void *element)
 					evntTrigger(descr->event, QUE_EVENT_FULL);
 				}
 				
-#ifdef QUE_STATS
 				// If the current capacity of queueue exceeds the previous max, update the max
-				uint8_t	size = queGetSize(que);
-				if(size>descr->stats->max)
-					descr->stats->max = size;
-#endif			
+				uint16_t	size = queGetSize(que);
+				if(size>descr->queue->max)
+					descr->queue->max = size;
 				
 				ret = true;
 			}
 		}
 #ifdef QUE_STATS
 		else
-			++descr->stats->overflow;
+			++descr->queue->stats.overflow;
 #endif
 	} // End of critical section
 	return(ret);

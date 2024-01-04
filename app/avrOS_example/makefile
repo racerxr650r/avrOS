@@ -3,12 +3,14 @@
 # based on the makefile written by michael cousins (http://github.com/mcous)
 
 # targets:
-#   all:    compiles the source code
-#   test:   tests the isp connection to the mcu
-#   flash:  writes compiled hex file to the mcu's flash memory
-#   fuse:   writes the fuse bytes to the MCU
-#   disasm: disassembles the code for debugging
-#   clean:  removes all .hex, .elf, and .o files in the source code and library directories
+#   all:       compiles the source code
+#   test:      tests the isp connection to the mcu
+#   terminal:  opens an avrdude terminal connected to the MCU
+#   flash:     writes compiled elf file to the mcu's flash memory
+#   fuses:     writes the fuse bytes to the MCU
+#   lock_bits: writes the lock_bits register
+#   disasm:    disassembles the code for debugging
+#   clean:     removes all .hex, .elf, and .o files in the source code and library directories
 
 # parameters (change this stuff accordingly)
 # project name
@@ -22,31 +24,19 @@ CLK = 24000000
 # The current programmer if the Atmel ICE w/UPDI interface
 PRG = serialupdi -P /dev/ttyAMA2
 #PRG = serialupdi -P /dev/ttyUSB2
-# fuse values for avr: low, high, and extended
-# these values are from an Arduino Uno (ATMega328P)
-# see http://www.engbedded.com/fusecalc/ for other MCUs and options
-LFU = 0xFF
-HFU = 0xDE
-EFU = 0x05
 # program source files (not including external libraries)
 SRC = $(PRJ).c
-# Device Family Pack directory
+# Device Family Pack directory (update this if you update the DFP)
 DFP = /usr/lib/gcc/avr/5.4.0/Atmel.AVR-Dx_DFP.2.2.253
 # where to look for external libraries (consisting of .c/.cpp files and .h files)
 # e.g. EXT = ../../EyeToSee ../../YouSART
 EXT = ../.. ../../sys ../../drv ../../srv
 # Build directory
 BUILD_DIR = ./build/
-
-
-#################################################################################################
-# \/ stuff nobody needs to worry about until such time that worrying about it is appropriate \/ #
-#################################################################################################
-
 # include path
 INCLUDE := $(foreach dir, $(EXT), -I$(dir))
 # c flags
-CFLAGS    = -Wall -Og -g2 -DDEBUG -mmcu=$(MCU) -B $(DFP)/gcc/dev/$(MCU) -funsigned-char -funsigned-bitfields -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -std=gnu99 -MMD -I$(DFP)/include -I. $(INCLUDE)
+CFLAGS    = -Wall -Wno-unused-function -Og -g2 -DDEBUG -mmcu=$(MCU) -B $(DFP)/gcc/dev/$(MCU) -funsigned-char -funsigned-bitfields -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -std=gnu99 -MMD -I$(DFP)/include -I. $(INCLUDE)
 # any aditional flags for c++
 CPPFLAGS =
 # linker flags
@@ -70,23 +60,35 @@ DEP    = $(OBJ:%.o=%.d)
 
 # user targets
 # compile all files
-all: build $(BUILD_DIR)$(PRJ).hex 
+all: build $(BUILD_DIR)$(PRJ).elf
 
 # Create the build directory
 build:
 	mkdir -p $(BUILD_DIR)
 
+# Generate the intel hex binary image
+hex: $(BUILD_DIR)$(PRJ).hex
+
 # test programmer connectivity
 test:
 	$(AVRDUDE) -v
 
+# display AVR configuration
+terminal:
+	$(AVRDUDE) -v -t
+
 # flash program to mcu
 flash: all
-	$(AVRDUDE) -U flash:w:$(BUILD_DIR)$(PRJ).hex:i
+	$(AVRDUDE) -U flash:w:$(BUILD_DIR)$(PRJ).elf:e
+#	$(AVRDUDE) -U flash:w:$(BUILD_DIR)$(PRJ).hex:i
 
 # write fuses to mcu
-fuse:
-	$(AVRDUDE) -U lfuse:w:$(LFU):m -U hfuse:w:$(HFU):m -U efuse:w:$(EFU):m
+fuses: all
+	$(AVRDUDE) -U fuses:w:$(BUILD_DIR)$(PRJ).elf:e
+
+# write lock bits to mcu
+lock_bits:
+	$(AVRDUDE) -U lock:w:$(BUILD_DIR)$(PRJ).elf:e
 
 # generate disassembly files for debugging
 disasm: $(PRJ).elf
@@ -107,7 +109,7 @@ clean:
 .c.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# objects from c++ files
+# objects from c files
 $(BUILD_DIR)%.o : %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 

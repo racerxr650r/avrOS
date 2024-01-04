@@ -32,6 +32,7 @@
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include <util/atomic.h>
+#include <avr/sleep.h>
 
 // Constants *******************************************************************
 #define AVRSMOS_OS
@@ -49,7 +50,6 @@
 #include "sys/fsm.h"
 #include "sys/event.h"
 #include "sys/queue.h"
-#include "sys/tmr.h"
 #include "srv/log.h"
 #include "sys/fio.h"
 

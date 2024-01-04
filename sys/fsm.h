@@ -68,15 +68,14 @@ typedef int (*initHandler_t)(const struct STATE_MACHINE_DESCR_TYPE *state);
  */
 typedef struct STATE_MACHINE_TYPE
 {
-#ifdef FSM_STATS	
-	const char									*currStateName;
-	const char									*prevStateName;
-	const char									*nextStateName;
-#endif
+	const char								*currStateName;
+	const char								*prevStateName;
+	const char								*nextStateName;
 	bool									initialCall;		///< Initial call to current state status
 	fsmHandler_t							prevState;			///< Previous state function pointer
 	fsmHandler_t							currState;			///< Current state function pointer
 	fsmHandler_t							nextState;			///< Next state function pointer
+	uint32_t								ticks;				///< Tick count for system tick wait
 	volatile struct STATE_MACHINE_TYPE    	*next;				///< Next pointer used for the SM queues
 	const struct STATE_MACHINE_DESCR_TYPE 	*stateMachineDescr;	///< Pointer to the state machine descriptor
 } fsmStateMachine_t;
@@ -92,7 +91,6 @@ typedef struct STATE_MACHINE_DESCR_TYPE
 {
 	const char					*name;			///< Name of the state machine
 	volatile fsmStateMachine_t	*stateMachine;	///< Pointer to the state machine status
-//	fsmHandler_t				initHandler;	///< Function pointer to the intial state
 	union
 	{
 		fsmHandler_t 			fsmHandler;
@@ -103,7 +101,6 @@ typedef struct STATE_MACHINE_DESCR_TYPE
 } fsmStateMachineDescr_t;
 
 // Finite State Machine Macros ------------------------------------------------
-#ifdef FSM_STATS
 /**
  * Add state machine to the application
  * 
@@ -112,9 +109,8 @@ typedef struct STATE_MACHINE_DESCR_TYPE
 #define ADD_STATE_MACHINE(stateMachineName, smInitHandler, smPriority, ...)	\
 		int smInitHandler(volatile fsmStateMachine_t *stateMachine); \
 		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr); \
-		volatile fsmStateMachine_t stateMachineName = {.prevState = NULL, .currState = NULL, .nextState = smInitHandler, .stateMachineDescr = &CONCAT(stateMachineName,_descr) }; \
+		volatile fsmStateMachine_t stateMachineName = {.currStateName = NULL, .prevStateName = NULL, .nextStateName = NULL, .initialCall = false, .prevState = NULL, .currState = NULL, .nextState = smInitHandler, .ticks = 0, .next = NULL, .stateMachineDescr = &CONCAT(stateMachineName,_descr)}; \
 		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = &stateMachineName, .handler.fsmHandler = smInitHandler, .priority = smPriority, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
-
 /**
  * Add an initializer to the application
  * 
@@ -128,25 +124,25 @@ typedef struct STATE_MACHINE_DESCR_TYPE
 #define ADD_INITIALIZER(stateMachineName, smHandler, ...)	\
 		int smHandler(const fsmStateMachineDescr_t *stateMachineDescr); \
 		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = NULL, .handler.initHandler = smHandler, .priority = 0, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
-
+// Define fsmSetNextState to use fsmSetNextStateVerbose
 #define fsmSetNextState(stateMachine, stateName) \
 		fsmSetNextStateVerbose(stateMachine, stateName, #stateName)
 
 // !FSM_STATS
-#else
+/*#else
 #define ADD_STATE_MACHINE(stateMachineName, smInitHandler, smPriority, ...)	\
 		int smInitHandler(volatile fsmStateMachine_t *stateMachine); \
 		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr); \
-		volatile fsmStateMachine_t stateMachineName = {.prevState = NULL, .currState = NULL, .nextState = smInitHandler, .stateMachineDescr = &CONCAT(stateMachineName,_descr) }; \
-		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .stateMachine = &stateMachineName, .initHandler = smInitHandler, .priority = smPriority, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
+		volatile fsmStateMachine_t stateMachineName = {.currStateName = NULL, .prevStateName = NULL, .nextStateName = NULL, .initialCall = false, .prevState = NULL, .currState = NULL, .nextState = smInitHandler, .ticks = 0, .next = NULL, .stateMachineDescr = &CONCAT(stateMachineName,_descr)}; \
+		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = &stateMachineName, .handler.fsmHandler = smInitHandler, .priority = smPriority, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
 
 #define ADD_INITIALIZER(stateMachineName, smHandler, ...)	\
 		int smHandler(const fsmStateMachineDescr_t *stateMachineDescr); \
-		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .stateMachine = NULL, .handler.initHandler = smHandler, .priority = 0, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
-
+		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = NULL, .handler.initHandler = smHandler, .priority = 0, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
+// Define fsmSetNextState to use fsmSetNextStateBasic
 #define fsmSetNextState(stateMachine, stateName) \
-		fsmSetNextStateBasic(stateMachine, stateName);
-#endif
+		fsmSetNextStateBasic(stateMachine, stateName)
+#endif*/
 
 // Exported Functions --------------------------------------------------------
 /**----------------------------------------------------------------------------
@@ -247,7 +243,7 @@ int fsmSetNextStateVerbose(volatile fsmStateMachine_t *stateMachine,	///< [in] P
  * walks the const table of state machines and builds the ready queue for first
  * call of fsmDispatch() in the application main loop.
  */
-void	fsmInit();
+void fsmInit();
 /**----------------------------------------------------------------------------
  * Move the given state machine to the ready queue
  *
@@ -255,7 +251,7 @@ void	fsmInit();
  * the finite state machine manager. The ready queue contains the state
  * machines that are ready to the be scheduled (called)
  */
-int		fsmReady(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
+int	fsmReady(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
 /**----------------------------------------------------------------------------
  * Move the given state machine to the wait queue
  * 
@@ -263,7 +259,7 @@ int		fsmReady(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to st
  * finite state machine manager. The wait queue contains state machines that
  * are waiting on a timer or event
  */
-int		fsmWait(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
+int	fsmWait(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
 /**----------------------------------------------------------------------------
  * Move the given state machine to the stopped queue
  * 
@@ -272,7 +268,22 @@ int		fsmWait(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to sta
  * that have stopped execution. These state machines will not run again, unless
  * fsmReady() is called for that state machine
  */
-int		fsmStop(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
+int	fsmStop(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
+/**----------------------------------------------------------------------------
+ * Update the state machines in the wait queue wating on the system timer
+ * 
+ */
+void fsmUpdateWaitTicks();								///< [in] Pointer to state machine
+/**----------------------------------------------------------------------------
+ * Set the state machine to sit in the wait queue for x ticks
+ * 
+ */
+void fsmWaitTicks(volatile fsmStateMachine_t*stateMachine, uint32_t ticks);	///< [in] Pointer to state machine
+/**----------------------------------------------------------------------------
+ * Set the state machine to sit in the wait queue for x milliseconds
+ * 
+ */
+void fsmWaitMilliseconds(volatile fsmStateMachine_t*stateMachine, uint16_t ms);	///< [in] Pointer to state machine
 /**----------------------------------------------------------------------------
  * Execute the state machines in the ready queue
  * 

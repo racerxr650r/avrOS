@@ -29,17 +29,12 @@ typedef struct
 
 // Add a log instance macro
 #define ADD_LOG(logName, logFile) \
-                const static logInstance_t logName = { .name = #logName, .outFile = logFile }; \
-                ADD_STATE_MACHINE(logName ## _SM,logInit,FSM_SYS | 0x01, (void *)&logName);
-        
+				static FILE logFile; \
+				const static logInstance_t logName = { .name = #logName, .outFile = &logFile }; \
+				ADD_INITIALIZER(logName, logInit, (void *)&logName);
 
 // LOG message macros ---------------------------------------------------------
-#if LOG_FORMAT == 0
-#define INFO(...)
-#define WARN(...)
-#define ERROR(...)
-#define CRITICAL(...)
-#elif LOG_FORMAT == 1
+#if LOG_FORMAT == 1
 #define INFO(fmt_str,...)	do{\
 	fprintf(stderr,FG_GREEN BOLD "\n\r%s: " RESET,"INFO"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
@@ -53,64 +48,64 @@ typedef struct
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define CRITICAL(fmt_str,...)	do{\
-	fprintf(stderr,FG_WHITE BG_RED BOLD "\n\r%s: " RESET,sysGetTick(),"CRIT"); \
+	fprintf(stderr,FG_WHITE BG_RED BOLD "\n\r%s: " RESET,sysGetTickCount(),"CRIT"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 	fprintf(stderr,FG_WHITE BG_RED BOLD BLINKING "\n\r+++ System Stopped +++" RESET); \
 	while(1);\
 }while(0)
 #elif LOG_FORMAT == 2
 #define INFO(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s: ",sysGetTick(),"INFO"); \
+	fprintf(stderr,"\n\r%lu:%s: ",sysGetTickCount(),"INFO"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define WARN(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s: ",sysGetTick(),"WARN"); \
+	fprintf(stderr,"\n\r%lu:%s: ",sysGetTickCount(),"WARN"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define ERROR(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s: ",sysGetTick(),"ERR "); \
+	fprintf(stderr,"\n\r%lu:%s: ",sysGetTickCount(),"ERR "); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define CRITICAL(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s: ",sysGetTick(),"CRIT"); \
+	fprintf(stderr,"\n\r%lu:%s: ",sysGetTickCount(),"CRIT"); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 	fprintf(stderr,"\n\r+++ System Stopped +++"); \
 	while(1);\
 }while(0)
 #elif LOG_FORMAT == 3
 #define INFO(fmt_str,...)	do{\
-	fprintf(stderr,FG_GREEN BOLD "\n\r%lu:%s:%s:%s: " RESET,sysGetTick(),"INFO",fsmGetCurrentStateMachineName(),fsmGetCurrentStateName(fsmGetCurrentStateMachine())); \
+	fprintf(stderr,FG_GREEN BOLD "\n\r%lu:%s:%s:%s: " RESET,sysGetTickCount(),"INFO",fsmGetCurrentStateMachineName(),fsmGetCurrentStateName(fsmGetCurrentStateMachine())); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define WARN(fmt_str,...)	do{\
-	fprintf(stderr,FG_ORANGE BOLD "\n\r%lu:%s:%s:%s: " RESET,sysGetTick(),"WARN",fsmGetCurrentStateMachineName(),fsmGetCurrentStateName(fsmGetCurrentStateMachine())); \
+	fprintf(stderr,FG_ORANGE BOLD "\n\r%lu:%s:%s:%s: " RESET,sysGetTickCount(),"WARN",fsmGetCurrentStateMachineName(),fsmGetCurrentStateName(fsmGetCurrentStateMachine())); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define ERROR(fmt_str,...)	do{\
-	fprintf(stderr,FG_RED BOLD "\n\r%lu:%s:%s:%s: " RESET,sysGetTick(),"ERR ",fsmGetCurrentStateMachineName(),fsmGetCurrentStateName(fsmGetCurrentStateMachine())); \
+	fprintf(stderr,FG_RED BOLD "\n\r%lu:%s:%s:%s: " RESET,sysGetTickCount(),"ERR ",fsmGetCurrentStateMachineName(),fsmGetCurrentStateName(fsmGetCurrentStateMachine())); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define CRITICAL(fmt_str,...)	do{\
-	fprintf(stderr,FG_WHITE BG_RED BOLD "\n\r%lu:%s:%s:%s: " RESET,sysGetTick(),"CRIT",fsmGetCurrentStateMachineName(),fsmGetCurrentStateName(fsmGetCurrentStateMachine())); \
+	fprintf(stderr,FG_WHITE BG_RED BOLD "\n\r%lu:%s:%s:%s: " RESET,sysGetTickCount(),"CRIT",fsmGetCurrentStateMachineName(),fsmGetCurrentStateName(fsmGetCurrentStateMachine())); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 	fprintf(stderr,FG_WHITE BG_RED BOLD BLINKING "\n\r+++ System Stopped +++" RESET); \
 	while(1);\
 }while(0)
 #elif LOG_FORMAT == 4
 #define INFO(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s:%s:%d: ",sysGetTick(),"INFO",__FUNCTION__,__LINE__); \
+	fprintf(stderr,"\n\r%lu:%s:%s:%d: ",sysGetTickCount(),"INFO",__FUNCTION__,__LINE__); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define WARN(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s:%s:%d: ",sysGetTick(),"WARN",__FUNCTION__,__LINE__); \
+	fprintf(stderr,"\n\r%lu:%s:%s:%d: ",sysGetTickCount(),"WARN",__FUNCTION__,__LINE__); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define ERROR(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s:%s:%d: ",sysGetTick(),"ERR ",__FUNCTION__,__LINE__); \
+	fprintf(stderr,"\n\r%lu:%s:%s:%d: ",sysGetTickCount(),"ERR ",__FUNCTION__,__LINE__); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 }while(0)
 #define CRITICAL(fmt_str,...)	do{\
-	fprintf(stderr,"\n\r%lu:%s:%s:%d: ",sysGetTick(),"CRIT",__FUNCTION__,__LINE__); \
+	fprintf(stderr,"\n\r%lu:%s:%s:%d: ",sysGetTickCount(),"CRIT",__FUNCTION__,__LINE__); \
 	fprintf(stderr,fmt_str, ##__VA_ARGS__); \
 	fprintf(stderr,"\n\r+++ System Stopped +++"); \
 	while(1);\
@@ -134,5 +129,10 @@ typedef struct
 #undef CRITICAL
 #define CRITICAL(...)
 #endif
+
+// External Functions ---------------------------------------------------------
+void logRam();
+void logRom();
+void logNewLine();
 
 #endif /* LOG_H_ */

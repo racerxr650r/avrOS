@@ -21,12 +21,37 @@
  */
 #include "../avrOS.h"
 
-static volatile uint32_t	tickOvrflw = 0; 
-static uint32_t				tickDivisor;
+// Globals --------------------------------------------------------------------
+static volatile uint32_t	sysTicks = 0;
+
+// Event for system timer ticks to update the waiting state machines
+ADD_EVENT(tick);
+
+// Interrupt Handler ----------------------------------------------------------
+#if SYS_TICK_TIMER==SYS_TIMER_TCB0
+#define SYS_TICK_INT_VECT TCB0_INT_vect
+#elif SYS_TICK_TIMER==SYS_TIMER_TCB1
+#define SYS_TICK_INT_VECT TCB1_INT_vect
+#elif SYS_TICK_TIMER==SYS_TIMER_TCB2
+#define SYS_TICK_INT_VECT TCB1_INT_vect
+#endif
+
+ISR(SYS_TICK_INT_VECT)
+{
+	// Clear the interrupt
+	(*(TCB_t*)SYS_TICK_TIMER).INTFLAGS = TCB_CAPT_bm;
+	
+	// Increment the tick counter
+	++sysTicks;
+
+	// Trigger the timer update event
+	evntTrigger(&tick,EVENT_TYPE_TICK);	
+}
 
 // Command line interface -----------------------------------------------------
-#ifdef TICK_CLI
+#ifdef SYS_CLI
 ADD_COMMAND("tick",tickCmd,true);
+ADD_COMMAND("tickFreq",tickFreqCmd);
 #endif
 
 int tickCmd(int argc, char *argv[])
@@ -34,119 +59,70 @@ int tickCmd(int argc, char *argv[])
 	UNUSED(argc);
 	UNUSED(argv);
 	
-	uint32_t ticks = sysGetTick();
-	uint32_t secs = ticks/1000000;
-	uint32_t msecs = (ticks%1000000)/1000;
+	uint32_t ticks = sysGetTickCount();
+	uint32_t secs = ticks/1000;
 	
-	printf("  Tick Timer: %s\n\r",&SYS_TICK_TIMER==&TCB0?"TCB0":&SYS_TICK_TIMER==&TCB1?"TCB1":&SYS_TICK_TIMER==&TCB2?"TCB2":"N/A");
-	printf("    CPU Freq: %2lu MHz\n\r",cpuGetFrequency()/FREQ_1_MHZ);
-	printf("   Tick Freq: %2lu MHz\n\r",tickDivisor);
-	printf(" System Tick: %10lu secs, %10lu msecs\n\r",secs,msecs);
+	printf(BOLD FG_BLUE "  Tick Timer: " RESET "%s\n\r",SYS_TICK_TIMER==SYS_TIMER_TCB0?"TCB0":SYS_TICK_TIMER==SYS_TIMER_TCB1?"TCB1":SYS_TICK_TIMER==SYS_TIMER_TCB2?"TCB2":"N/A");
+	printf(BOLD FG_BLUE "    CPU Freq: " RESET "%10u MHz\n\r",cpuGetFrequency()/1000);
+	printf(BOLD FG_BLUE "   Tick Freq: " RESET "%10u kHz\n\r",sysGetTickFreq());
+	printf(BOLD FG_BLUE " System Tick: " RESET "%10lu secs\n\r",secs);
+	printf(BOLD FG_BLUE " System Tick: " RESET "%10lu cnt\n\r",ticks);
 
 	return(0);
 }
 
-// Interrupt Handler ----------------------------------------------------------
-ISR(TCB0_INT_vect)
+int tickFreqCmd(int argc, char *argv[])
 {
-	TCB_t *tcb = &SYS_TICK_TIMER;
+	int ret = -1;
 
-	// Clear the interrupt
-	tcb->INTFLAGS = TCB_CAPT_bm;
-	
-	// Increment the tick overflow counter
-	++tickOvrflw;
-	
-	// Overflow the tick overflow counter
-	// Each overflow tick is equal to 5000 microseconds
-	// tickOverflw = 0xffffffff / 50000
-//	if(tickOvrflw>858993)
-//		tickOvrflw=0;
-}
-
-// External Functions ---------------------------------------------------------
-
-// Initialize the system
-//
-bool sysInit()
-{
-	// Initialize the system -----------------------------------------------------
-	// Setup the internal CPU clock source
-	cpuSetOSCHF(CPU_SPEED,false,0);
-
-#ifdef MEM_STATS	
-	// Fill the stack area with pattern to detect max stack size
-	memStackFill();
-#endif	
-
-	// Initialize the system tick counter
-	sysInitTick();
-
-	// Initialize the fsm scheduler
-	fsmInit();
-	
-	/*INFO("Start sys tick %lu MHz",tickDivisor);
-	INFO("CPU clock %d MHz",CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_1M_gc?1: \
-							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_2M_gc?2: \
-							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_3M_gc?3: \
-							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_4M_gc?4: \
-							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_8M_gc?8: \
-							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_12M_gc?12: \
-							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_16M_gc?16: \
-							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_20M_gc?20: \
-							CLKCTRL.OSCHFCTRLA==(uint8_t)CLKCTRL_FRQSEL_24M_gc?24:0);*/
-	
-	return(true);
-}
-
-void sysInitTick()
-{
-	TCB_t		*tcb = &SYS_TICK_TIMER;
-	uint32_t	freq = cpuGetFrequency();
-
-	switch(freq)
+	if(argc == 2)
 	{
-		case FREQ_1_MHZ:
-			tickDivisor = 1;
-			break;
-		case FREQ_2_MHZ:
-			tickDivisor = 2;
-			break;
-		case FREQ_3_MHZ:
-			tickDivisor = 3;
-			break;
-		case FREQ_4_MHZ:
-			tickDivisor = 2;
-			break;
-		case FREQ_8_MHZ:
-			tickDivisor = 4;
-			break;
-		case FREQ_12_MHZ:
-			tickDivisor = 6;
-			break;
-		case FREQ_16_MHZ:
-			tickDivisor = 8;
-			break;
-		case FREQ_20_MHZ:
-			tickDivisor = 10;
-			break;
-		case FREQ_24_MHZ:
-			tickDivisor = 12;
-			break;
-		default:
-			return;
+		uint16_t freq = atoi(argv[1]);
+
+		if(freq >= 1000)
+		{
+			sysSetTickFreq(freq);
+			ret = 0;
+		}
+	}
+
+	return(ret);
+}
+
+// Internal Functions ---------------------------------------------------------
+int sysUpdateWaitTicks(volatile fsmStateMachine_t *sm)
+{
+	fsmUpdateWaitTicks();
+	evntEnable(&tick,EVENT_TYPE_TICK,sysUpdateWaitTicks,NULL);
+	return(0);
+}
+
+void sysInitTick(TCB_t *tcb, uint16_t sysTickFreq)
+{
+	uint32_t		cpuFreq = cpuGetFrequency();
+	uint16_t		tickDivisor;
+	TCB_CLKSEL_t	clockSource;
+
+	sysTickFreq = sysTickFreq/1000;
+
+	if(cpuFreq==1000)
+	{
+		tickDivisor = 1000/sysTickFreq;
+		clockSource = TCB_CLKSEL_DIV1_gc;
+	}
+	else
+	{
+		tickDivisor = cpuFreq/(2*sysTickFreq);
+		clockSource = TCB_CLKSEL_DIV2_gc;
 	}
 
 	// Disable interrupts while setting up timer registers
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		// Setup control reg A (Peripheral clock DIV 2)
-		if(freq>FREQ_3_MHZ)
-			tcb->CTRLA = TCB_CLKSEL_DIV2_gc;
-		else
-			tcb->CTRLA = TCB_CLKSEL_DIV1_gc;
-		// Set the top to 60,000
-		tcb->CCMP = (uint16_t)TICK_TOP;
+		tcb->CTRLA = clockSource;
+		// Set the top to tick divisor for tick freq
+		tcb->CCMP = tickDivisor;
 		// Enable the overflow interrupt
 		tcb->INTCTRL |= TCB_CAPT_bm;
 		// Setup control reg B (Periodic timer mode)
@@ -154,25 +130,83 @@ void sysInitTick()
 		// Enable the clock
 		tcb->CTRLA |= TCB_ENABLE_bm;
 	}
+
+	evntEnable(&tick,EVENT_TYPE_TICK,sysUpdateWaitTicks,NULL);
 }
 
-uint32_t sysGetTick()
+// External Functions ---------------------------------------------------------
+// Initialize the system
+bool sysInit()
 {
-	TCB_t *tcb = &SYS_TICK_TIMER;
-	uint32_t ret;
+	// Initialize the system --------------------------------------------------
+	// Setup the internal CPU clock source
+	cpuSetOSCHF(CPU_SPEED,false,0);
+
+	// Fill the stack area with pattern to detect max stack size
+	memStackFill();
+
+	// Initialize the system tick counter
+	sysInitTick((TCB_t *)SYS_TICK_TIMER, SYS_TICK_FREQ);
+
+	// Initialize the fsm scheduler
+	fsmInit();
 	
-	// Add the low order byte of the current counter
-	ret = tcb->CNT / tickDivisor;
-	// Add the high order byte of the current counter
-	//ret = ret + (tcb->CNTH*256);
-	// Calculate and add the total for the tick overflow counter
-	ret = ret + (tickOvrflw*(TICK_TOP/tickDivisor));
-	
-	return(ret);
+//	logRom();
+//	logNewLine();
+//	fioBusyWaitOutput(stderr);
+//	logRam();
+//	fioBusyWaitOutput(stderr);
+	INFO("CPU clock %d MHz",cpuGetFrequency()/1000);	
+	INFO("Start sys tick %u Hz",SYS_TICK_FREQ);
+
+	return(true);
+}
+
+// Set the system tick frequeny
+void sysSetTickFreq(uint16_t sysTickFreq)
+{
+	uint32_t		cpuFreq = cpuGetFrequency();
+	uint16_t		tickDivisor;
+
+	sysTickFreq = sysTickFreq/1000;
+
+	if(cpuFreq==1000)
+		tickDivisor = 1000/sysTickFreq;
+	else
+		tickDivisor = cpuFreq/(2*sysTickFreq);
+
+	// Disable interrupts while setting up timer registers
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		// Set the top to divisor for tick freq
+		((TCB_t *)SYS_TICK_TIMER)->CCMP = tickDivisor;
+	}
+}
+
+// Return the system tick frequency in Hz
+uint16_t sysGetTickFreq()
+{
+	uint32_t		cpuFreq = cpuGetFrequency();
+	uint16_t		sysTickFreq;
+
+	if(cpuFreq==1000)
+		sysTickFreq = 1000/((TCB_t *)SYS_TICK_TIMER)->CCMP;
+	else
+		sysTickFreq = cpuFreq/(2*((TCB_t *)SYS_TICK_TIMER)->CCMP);
+
+	return(sysTickFreq);
+}
+
+// Return the current system tick count
+uint32_t sysGetTickCount()
+{
+	return(sysTicks);
 }
 
 // Put the system to sleep until the next interrupt
 void sysSleep()
 {
+	set_sleep_mode(SLEEP_MODE_IDLE);
+	sleep_mode();
 	return;
 }

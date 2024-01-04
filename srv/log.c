@@ -21,33 +21,9 @@
  #include "../avrOS.h"
 
 // Internal Functions ----------------------------------------------------------
-static int logRAM(volatile fsmStateMachine_t *stateMachine)
+int logInit(const fsmStateMachineDescr_t *stateMachineDescr)
 {
-	// Display the system RAM info
-	memRamStatus(stderr);
-
-	// Stop the log initialization SM
-	fsmStop(stateMachine);
-	return(0);
-}
-
-static int logROM(volatile fsmStateMachine_t *stateMachine)
-{
-	// Display the system ROM info
-	//fprintf(stderr,"\n\rSystem Memory --------------\n\r");
-	memRomStatus(stderr);
-	fprintf(stderr,"\n\r");
-
-	// Wait until the stderr output queue is empty and then go to next state
-    fioWaitOutput(stderr);
-	fsmSetNextState(stateMachine,logRAM);
-
-	return(0);
-}
-
-int logInit(volatile fsmStateMachine_t *stateMachine)
-{
-	logInstance_t *logInstance = (logInstance_t*)fsmGetInstance(stateMachine);
+	logInstance_t *logInstance = (logInstance_t*)initGetInstance(stateMachineDescr);
 	FILE          *outFile = logInstance->outFile;
 	
 	// Setup stderr so stdout.h functions like fprintf output the log
@@ -58,11 +34,30 @@ int logInit(volatile fsmStateMachine_t *stateMachine)
 	// Display the system greeting
 	fprintf(stderr,LOG_BANNER);
 
-	INFO("Init LOG");
-	
-	// Wait until the stderr output queue is empty and then go to next state
-    fioWaitOutput(stderr);
-    fsmSetNextState(stateMachine,logROM);
-
 	return(0);
+}
+
+// External Function ----------------------------------------------------------
+void logRam()
+{
+	if(stderr!=NULL)
+	{
+		memRamStatus(stderr);
+	}
+}
+
+void logRom()
+{
+	if(stderr!=NULL)
+	{
+		memRomStatus(stderr);
+	}
+}
+
+void logNewLine()
+{
+	if(stderr!=NULL)
+	{
+		fprintf(stderr,"\n\r");
+	}
 }

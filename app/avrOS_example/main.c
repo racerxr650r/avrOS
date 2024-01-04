@@ -25,72 +25,118 @@
 
 #include "avrOS.h"
 
+// AVR Fuse configuration -----------------------------------------------------
+FUSES =
+{
+	.WDTCFG = FUSE_WDTCFG_DEFAULT,		///< Default
+	.BODCFG = FUSE_BODCFG_DEFAULT,		///< Default
+	.OSCCFG = FUSE_OSCCFG_DEFAULT,		///< Default
+	.SYSCFG0 = 0xCC,					///< External Reset enabled on PF6
+	.SYSCFG1 = FUSE_SYSCFG1_DEFAULT,	///< Default
+	.CODESIZE = FUSE_CODESIZE_DEFAULT,	///< Default
+	.BOOTSIZE = FUSE_BOOTSIZE_DEFAULT	///< Default
+};
+
+// AVR Lock bits configuration ------------------------------------------------
+LOCKBITS = LOCKBITS_DEFAULT;
+
 // Internal function prototypes -----------------------------------------------
 void btnHandler(gpio_t *gpio);
 
-// Logger Configuration --------------------------------------------------------
-#define LOG_QUEUE_SIZE		255
-#define LOG_USART			USART1
-#define LOG_BAUDRATE		115200
-#define LOG_PARITY			USART_PMODE_DISABLED_gc	// USART_PMODE_DISABLED_gc = No Parity
-													// USART_PMODE_EVEN_gc = Even Parity
-													// USART_PMODE_ODD_gc = Odd Parity
-#define LOG_DATA_BITS		USART_CHSIZE_8BIT_gc	// USART_CHSIZE_5BIT_gc = Character size: 5 bit
-													// USART_CHSIZE_6BIT_gc = Character size: 6 bit
-													// USART_CHSIZE_7BIT_gc = Character size: 7 bit
-													// USART_CHSIZE_8BIT_gc = Character size: 8 bit
-													// 9-bit character size is not support by the driver
-													// USART_CHSIZE_9BITL_gc = Character size: 9 bit read low byte first
-													// USART_CHSIZE_9BITH_gc = Character size: 9 bit read high byte first
-#define LOG_STOP_BITS		USART_SBMODE_1BIT_gc	// USART_SBMODE_1BIT_gc = 1 stop bit
-													// USART_SBMODE_2BIT_gc = 2 stop bits
-
-ADD_UART_WRITE(logUart1,LOG_USART,LOG_BAUDRATE, LOG_PARITY, LOG_DATA_BITS, LOG_STOP_BITS, LOG_QUEUE_SIZE);
-ADD_LOG(logUart1Instance,&logUart1_file);
+// Logger Configuration -------------------------------------------------------
+#if LOG_FORMAT > 0 && LOG_LEVEL > 0
+ADD_UART_WRITE(logUart,LOG_USART,LOG_BAUDRATE, LOG_PARITY, LOG_DATA_BITS, LOG_STOP_BITS, LOG_QUEUE_SIZE);
+ADD_LOG(logger,UART_FILE_PTR(logUart));
+#endif  // LOG_FORMAT LOG_LEVEL
 
 // Command Line Interface Configuration ----------------------------------------
-#define CLI_RX_QUEUE_SIZE	8
-#define CLI_TX_QUEUE_SIZE	1026
-#define CLI_USART     USART2
-#define CLI_BAUDRATE  115200
-#define CLI_PARITY    USART_PMODE_DISABLED_gc // USART_PMODE_DISABLED_gc = No Parity
-											  // USART_PMODE_EVEN_gc = Even Parity
-											  // USART_PMODE_ODD_gc = Odd Parity
-#define CLI_DATA_BITS USART_CHSIZE_8BIT_gc    // USART_CHSIZE_5BIT_gc = Character size: 5 bit
-											  // USART_CHSIZE_6BIT_gc = Character size: 6 bit
-											  // USART_CHSIZE_7BIT_gc = Character size: 7 bit
-										 	  // USART_CHSIZE_8BIT_gc = Character size: 8 bit
-											  // 9-bit character size is not support by the driver
-										 	  // USART_CHSIZE_9BITL_gc = Character size: 9 bit read low byte first
-											  // USART_CHSIZE_9BITH_gc = Character size: 9 bit read high byte first
-#define CLI_STOP_BITS USART_SBMODE_1BIT_gc	  // USART_SBMODE_1BIT_gc = 1 stop bit
-											  // USART_SBMODE_2BIT_gc = 2 stop bits
-
-ADD_UART_RW(cliUart2, CLI_USART, CLI_BAUDRATE, CLI_PARITY, CLI_DATA_BITS, CLI_STOP_BITS, CLI_TX_QUEUE_SIZE, CLI_RX_QUEUE_SIZE);
-ADD_CLI(cliUart2Instance,&cliUart2_file,&cliUart2_file);
+#ifdef CLI
+ADD_UART_RW(cliUart, CLI_USART, CLI_BAUDRATE, CLI_PARITY, CLI_DATA_BITS, CLI_STOP_BITS, CLI_TX_QUEUE_SIZE, CLI_RX_QUEUE_SIZE);
+ADD_CLI(command_line,UART_FILE_PTR(cliUart));
+#endif // CLI
 
 // GPIO Configuration ---------------------------------------------------------
-ADD_GPIO(Blue,PORTD,GPIO_PIN_0,GPIO_OUTPUT);
-ADD_GPIO(Green,PORTD,GPIO_PIN_1,GPIO_OUTPUT);
-ADD_GPIO(Yellow,PORTD,GPIO_PIN_2,GPIO_OUTPUT);
-ADD_GPIO(Red,PORTD,GPIO_PIN_3,GPIO_OUTPUT);
+ADD_GPIO(Sleep_gpio,PORTD,GPIO_PIN_0,GPIO_OUTPUT);
+ADD_GPIO(Leds_gpio,PORTD,GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3,GPIO_OUTPUT);
+//ADD_GPIO(Green,PORTD,GPIO_PIN_1,GPIO_OUTPUT);
+//ADD_GPIO(Yellow,PORTD,GPIO_PIN_2,GPIO_OUTPUT);
+//ADD_GPIO(Red,PORTD,GPIO_PIN_3,GPIO_OUTPUT);
 
 ADD_GPIO(Clock,PORTA,GPIO_PIN_0,GPIO_INPUT);
 ADD_GPIO(Data,PORTA,GPIO_PIN_1,GPIO_INPUT);
 ADD_GPIO(Button,PORTA,GPIO_PIN_2,GPIO_INPUT,btnHandler);
 
+// State Machine Configuration ------------------------------------------------
+ADD_STATE_MACHINE(Leds_sm,ledsInit, FSM_APP | 10);
+int ledsInit(volatile fsmStateMachine_t *stateMachine);
+int ledsMeter(volatile fsmStateMachine_t *stateMachine);
+int ledsFlash(volatile fsmStateMachine_t *stateMachine);
+
+int ledsInit(volatile fsmStateMachine_t *stateMachine)
+{
+	static uint8_t ledsCounter = 0;
+	static uint8_t pattern[] = {0b00001110, 0b00001100, 0b00001010, 0b00000110};
+	
+	gpioWriteOutput(&Leds_gpio,pattern[ledsCounter]);
+	if(++ledsCounter == sizeof(pattern))
+	{
+		INFO("Meter LEDs");
+		ledsCounter = 0;
+		fsmSetNextState(stateMachine,ledsMeter);
+	}
+	fsmWaitTicks(stateMachine, 250);
+
+	return(0);
+}
+
+int ledsMeter(volatile fsmStateMachine_t *stateMachine)
+{
+	static uint8_t ledsCounter_ = 0;
+	static uint8_t pattern_[] = {GPIO_PIN_2 | GPIO_PIN_3, GPIO_PIN_3, 0};
+	
+	gpioWriteOutput(&Leds_gpio,pattern_[ledsCounter_]);
+	if(++ledsCounter_ == sizeof(pattern_))
+	{
+		INFO("Alarm LEDs");
+		ledsCounter_ = 0;
+		fsmSetNextState(stateMachine,ledsFlash);
+	}
+	fsmWaitTicks(stateMachine, 3000);
+
+	return(0);
+}
+
+int ledsFlash(volatile fsmStateMachine_t *stateMachine)
+{
+	static uint8_t ledsCounter = 0;
+
+	if(++ledsCounter == 25)
+	{
+		INFO("Reset LEDs");
+		ledsCounter = 0;
+		fsmSetNextState(stateMachine,ledsInit);
+	}
+	gpioToggleOutput(&Leds_gpio,GPIO_PIN_3);
+	fsmWaitTicks(stateMachine, 250);
+
+	return(0);
+}
+
+// Application entry point and system loop ------------------------------------
 int main(void)
 {
 	// Initialize the system --------------------------------------------------
 	sysInit();
 	
-	// Loop forever ------------------------------------------------------------
+	// Loop forever -----------------------------------------------------------
     while (1) 
     {
 	    // Call the main state machine dispatcher
 		fsmDispatch();
 		// Go to sleep until the next interrupt
+		gpioClearOutput(&Sleep_gpio,0xff);
 		sysSleep();
+		gpioSetOutput(&Sleep_gpio,0xff);
     }
 }
 

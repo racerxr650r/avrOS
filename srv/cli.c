@@ -77,7 +77,7 @@ int cliHelp(int argC, char *argV[])
 	cliCommand_t *cmd = (cliCommand_t *)&__start_CLI_CMDS;
 
 	for(; cmd < (cliCommand_t *)&__stop_CLI_CMDS; ++cmd)
-		printf("    %s%s\n\r",cmd->commandStr,cmd->repeatable?" (-r)":"");
+		printf("    %s" FG_BLUE " %s\n\r" RESET,cmd->commandStr,cmd->repeatable?"(-r)":"");
 
 	return(0);
 }
@@ -103,8 +103,6 @@ int cliInit(volatile fsmStateMachine_t *stateMachine)
 {
 	cliInstance_t *cliInstance = (cliInstance_t*)fsmGetInstance(stateMachine);
 	FILE          *inFile = cliInstance->inFile, *outFile = cliInstance->outFile;
-	
-	INFO("Init CLI");
 	
 	// Setup stdout so stdout.h functions like printf output the CLI associated
 	stdout = outFile;
@@ -300,7 +298,7 @@ static int cliDisplayEscape(volatile fsmStateMachine_t *stateMachine)
 	if(uartTxEmpty(uart))
 	{
 		// Set the cursor to Home (upper left of screen)
-		printf("\n\r<<< Press [Ctrl-C] to return to command prompt >>>");
+		printf(FG_GREEN "\n\r<<< Press [Ctrl-C] to return to command prompt >>>" FG_DEFAULT);
 		fsmSetNextState(stateMachine, cliWaitTxQueue);
 
 		// Get the next keystroke

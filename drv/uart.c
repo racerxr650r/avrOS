@@ -98,12 +98,14 @@ static void isrUsartRXC(UART_t *uart)
     
     if(error == USART_RXCIF_bm)
     {
-        bool queued = quePutByte(uart->rxQueue,uart->usartRegs->RXDATAL);
 #ifdef UART_STATS
+        bool queued = quePutByte(uart->rxQueue,uart->usartRegs->RXDATAL);
         if(queued)
             ++uart->stats->rxBytes;
         else
             ++uart->stats->rxQueueOverflow;
+#else
+        quePutByte(uart->rxQueue,uart->usartRegs->RXDATAL);
 #endif
     }
 #ifdef UART_STATS
@@ -123,9 +125,10 @@ ADD_COMMAND("uart",uartCmd,true);
 
 int uartCmd(int argc, char *argv[])
 {
-    // Walk the table of uarts
-    UART_t *uart = (UART_t *)&__start_UART_TABLE;
+    UART_t  *uart = (UART_t *)&__start_UART_TABLE;
+    int     ret = -1;
     
+    // Walk the table of uarts
     for(; uart < (UART_t *)&__stop_UART_TABLE; ++uart)
     {
         char * name;
@@ -133,14 +136,23 @@ int uartCmd(int argc, char *argv[])
         name = uartName(uart);
         if(argc<2 || (argc==2 && !strcmp(name,argv[1])))
         {
-            printf("UART: %s\n\r",name);
 #ifdef UART_STATS
-            printf("\tTx:%8lu Rx:%8lu Frame Err:%8lu Parity Err:%8lu\n\r",uart->stats->txBytes,uart->stats->rxBytes,uart->stats->frameError,uart->stats->parityError);
+            printf(BOLD UNDERLINE FG_BLUE "%-20s%s",uart->name,name);
+#else
+            printf(BOLD UNDERLINE FG_BLUE "%s",name);
+#endif
+            printf("   %lu:%c:%d:%d\n\r" RESET,(uint32_t)uart->baud*100,
+                                        uart->parity==USART_PMODE_DISABLED_gc?'N':uart->parity==USART_PMODE_EVEN_gc?'E':uart->parity==USART_PMODE_ODD_gc?'O':'?',
+                                        uart->dataBits==USART_CHSIZE_5BIT_gc?(uint8_t)5:uart->dataBits==USART_CHSIZE_6BIT_gc?(uint8_t)6:uart->dataBits==USART_CHSIZE_7BIT_gc?(uint8_t)7:uart->dataBits==USART_CHSIZE_8BIT_gc?(uint8_t)8:uart->dataBits==USART_CHSIZE_9BITL_gc?(uint8_t)9:uart->dataBits==USART_CHSIZE_9BITH_gc?(uint8_t)9:0,
+                                        uart->stopBits==USART_SBMODE_1BIT_gc?(uint8_t)1:uart->stopBits==USART_SBMODE_2BIT_gc?(uint8_t)2:0);
+#ifdef UART_STATS
+            printf("\tTx:%14lu Rx:%20lu Frame Err:%12lu Parity Err:%8lu\n\r",uart->stats->txBytes,uart->stats->rxBytes,uart->stats->frameError,uart->stats->parityError);
             printf("\tTxOvrflw:%8lu RxBufferOvrflw:%8lu RxQueueOvrflw:%8lu\n\r",uart->stats->txQueueOverflow,uart->stats->rxBufferOverflow,uart->stats->rxQueueOverflow);
 #endif
+            ret = 0;
         }
     }
-    return(0);
+    return(ret);
 }
 
 // State Machine Functions ----------------------------------------------------
@@ -153,7 +165,7 @@ int uartInit(const fsmStateMachineDescr_t *stateMachineDescr)
     UART_t      *uartInstance = (UART_t *)initGetInstance(stateMachineDescr);
     USART_t		*usartRegs = uartInstance->usartRegs;
     int8_t		ret = 0;
-    uint32_t	freq = cpuGetFrequency();
+    uint16_t	freq = cpuGetFrequency();
 
 #ifdef UART_STATS
     // Zero out the interface stats
@@ -165,7 +177,7 @@ int uartInit(const fsmStateMachineDescr_t *stateMachineDescr)
  //   {
         // If the CPU frequency is calculable...
         if(freq)
-            usartRegs->BAUD = (uint16_t)((freq/uartInstance->baud)<<2);
+            usartRegs->BAUD = ((freq/uartInstance->baud*10)<<2);
         // Else baud is the baud register value
         else
             usartRegs->BAUD = uartInstance->baud;
@@ -213,9 +225,6 @@ int uartInit(const fsmStateMachineDescr_t *stateMachineDescr)
             usartRegs->CTRLB |= USART_RXEN_bm | USART_TXEN_bm | USART_RXMODE_NORMAL_gc;
         }
 //    }
-    
-    // Enable global interrupts
- //   sei();
     
     return(ret);
 }
@@ -365,10 +374,12 @@ uint8_t uartRxCapacity(const UART_t *uart)
     return(queGetCapacity(uart->rxQueue));
 }
 
+//#ifdef QUE_STATS
 uint8_t uartRxMax(const UART_t *uart)
 {
     return(queGetMaxSize(uart->rxQueue));
 }
+//#endif
 
 bool uartTxEmpty(const UART_t *uart)
 {
@@ -390,10 +401,12 @@ uint8_t uartTxCount(const UART_t *uart)
     return(queGetCapacity(uart->txQueue));
 }
 
+//#ifdef QUE_STATS
 uint8_t uartTxMax(const UART_t *uart)
 {
     return(queGetMaxSize(uart->txQueue));
 }
+//#endif
 
 char* uartName(const UART_t *uart)
 {

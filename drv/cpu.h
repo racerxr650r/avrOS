@@ -33,7 +33,7 @@ void cpuClockOut(bool enable);
 // Set the internal high frequency oscillator as the source clock and configure
 void cpuSetOSCHF(CLKCTRL_FRQSEL_t frequency, bool prescalerEnable, CLKCTRL_PDIV_t prescaler);
 // Calculate the CPU frequency using the Clock Controller settings. Note: If an external clock is being used, this function will return 0
-uint32_t cpuGetFrequency();
+uint16_t cpuGetFrequency();
 void cpuReset();
 
 #endif /* CPU_H_ */
