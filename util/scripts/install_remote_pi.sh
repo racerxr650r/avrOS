@@ -6,7 +6,7 @@
 #
 # Note: This script replaces the Bash shell configuration script
 #
-if [ -z "${AVROSHOME}"]; then
+if [ -z "$AVROSHOME" ]; then
     echo "Set AVROSHOME environment variable before running this script"
     echo "Goto the avrOS root directory and the run this command: export AVROSHOME=$(pwd)"
 else

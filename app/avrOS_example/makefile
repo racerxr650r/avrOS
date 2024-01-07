@@ -27,7 +27,7 @@ PRG = serialupdi -P /dev/ttyAMA2
 # program source files (not including external libraries)
 SRC = $(PRJ).c
 # Device Family Pack directory (update this if you update the DFP)
-DFP = /usr/lib/gcc/avr/5.4.0/Atmel.AVR-Dx_DFP.2.2.253
+DFP = /usr/lib/gcc/avr/5.4.0/Atmel.AVR-Dx_DFP.2.4.286
 # where to look for external libraries (consisting of .c/.cpp files and .h files)
 # e.g. EXT = ../../EyeToSee ../../YouSART
 EXT = ../.. ../../sys ../../drv ../../srv

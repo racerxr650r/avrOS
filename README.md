@@ -2,43 +2,50 @@
 ---
 # avrOS Getting Started
 
-**avrOS** - _Operating Environment for AVR DA_, is a scalable operating environment 
-including drivers for the AVR DA family of microcontrollers. It provides macros and a 
-custom linker script to build the system tables (state machines, drivers, services, 
-command line interface callbacks, Events, Queues, and Timers) at compile time. 
-Application code defining these objects can be distributed across several source files.
-In addition, these tables reside in FLASH where possible and the
-system doesn't require run-time registration and related fault handling code.
-There is no need to edit a single source file containing all these system tables.
+**avrOS** - _Operating System for AVR DA_, is a scalable operating system 
+with drivers for the AVR DA family of microcontrollers. It provides macros and a 
+custom linker script to build the system tables (state machines, drivers (GPIO,
+UART, etc.), services, command line commands, events, and queues) at compile time. 
+Source code defining these objects can be distributed across several source files.
+In addition, these tables reside in FLASH where possible. So the system doesn't
+require run-time registration and related fault handling code. There is no need
+to edit a single source file containing all these system tables.
 
 avrOS also provides a makefile and instructions to setup a development
 environment and build applications on a Linux desktop PC, chromebook, or even a
-Raspberry PI. There's no need to use Atmel Studio and Windows for AVR application
-development.
+Raspberry PI. You can leave Windows behind for AVR application development.
 
-avrOS provides the following system objects and services:
+avrOS provides the following system objects and services...
 
+* System Tick _Timer Type B_ (sys)
 * Finite State Machine manager (fsm)
 * Extensible Command Line Interface (cli)
 * Logger (log)
-* Memory usage API (mem)
 * Pulse Code Modulated sound player API (pcm)
-* Flags API (flg)
 * Queues API (que)
-* Timers API (tmr)
 * Events (evnt)
 
-It also provides the following AVR DA device drivers:
+...the following AVR DA device drivers...
 
-* GPIO
-* UART
-* System Tick (16 bit Timer Type B)
-* DAC
-* Internal CPU Oscillator API
+* General purpose I/O (gpio)
+* Universal async recevier/transmitter (uart)
+* Digital to analog conveter (dac)
+* Internal CPU oscillator (cpu)
+* Memory map/stack/usage diagnostics (mem)
 
-Lastly, it also includes a Linux command line utility `wav2c` to convert a 
-number of sound and video file formats to a C file that can be linked with
-your application and played with the PCM sound player API.
+...and the following generic device drivers...
+
+* Button/switch (btn)
+* Rotary Encoder (rot)
+* PCM Audio (pcm)
+* 7 segment LED display (7seg)
+* PS/2 keyboard interface (ps2)
+
+Lastly, it also includes a Linux scripts to install command line and GUI 
+development tools required to build avrOS applications. There is also a
+command line utility `wav2c` to convert a number of sound and video file
+formats to a C file that can be linked with your application and played 
+with the PCM sound player API.
 
 avrOS is still in it's sub 1.0 development stage. So there are lots of new 
 features and drivers coming. For more information regarding avrOS, refer to
