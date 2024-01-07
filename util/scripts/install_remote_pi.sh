@@ -10,12 +10,13 @@ if [ -z "$AVROSHOME" ]; then
     echo "Set AVROSHOME environment variable before running this script"
     echo "Goto the avrOS root directory and the run this command: export AVROSHOME=$(pwd)"
 else
+    sudo apt update
+    sudo apt full-upgrade -y
     # Install the command line tools
     $AVROSHOME/util/scripts/install_cli_tools.sh
 
     # Install Bottom (btm) system status tool
     echo "Installing Bottom (btm) system status tool"
-    sudo apt update
     wget https://github.com/ClementTsang/bottom/releases/download/0.9.6/bottom_0.9.6_arm64.deb
     sudo apt install -y ./bottom_0.9.6_arm64.deb
     rm bottom_0.9.6_arm64.deb
