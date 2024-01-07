@@ -124,7 +124,20 @@ breadboard for prototyping
    haven't already done so, clone [avrOS](https://github.com/racerxr650r/avrOS)
    and install it according to the intructions in [README.md](../README.md)
 
-2. Edit the configuration file to enable serial console, UART2, UART3, and UART4
+2. For manual installation, skip to the next step.
+
+   To install the command line tools and configure the Pi using an automated
+   script, go to the avrOS root directory and run the following commands
+
+   ```console
+   export AVROSHOME=$(pwd)
+   ./util/scripts/install_remote_pi.sh
+   ```
+
+   The script will prompt you for a username and password for git. Enter these
+   and the script will complete the install. Skip to step 8 below.
+
+3. Edit the configuration file to enable serial console, UART2, UART3, and UART4
    on the Pi. Open the /boot/firmware/config.txt file using an editor (Vim,
    Nano, Micro etc.). To save the file, you will need to have root permission.
    So, open the editor like this
@@ -146,7 +159,7 @@ breadboard for prototyping
    Save the file and close the editor. `enable_uart=1` is optional here. It
    enables the Linux serial console on the default uart
 
-3. Reboot the Pi and confirm the serial ports are enabled.
+4. Reboot the Pi and confirm the serial ports are enabled.
 
    ```console
    ls -l /dev/ttyAMA*
@@ -160,7 +173,7 @@ breadboard for prototyping
    crw-rw---- 1 root dialout 204, 68 Oct 22 09:06 /dev/ttyAMA4
    ```
 
-4. Update the avrOS makefile to use the correct serial port for UPDI programming.
+5. Update the avrOS makefile to use the correct serial port for UPDI programming.
    Open the makefile found in the .../avrOS/app/avrOS_example directory with your
    program editor. Find the following lines in the makefile
 
@@ -179,7 +192,7 @@ breadboard for prototyping
 
    Save the makefile
 
-5. Install Tio command line serial console application for the avrOS
+6. Install Tio command line serial console application for the avrOS
    command line interface and logger
 
    ```console
@@ -220,7 +233,7 @@ breadboard for prototyping
    to connect to the avrOS command line and logger respectively. Control-t q
    to exit.
 
-6. From the avrOS_example directory run the following command to build the
+7. From the avrOS_example directory run the following command to build the
    example application, load it into the AVR flash memory, and reset the AVR
 
    ```console
@@ -233,7 +246,7 @@ breadboard for prototyping
    For more information regarding building, loading, and running avrOS, check out
    the [User Manual](./MANUAL.md).
 
-7. (Optional) If using the Pi as a remote headless development station, install
+8. (Optional) If using the Pi as a remote headless development station, install
    vscode on you host PC
 
    ```console
