@@ -111,14 +111,14 @@ environment on a debian based Linux distribution follow the instructions here:
    wget http://packs.download.atmel.com/Atmel.AVR-Dx_DFP.2.2.253.atpack
    ```
 
-5. Extract the `Atmel.AVR-Dx_DFP.2.2.253.atpack` file locally and copy it to the `/usr/lib/gcc/avr/5.4.0` directory
+5. Extract the `Atmel.AVR-Dx_DFP.2.4.286.atpack` file locally and copy it to the `/usr/lib/gcc/avr/5.4.0` directory
 
    ```console
-   mkdir ./Atmel.AVR-Dx_DFP.2.2.253
-   unzip -d Atmel.AVR-Dx_DFP.2.2.253/ Atmel.AVR-Dx_DFP.2.2.253.atpack
-   sudo cp -R Atmel.AVR-Dx_DFP.2.2.253/ /usr/lib/gcc/avr/5.4.0
-   rm -rf Atmel.AVR-Dx_DFP.2.2.253
-   rm Atmel.AVR-Dx_DFP.2.2.253.atpack
+   mkdir ./Atmel.AVR-Dx_DFP.2.4.286
+   unzip -d Atmel.AVR-Dx_DFP.2.4.286/ Atmel.AVR-Dx_DFP.2.4.286.atpack
+   sudo cp -R Atmel.AVR-Dx_DFP.2.4.286/ /usr/lib/gcc/avr/5.4.0
+   rm -rf Atmel.AVR-Dx_DFP.2.4.286
+   rm Atmel.AVR-Dx_DFP.2.4.286.atpack
    ```
 
 6. (Optional) Install the latest AVRDUDE from sources on github
@@ -126,9 +126,10 @@ environment on a debian based Linux distribution follow the instructions here:
    Go to this [AVRDUDE github page](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
    for instructions to clone, build, and install it from the latest source
 
-   > :memo: **Note:** If you are using an older distrobution based on Debian 10 or earlier, you may need
+   > :memo: **Note:** If you are using an older distribution based on Debian 10 or earlier, you may need
    to do this because the version the Debian/Ubuntu repositories does not support Atmel Ice and Serial
-   UPDI programming interfaces.
+   UPDI programming interfaces. Distributions based on Debian 12 (Bookworm) will have a current version
+   of AVRDUDE and this step is not required
 
 7. (Optional) Install Tio command line serial console application for the avrOS
    command line interface and logger
@@ -187,8 +188,9 @@ environment on a debian based Linux distribution follow the instructions here:
    make flash
    ```
     
-    The default programmer defined in the makefile is the Atmel ICE. Change
-    this to the appropriate serial port 
+    The default programmer defined in the makefile is the /dev/ttyAMA2 serial
+    port using serialupdi. If you are not running on a Pi 4 or 5, change this
+    to the appropriate serial port or the atmel ice (atmelice_updi)
 
 10. Setup your git username and email
 
