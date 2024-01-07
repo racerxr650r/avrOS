@@ -16,7 +16,7 @@ else
     sudo apt-get install -y make binutils gcc-avr gdb-avr avr-libc flex byacc bison cmake unzip avrdude
 
     # Install command line app tools
-    sudo apt-get install -y minicom tio screens tmux micro tree devmon xterm
+    sudo apt-get install -y minicom tio screen tmux micro tree devmon xterm
 
     # Get the AVR Dx DFP file for the AVR DA libs and header files
     echo "Installing the Microchip/Atmel Device Feature Pack for the AVR-Dx"
