@@ -1,6 +1,8 @@
 /*
  * log.c
  *
+ * Implements logging to file I/O stream
+ * 
  * Created: 4/25/2021 6:01:41 PM
  * Author: john anderson
  *

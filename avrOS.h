@@ -24,6 +24,7 @@
 #define AVROS_H_
 
 // Toolchain/Library header files **********************************************
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
