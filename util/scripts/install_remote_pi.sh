@@ -23,13 +23,15 @@ else
 
     # Copy the config files for bash, tio, and tmux to user home
     echo "Copying Bash, Tio, and Tmux configs to user home"
-    cp --backup -f $AVROSHOME/util/scripts/config/.bashrc ~
-    cp --backup -f $AVROSHOME/util/scripts/config/.tioconfig ~
-    cp --backup -f $AVROSHOME/util/scripts/config/.tmux.conf ~
+    cp --backup=simple -f $AVROSHOME/util/scripts/config/.bashrc ~
+    cp --backup=simple -f $AVROSHOME/util/scripts/config/.tioconfig ~
+    cp --backup=simple -f $AVROSHOME/util/scripts/config/.tmux.conf ~
 
     # Update /boot/config.txt to support serial console and uarts 2, 3, and 4
     echo "Modifying /boot/config.txt to support serial console and uarts 2, 3, and 4"
-    echo "[all]" | sudo tee -a /boot/config.txt
+
+#    echo "[all]" | sudo tee -a /boot/config.txt
+    grep -qxF 'alias complex' /boot/config.txt || printf "alias complex=\'tree -f -i -n -P *.c | grep .c | complexity -h -c --threshold=1\'\n\r" | sudo tee -a /boot/config.txt
     grep -qxF 'enable_uart=1' /boot/config.txt || echo 'enable_uart=1' | sudo tee -a /boot/config.txt
     grep -qxF 'dtoverlay=uart2' /boot/config.txt || echo 'dtoverlay=uart2' | sudo tee -a /boot/config.txt
     grep -qxF 'dtoverlay=uart3' /boot/config.txt || echo 'dtoverlay=uart3' | sudo tee -a /boot/config.txt

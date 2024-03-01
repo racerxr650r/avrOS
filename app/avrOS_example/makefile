@@ -3,14 +3,17 @@
 # based on the makefile written by michael cousins (http://github.com/mcous)
 
 # targets:
-#   all:       compiles the source code
-#   test:      tests the isp connection to the mcu
-#   terminal:  opens an avrdude terminal connected to the MCU
-#   flash:     writes compiled elf file to the mcu's flash memory
-#   fuses:     writes the fuse bytes to the MCU
-#   lock_bits: writes the lock_bits register
-#   disasm:    disassembles the code for debugging
-#   clean:     removes all .hex, .elf, and .o files in the source code and library directories
+#   all:        compiles the source code
+#   test:       tests the isp connection to the mcu
+#   terminal:   opens an avrdude terminal connected to the MCU
+#   flash:      writes compiled elf file to the mcu's flash memory
+#   fuses:      writes the fuse bytes to the MCU
+#   lock_bits:  writes the lock_bits register
+#   complexity: calculate and display the complexity of the complete source 
+#               code. See GNU Complexity
+#   disasm:     disassembles the code for debugging
+#   clean:      removes all .hex, .elf, and .o files in the source code and
+#               library directories
 
 # parameters (change this stuff accordingly)
 # project name
@@ -19,6 +22,8 @@ PRJ = main
 MCU = avr128da28
 # mcu clock frequency
 CLK = 24000000
+# annual salary used to calculate cost for the SLOC estimation
+SALARY=100000
 # avr programmer (and port if necessary)
 # e.g. PRG = atmelice_updi -or- PRG = serialupdi -P /dev/ttyUSB0
 # The current programmer if the Atmel ICE w/UPDI interface
@@ -40,7 +45,7 @@ CFLAGS    = -Wall -Wno-unused-function -Og -g2 -DDEBUG -mmcu=$(MCU) -B $(DFP)/gc
 # any aditional flags for c++
 CPPFLAGS =
 # linker flags
-LINKFLAGS = -Wl,-Map="$(OutputFileName).map" -Wl,--start-group -Wl,-lm -Wl,--end-group -Wl,--gc-sections -mmcu=avr128da28 -B $(DFP)/gcc/dev/$(MCU) -Wl,-T avrOS.x 
+LINKFLAGS = -Wl,-Map="$(OutputFileName).map" -Wl,--cref -Wl,--start-group -Wl,-lm -Wl,--end-group -Wl,--gc-sections -mmcu=avr128da28 -B $(DFP)/gcc/dev/$(MCU) -Wl,-T avrOS.x 
 
 # executables
 #AVRDUDE = /usr/local/bin/avrdude -c $(PRG) -p $(MCU)
@@ -60,11 +65,12 @@ DEP    = $(OBJ:%.o=%.d)
 
 # user targets
 # compile all files
-all: build $(BUILD_DIR)$(PRJ).elf
+all: build $(BUILD_DIR)$(PRJ).elf $(BUILD_DIR)cppcheck_report.txt $(BUILD_DIR)complexity_report.txt
 
 # Create the build directory
 build:
 	mkdir -p $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR)cppcheck
 
 # Generate the intel hex binary image
 hex: $(BUILD_DIR)$(PRJ).hex
@@ -87,8 +93,21 @@ fuses: all
 	$(AVRDUDE) -U fuses:w:$(BUILD_DIR)$(PRJ).elf:e
 
 # write lock bits to mcu
-lock_bits:
+lock_bits: all
 	$(AVRDUDE) -U lock:w:$(BUILD_DIR)$(PRJ).elf:e
+
+# determine/display source complexity
+complexity:
+	complexity -H -h -c --threshold=0 $(SRCS)
+
+# static code analysis
+# --output-file=$(BUILD_DIR)cppcheck_report.txt 
+analyze: build
+	cppcheck -v --std=c99 --platform=avr8 --library=avr.cfg --max-ctu-depth=10 --cppcheck-build-dir=$(BUILD_DIR)cppcheck --language=c --inconclusive -I$(DFP)/include -I. $(INCLUDE) $(SRCS)
+
+# SLOC Count
+sloc: build
+	sloccount --personcost $(SALARY) --datadir ./build . $(EXT)
 
 # generate disassembly files for debugging
 disasm: $(PRJ).elf
@@ -106,12 +125,13 @@ clean:
 
 # other targets
 # objects from c files
-.c.o:
-	$(CC) $(CFLAGS) -c $< -o $@
+#.c.o:
+#	$(CC) $(CFLAGS) -c $< -o $@
+#	cppcheck --enable=all $<
 
 # objects from c files
 $(BUILD_DIR)%.o : %.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # elf file
 $(BUILD_DIR)$(PRJ).elf: $(OBJ)
@@ -121,3 +141,11 @@ $(BUILD_DIR)$(PRJ).elf: $(OBJ)
 $(BUILD_DIR)$(PRJ).hex: $(BUILD_DIR)$(PRJ).elf
 	rm -f $(BUILD_DIR)$(PRJ).hex
 	$(OBJCOPY) -O ihex -R .eeprom -R .fuse -R .lock -R .signature -R .user_signatures $(BUILD_DIR)$(PRJ).elf $(BUILD_DIR)$(PRJ).hex
+
+# Static analysis report 
+$(BUILD_DIR)cppcheck_report.txt:
+	cppcheck -v --std=c99 --platform=avr8 --library=avr.cfg --max-ctu-depth=10 --cppcheck-build-dir=$(BUILD_DIR)cppcheck --language=c --output-file=$(BUILD_DIR)cppcheck_report.txt -I$(DFP)/include -I. $(INCLUDE) $(SRCS)
+
+# Complexity analysis report
+$(BUILD_DIR)complexity_report.txt:
+	complexity -H -h -c --threshold=0 $(SRCS) > $(BUILD_DIR)complexity_report.txt
