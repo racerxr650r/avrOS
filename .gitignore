@@ -68,3 +68,10 @@ gh_token.txt
 
 # Doxygen generated files
 /doc/api/**/*
+
+# Build directory
+**/build
+
+# Apps directory (ignore all except avrOS_example directory
+/app/
+!/app/avrOS_example/
