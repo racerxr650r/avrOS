@@ -18,15 +18,15 @@ avrOS is organized into 7 directories counting the root directory; ./, ./app,
 
 ```console
 avrOS
-├── app
-│   └── avrOS_example
-├── doc
-│   └── images
-├── drv
-├── srv
-├── sys
-└── util
-    └── wav2c
++-- app
+|   +-- avrOS_example
++-- doc
+|   +-- images
++-- drv
++-- srv
++-- sys
++-- util
+    +-- wav2c
 ```
 **.../avrOS** Root contains the avrOS.h header file. 
 
