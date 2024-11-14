@@ -2,7 +2,8 @@
 ---
 # avrOS Getting Started
 
-**avrOS** - _Operating System for AVR DA_, is a scalable operating system 
+## avrOS - _Operating System for AVR DA microcontrollers_
+**avrOS** is a scalable operating system 
 with drivers for the AVR DA family of microcontrollers. It provides macros and a 
 custom linker script to build the various system tables implementing state 
 machines, queues, events, memory heaps, command line commands, alarms, and modus 
@@ -12,13 +13,13 @@ In addtion, there is no need to maintain a single source file containing all
 these system tables. The macros that build these table can be distributed across
 several source files so they can be co-located with the associated logic.
 
-The **avrOS** ecosystem also provides a makefile, instructions, and scripts to 
-setup a development environment and build applications using the Linux operating
+The **avrOS** ecosystem also provides a makefile, instructions, and shell scripts to 
+easily setup a development environment and build applications using the Linux operating
 system and it's abundant open source development software and hardware resources.
 You no longer need to use Microsoft Windows for AVR application development.
 
-**avrOS** provides the following system services...
-
+## avrOS Features
+### System Services:
 * **System Tick** (sys) - Provides a system tick and timers
 * **Finite State Machine manager** (fsm) - Manages user defined state machines and prioritized scheduling
 * **Queues API** (que) - Inter-State Machine communication mechanism. It can be used to synchronize or pass data between two or more state machines
@@ -30,8 +31,7 @@ You no longer need to use Microsoft Windows for AVR application development.
 * **Modbus protocol** (mod) - Modbus RTU server and client protocol stacks to enable off-board communication using RS-232 or RS-485 serial interfaces
 * **Pulse Code Modulated sound player** (pcm) - Plays PCM encoded sound converted from various sound file formats using the wav2c utility
 
-...AVR DA device drivers...
-
+### AVR DA device drivers:
 * **General purpose I/O** (gpio) - Manipulate the AVR general purpose I/O pins
 * **Universal async recevier/transmitter** (uart) - Buffered serial interface driver
 * **Digital to analog converter** (dac) - Output analog values on the AVR DAC pin
@@ -39,24 +39,21 @@ You no longer need to use Microsoft Windows for AVR application development.
 * **Internal CPU oscillator** (cpu) - Configure internal clock used for the system tick
 * **Memory map/stack/usage diagnostics** (mem) - Determine RAM and Flash memory usage
 
-...physical device drivers...
-
+### Physical device drivers:
 * **Button/switch** (btn) - Digital button or switch driver with de-bounce 
 * **Rotary Encoder** (rot) - Rotary encoder driver
 * **PCM Audio** (pcm) - PCM audio player that works with the Sound Converter Utility
 * **7 segment LED display** (7seg) - Matrixed 7 Segment LED display driver
 * **PS/2 keyboard interface** (ps2) - PS/2 keyboard/mouse protocol driver 
 
-...and Linux based utilities...
-
+### Linux based utilities:
 * **avrOS Command Center** (avrcc) - Linux text mode application to connect to avrOS applications using the CLI, logging, and/or alarm services. This application enables these services to share the same serial interface thus reducing the resources (pins) required for an application user/debug interface
-* **avrOS Dash Board** (arvdb) - Example Linux graphical application using the Grafana data visualization tool, Prometheus time series database, and the avrOS modbus service 
+* **avrOS Dash Board** (arvdb) - Example Linux graphical application using the Grafana data visualization tool, Prometheus time series database, and the avrOS modbus service
+* **Installation Scripts** - Bash shell scripts that automate the installation of a fully functional AVR development system on Debian based Linux distributions such as Debian, Ubuntu, and Raspberry Pi OS. These scripts install freely available open source tools such as avr-gcc, binutils, Cppcheck static code analyzer, GNU code complexity analyzer, AVR DA family library and header files, a variety of program editors/IDEs, and avrDude. There's even a script to setup a Raspberry Pi as a headless development environment with serial connectivity and avr UPDI programming. This setup can be remotely accessed using VsCode, Zed, or even ssh from your desktop development PC
 * **Sound Converter Utility** (snd2c) - Utility to convert various sound file formats to C code data structures that can be linked with user applications
 * **Serial Keyboard Service** (serkey) - Linux user mode serial keyboard/HMI device service. It can be used with avrOS applications to implement HMI devices connected to a Linux device using a serial port
 
-Lastly, it also includes Linux scripts to install command line and GUI 
-development tools required to build avrOS applications.
-
+## Project Status and additional resources
 avrOS is still in it's sub 1.0 development stage. So there are lots of new 
 features and drivers coming. For more information regarding avrOS, refer to
 the [User Manual](./doc/MANUAL.md).
@@ -64,8 +61,7 @@ the [User Manual](./doc/MANUAL.md).
 For an example of Raspberry Pi 4 based development environment, see the
 [Raspberry PI 4 model B Development Platform](./doc/PI4_Dev_Station.md) document.
 
-## Install Development Environment and Build
-
+## Install Development Environment and Build a avrOS Application
 avrOS is developed on a Linux workstation using the avr-gcc compiler, gnu make,
 and avrdude w/Atmel Ice jtag programmer. To recreate this development 
 environment on a debian based Linux distribution follow the instructions here:
@@ -83,7 +79,7 @@ environment on a debian based Linux distribution follow the instructions here:
    is included with the project. This file will setup the visual studio code 
    C/C++ intellisense to find all the appropriate include directories and files.
 
-2. If you prefer a manual installation, skip to the next step.
+2. If you prefer a manual installation, skip to the next step. Else, continue with this step to complete your intallation
    
    For an automated installation, first set the $AVROSHOME environment variable
    with the following commands
