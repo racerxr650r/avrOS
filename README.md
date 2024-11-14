@@ -50,7 +50,7 @@ avrOS provides the following system services...
 * **avrOS Command Center** (avrcc) - Linux text mode application to connect to avrOS applications using the CLI, logging, and/or alarm services. This application enables these services to share the same serial interface thus reducing the resources (pins) required for an application user/debug interface
 * **avrOS Dash Board** (arvdb) - Example Linux graphical application using the Grafana data visualization tool, Prometheus time series database, and the avrOS modbus service 
 * **Sound Converter Utility** (snd2c) - Utility to convert various sound file formats to C code data structures that can be linked with user applications
-* **Serial Keyboard Service** (serkey) - Linux user mode serial keyboard/HMI device service
+* **Serial Keyboard Service** (serkey) - Linux user mode serial keyboard/HMI device service. It can be used with avrOS applications to implement HMI devices connected to a Linux device using a serial port
 
 Lastly, it also includes Linux scripts to install command line and GUI 
 development tools required to build avrOS applications.
