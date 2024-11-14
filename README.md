@@ -23,10 +23,18 @@ real time operating systems that use threads or tasks that require individually
 reserved memory stacks in RAM. This partitioning of the system stack is
 complex, inefficient, and prone to issues that are difficult to debug.
 
-The **avrOS** ecosystem also provides a makefile, instructions, and scripts to 
+In addtion, **avrOS** provides event and queue services that enable inter-state
+machine and device driver communication and syncronization. This creates a
+system that is interrupt/event driven and takes advantage of the AVR DS's rich
+number of interrupt sources. This reduces CPU intensive polling and makes the
+built in power management even more efficient.
+
+Lastly, the **avrOS** ecosystem also provides instructions, makefiles, and scripts to 
 setup a development environment and build applications using the Linux operating
 system and it's abundant open source development software and hardware resources.
-You no longer need to use Microsoft Windows for AVR application development.
+You no longer need to use Microsoft Windows for AVR application development. But
+if you prefer Windows on your desktop PC, you can setup a headless Raspberry Pi
+for remote development using VsCode, Zed, or ssh with your favorite text mode editor.
 
 ## avrOS Features
 ### System Services:
@@ -56,7 +64,7 @@ You no longer need to use Microsoft Windows for AVR application development.
 * **7 segment LED display** (7seg) - Matrixed 7 Segment LED display driver
 * **PS/2 keyboard interface** (ps2) - PS/2 keyboard/mouse protocol driver 
 
-### Linux based utilities:
+### Linux based utilities and scripts:
 * **avrOS Command Center** (avrcc) - Linux text mode application to connect to avrOS applications using the CLI, logging, and/or alarm services. This application enables these services to share the same serial interface thus reducing the resources (pins) required for an application user/debug interface
 * **avrOS Dash Board** (arvdb) - Example Linux graphical application using the Grafana data visualization tool, Prometheus time series database, and the avrOS modbus service
 * **Installation Scripts** - Bash shell scripts that automate the installation of a fully functional AVR development system on Debian based Linux distributions such as Debian, Ubuntu, and Raspberry Pi OS. These scripts install freely available open source tools such as avr-gcc, binutils, Cppcheck static code analyzer, GNU code complexity analyzer, AVR DA family library and header files, a variety of program editors/IDEs, and avrDude. There's even a script to setup a Raspberry Pi as a headless development environment with serial connectivity and avr UPDI programming. This setup can be remotely accessed using VsCode, Zed, or even ssh from your desktop development PC
