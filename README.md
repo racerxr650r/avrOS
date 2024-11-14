@@ -63,7 +63,7 @@ You no longer need to use Microsoft Windows for AVR application development.
 * **Sound Converter Utility** (snd2c) - Utility to convert various sound file formats to C code data structures that can be linked with user applications
 * **Serial Keyboard Service** (serkey) - Linux user mode serial keyboard/HMI device service. It can be used with avrOS applications to implement HMI devices connected to a Linux device using a serial port
 
-## Project Status and additional resources
+## Project Status and Additional Resources
 avrOS is still in it's sub 1.0 development stage. So there are lots of new 
 features and drivers coming. For more information regarding avrOS, refer to
 the [User Manual](./doc/MANUAL.md).
@@ -71,7 +71,7 @@ the [User Manual](./doc/MANUAL.md).
 For an example of Raspberry Pi 4 based development environment, see the
 [Raspberry PI 4 model B Development Platform](./doc/PI4_Dev_Station.md) document.
 
-## Install Development Environment and Build a avrOS Application
+## Install Development Environment and Build an avrOS Application
 avrOS is developed on a Linux workstation using the avr-gcc compiler, gnu make,
 and avrdude w/Atmel Ice jtag programmer. To recreate this development 
 environment on a debian based Linux distribution follow the instructions here:
