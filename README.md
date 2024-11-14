@@ -1,8 +1,8 @@
 [![avrOS](doc/avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
 ---
-# avrOS Getting Started
+# Getting Started
 
-## avrOS - _Operating System for AVR DA microcontrollers_
+## avrOS - _The Operating System for AVR DA microcontrollers_
 **avrOS** is a scalable operating system 
 with drivers for the AVR DA family of microcontrollers. It provides macros and a 
 custom linker script to build the various system tables implementing state 
