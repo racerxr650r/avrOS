@@ -12,6 +12,16 @@ In addtion, there is no need to maintain a single source file containing all
 these system tables. The macros that build these table can be distributed across
 several source files so they can be co-located with the associated logic.
 
+**avrOS** provides a state machine manager. The developer defines one or more
+state machines that implement the system functionality. The state machine
+manager handles priortized scheduling of these state machine states and power 
+management when the system is idle waiting for asynchronous events. This
+state machine approach reduces the RAM requirements for applications by
+using just one stack for all of the system "processes". This differs from other
+real time operating systems that use threads or tasks that require individually
+reserved memory stacks in RAM. This partitioning of the system stack is
+complex, inefficient, and prone to issues that are difficult to debug.
+
 The **avrOS** ecosystem also provides a makefile, instructions, and scripts to 
 setup a development environment and build applications using the Linux operating
 system and it's abundant open source development software and hardware resources.
@@ -20,9 +30,9 @@ You no longer need to use Microsoft Windows for AVR application development.
 **avrOS** provides the following system services...
 
 * **System Tick** (sys) - Provides a system tick and timers
-* **Finite State Machine manager** (fsm) - Manages user defined state machines and prioritized scheduling
+* **Finite State Machine manager** (fsm) - Manages user defined state machines implementing prioritized scheduling and power management
 * **Queues API** (que) - Inter-State Machine communication mechanism. It can be used to synchronize or pass data between two or more state machines
-* **Events API** (evnt) - Asynchronous event system device drivers can use to notify the system. One or more state machines can be notified
+* **Events API** (evnt) - An Asynchronous event system that device drivers and state machines can use to notify the system of various occurances. One or more state machines can wait on a single event
 * **Heap memory manager** (heap) - Implements user defined heaps with dynamic fixed block sized memory allocation and free. This provides a mechanism for dynamic memory allocation that is not prone to memory fragmentation
 * **Extensible Command Line Interface** (cli) - Simplifies debugging by providing a simple method to create command line "apps" that exercise or provide status on system functions
 * **Logging API** (log) - Provides a mechanism to insert log messages in code this can be filtered on severity or conditionally compiled out of the application
