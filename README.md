@@ -4,18 +4,20 @@
 
 **avrOS** - _Operating System for AVR DA_, is a scalable operating system 
 with drivers for the AVR DA family of microcontrollers. It provides macros and a 
-custom linker script to build the system tables (state machines, drivers (GPIO,
-UART, etc.), services, command line commands, events, and queues) at compile time. 
-Source code defining these objects can be distributed across several source files.
-In addition, these tables reside in FLASH where possible. So the system doesn't
-require run-time registration and related fault handling code. There is no need
-to edit a single source file containing all these system tables.
+custom linker script to build the various system tables implementing state 
+machines, queues, events, memory heaps, command line commands, alarms, and modus 
+registers at compile time. These tables reside in FLASH where possible. So the 
+system doesn't require run-time registration and related fault handling code. 
+In addtion, there is no need to maintain a single source file containing all 
+these system tables. The macros that build these table can be distributed across
+several source files so they can be co-located with the associated logic.
 
-avrOS also provides a makefile and instructions to setup a development
-environment and build applications on a Linux desktop PC, chromebook, or even a
-Raspberry PI. You can leave Windows behind for AVR application development.
+The **avrOS** ecosystem also provides a makefile, instructions, and scripts to 
+setup a development environment and build applications using the Linux operating
+system and it's abundant open source development software and hardware resources.
+You no longer need to use Microsoft Windows for AVR application development.
 
-avrOS provides the following system services...
+**avrOS** provides the following system services...
 
 * **System Tick** (sys) - Provides a system tick and timers
 * **Finite State Machine manager** (fsm) - Manages user defined state machines and prioritized scheduling
