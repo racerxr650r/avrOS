@@ -15,37 +15,45 @@ avrOS also provides a makefile and instructions to setup a development
 environment and build applications on a Linux desktop PC, chromebook, or even a
 Raspberry PI. You can leave Windows behind for AVR application development.
 
-avrOS provides the following system objects and services...
+avrOS provides the following system services...
 
-* System Tick _Timer Type B_ (sys)
-* Finite State Machine manager (fsm)
-* Extensible Command Line Interface (cli)
-* Logger (log)
-* Pulse Code Modulated sound player API (pcm)
-* Queues API (que)
-* Events (evnt)
+* **System Tick** (sys) - Provides a system tick and timers
+* **Finite State Machine manager** (fsm) - Manages user defined state machines and prioritized scheduling
+* **Queues API** (que) - Inter-State Machine communication mechanism. It can be used to synchronize or pass data between two or more state machines
+* **Events API** (evnt) - Asynchronous event system device drivers can use to notify the system. One or more state machines can be notified
+* **Heap memory manager** (heap) - Implements user defined heaps with dynamic fixed block sized memory allocation and free. This provides a mechanism for dynamic memory allocation that is not prone to memory fragmentation
+* **Extensible Command Line Interface** (cli) - Simplifies debugging by providing a simple method to create command line "apps" that exercise or provide status on system functions
+* **Logging API** (log) - Provides a mechanism to insert log messages in code this can be filtered on severity or conditionally compiled out of the application
+* **Alarm manager** (alrm) - Provides a mechanism for an application to implement alarms that can be acknowledged by the user
+* **Modbus protocol** (mod) - Modbus RTU server and client protocol stacks to enable off-board communication using RS-232 or RS-485 serial interfaces
+* **Pulse Code Modulated sound player** (pcm) - Plays PCM encoded sound converted from various sound file formats using the wav2c utility
 
-...the following AVR DA device drivers...
+...AVR DA device drivers...
 
-* General purpose I/O (gpio)
-* Universal async recevier/transmitter (uart)
-* Digital to analog conveter (dac)
-* Internal CPU oscillator (cpu)
-* Memory map/stack/usage diagnostics (mem)
+* **General purpose I/O** (gpio) - Manipulate the AVR general purpose I/O pins
+* **Universal async recevier/transmitter** (uart) - Buffered serial interface driver
+* **Digital to analog converter** (dac) - Output analog values on the AVR DAC pin
+* **Analog to digital converter** (adc) - Capture analog values from the AVR ADC pin(s)
+* **Internal CPU oscillator** (cpu) - Configure internal clock used for the system tick
+* **Memory map/stack/usage diagnostics** (mem) - Determine RAM and Flash memory usage
 
-...and the following generic device drivers...
+...physical device drivers...
 
-* Button/switch (btn)
-* Rotary Encoder (rot)
-* PCM Audio (pcm)
-* 7 segment LED display (7seg)
-* PS/2 keyboard interface (ps2)
+* **Button/switch** (btn) - Digital button or switch driver with de-bounce 
+* **Rotary Encoder** (rot) - Rotary encoder driver
+* **PCM Audio** (pcm) - PCM audio player that works with the Sound Converter Utility
+* **7 segment LED display** (7seg) - Matrixed 7 Segment LED display driver
+* **PS/2 keyboard interface** (ps2) - PS/2 keyboard/mouse protocol driver 
 
-Lastly, it also includes a Linux scripts to install command line and GUI 
-development tools required to build avrOS applications. There is also a
-command line utility `wav2c` to convert a number of sound and video file
-formats to a C file that can be linked with your application and played 
-with the PCM sound player API.
+...and Linux based utilities...
+
+* **avrOS Command Center** (avrcc) - Linux text mode application to connect to avrOS applications using the CLI, logging, and/or alarm services. This application enables these services to share the same serial interface thus reducing the resources (pins) required for an application user/debug interface
+* **avrOS Dash Board** (arvdb) - Example Linux graphical application using the Grafana data visualization tool, Prometheus time series database, and the avrOS modbus service 
+* **Sound Converter Utility** (snd2c) - Utility to convert various sound file formats to C code data structures that can be linked with user applications
+* **Serial Keyboard Service** (serkey) - Linux user mode serial keyboard/HMI device service
+
+Lastly, it also includes Linux scripts to install command line and GUI 
+development tools required to build avrOS applications.
 
 avrOS is still in it's sub 1.0 development stage. So there are lots of new 
 features and drivers coming. For more information regarding avrOS, refer to
