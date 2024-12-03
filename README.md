@@ -121,8 +121,8 @@ environment on a debian based Linux distribution follow the instructions here:
 
    > [!NOTE]
    > These automated scripts will install additional software
-     software packages and possibly update config files. I encourage you to
-     review these scripts before running any of them.
+   software packages and possibly update config files. I encourage you to
+   review these scripts before running any of them.
 
 3. Install Gnu make, git, avr-gcc Gnu C compiler, and other CLI tools
 
