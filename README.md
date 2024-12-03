@@ -119,7 +119,8 @@ environment on a debian based Linux distribution follow the instructions here:
    | install_avrdude.sh   | Downloads, boulds, and installs avrdude from the latest version on github |
    | setup_git.sh         | Prompts and configures the username and email for git. install_cli_tools.sh calls this script |
 
-   > :memo: **Note:** These automated scripts will install additional software
+   > [!NOTE]
+   > These automated scripts will install additional software
      software packages and possibly update config files. I encourage you to
      review these scripts before running any of them.
 
@@ -150,7 +151,8 @@ environment on a debian based Linux distribution follow the instructions here:
    Go to this [AVRDUDE github page](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
    for instructions to clone, build, and install it from the latest source
 
-   > :memo: **Note:** If you are using an older distribution based on Debian 10 or earlier, you may need
+   > [!NOTE]
+   > If you are using an older distribution based on Debian 10 or earlier, you may need
    to do this because the version the Debian/Ubuntu repositories does not support Atmel Ice and Serial
    UPDI programming interfaces. Distributions based on Debian 12 (Bookworm) will have a current version
    of AVRDUDE and this step is not required
