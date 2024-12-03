@@ -151,7 +151,7 @@ review these scripts before running any of them.
    Go to this [AVRDUDE github page](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
    for instructions to clone, build, and install it from the latest source
 
-> [!INFORMATION]
+> [!IMPORTANT]
 > If you are using an older distribution based on Debian 10 or earlier, you may need
 to do this because the version the Debian/Ubuntu repositories does not support Atmel Ice and Serial
 UPDI programming interfaces. Distributions based on Debian 12 (Bookworm) will have a current version
