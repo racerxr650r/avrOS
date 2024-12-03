@@ -119,10 +119,10 @@ environment on a debian based Linux distribution follow the instructions here:
    | install_avrdude.sh   | Downloads, boulds, and installs avrdude from the latest version on github |
    | setup_git.sh         | Prompts and configures the username and email for git. install_cli_tools.sh calls this script |
 
-   > [!NOTE]
-   > These automated scripts will install additional software
-   software packages and possibly update config files. I encourage you to
-   review these scripts before running any of them.
+> [!NOTE]
+> These automated scripts will install additional software
+software packages and possibly update config files. I encourage you to
+review these scripts before running any of them.
 
 3. Install Gnu make, git, avr-gcc Gnu C compiler, and other CLI tools
 
