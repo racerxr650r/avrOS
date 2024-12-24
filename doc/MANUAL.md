@@ -1,7 +1,6 @@
 [![avrOS](./avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
 ---
 # User Manual
-
 **avrOS** - _Operating Environment for AVR DA_, is a scalable operating environment 
 including drivers for the AVR DA family of microcontrollers. It uses macros, a 
 custom linker script, and the linker to build the system tables (state machines,
@@ -12,7 +11,6 @@ source files. In addition, these tables reside in FLASH where possible and the
 system does not require run-time registration and related fault handling code.
 
 ## avrOS File Organization
-
 avrOS is organized into 7 directories counting the root directory; ./, ./app,
 ./docs, ./drv, ./srv, ./sys, and ./util
 
@@ -48,8 +46,7 @@ finite state machine manager, and the OS objects (flags and queues).
 **avrOS
 /util** contains host utility programs.
 
-## avrOS Application Directory
-
+### Application (app)
 The avrOS/app directory contains a sub-directory for each application. The
 app directory should contain at least the following files.
 
@@ -76,8 +73,7 @@ The loop then repeats.
 
 **makefile** is the make script to build, clean, and flash your application.
 
-## System
-
+### System (sys)
 avrOS provides the following system objects and functions:
 
 * Finite State Machine manager (fsm)
@@ -86,16 +82,14 @@ avrOS provides the following system objects and functions:
 * Queues API (que)
 * Timers API (tmr)
 
-## Services
-
+### Services (srv)
 avrOS provides the following system services:
 
 * Command Line Interface (cli)
 * Logger (log)
 * Pulse Code Modulated sound player API (pcm)
 
-## Drivers
-
+### Drivers (drv)
 avrOS provides the following AVR DA device drivers:
 
 * UART
@@ -103,14 +97,13 @@ avrOS provides the following AVR DA device drivers:
 * DAC
 * Internal CPU Oscillator API
 
-## Utilities
-
+### Utilities (util)
 avrOS includes a Linux command line utility `wav2c` to convert a 
 number of sound and video file formats to a C file that can be linked with
 your application and played with the PCM sound player API.
 
-## Scarce Microcontroller Resources
-
+## avrOS Theory of Operation
+### The Problem
 RAM is a precious commodity on microcontrollers. Especially for 8 bit 
 microcontrollers like the AVR. The AVR DA family only has 16K of RAM. 
 Therefore, avrOS is designed to use as little RAM as possible.
@@ -141,8 +134,7 @@ object at runtime requires the functional block to allocate memory from RAM.
 This is another inefficient use of RAM. It also requires additional code to
 test and handle the condition when not enough RAM is available.
 
-## avrOS Theory of Operation
-
+### The Solution
 avrOS uses an Automata-based programming paradigm. The system scheduler relies
 on a cooperative multitasking implementation of the application code. It
 implements a finite state machine manager. Instead of threads, it manages a
@@ -189,7 +181,6 @@ CLI and Logger services. But, the release version of the same application may
 not include either of these services.
 
 ## avrOS Application Development
-
 As previously mentioned, avrOS builds a series of tables that describes the OS
 and driver configuration. These tables are stored in non-volatile flash memory
 wherever possible. To facilitate this, avrOS provides macros to declare and
@@ -198,6 +189,41 @@ various OS modules and drivers, how to declare and define them, and API to use
 them in your application.
 
 ### System (sys)
+System provides the functions that initialize the system, manage the system
+tick, and put the system to sleep. These are used in the application code that 
+implements the system loop.
+
+```code
+// Application entry point and system loop ------------------------------------
+int main(void)
+{
+	// Initialize the system --------------------------------------------------
+	sysInit();
+    // *** Insert custom initialization code here ***
+	// Loop forever -----------------------------------------------------------
+    while (1) 
+    {
+	    // Call the main state machine dispatcher
+        fsmDispatch();
+        // *** Insert custom logic prior to going asleep here ***
+        // Go to sleep until the next interrupt
+        sysSleep();
+        // ** Insert custom logic after awaking here ***
+    }
+}
+```
+'sysInit()' initializes all of the system objects, services, and device drivers. The
+while loop implements the system run time. The 'fsmDispatch()' function implements
+the finite state machine. This function will step through all the of the state
+machines in the ready queue in priority order calling the current state function for
+each. The function only returns when there are no longer any state machines in the
+ready queue. This implies that all of the state machines have either ended and/or
+they are waiting on an event.
+
+>[Note!]
+>Events are important to system power management. All state machines must eventually
+>wait on an event if the system is to go into sleep mode. If there is just one state
+>machine that does not wait on an event, the system will never go into sleep mode.
 
 ### Finite State Machine (fsm)
 The state machine dispatcher in avrOS maintains a table of state machine descriptors
@@ -294,12 +320,17 @@ int MyState3(volatile fsmStateMachine_t *stateMachine)
 
 ### Testing (tst)
 
+### Modbus (mod)
+Future Feature
 
+### General Purpose I/O (gpio)
+
+### UART Serial Interface (uart)
+
+### Memory Usage (mem)
 
 ## Building, Programming, and Running Applications
-
 ### Building avrOS Application
-
 An application is built from the avrOS/app/application_name directory. avrOS
 comes with a avrOS/app/avrOS_example directory and application code example.
 `make all` from the command line in the application directory will build the
@@ -324,7 +355,6 @@ Raspberry PI. There's no need to use Atmel Studio and Windows for AVR applicatio
 development.
 
 ### Programming and Running avrOS Application
-
 The makefile uses [AVRDUDE](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
 to program the target CPU. By default, it uses the Atmel Ice as the programmer.
 To change this, modify the PRG variable in the makefile.
