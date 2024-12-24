@@ -26,7 +26,7 @@ avrOS
 +-- util
     +-- wav2c
 ```
-**.../avrOS** Root contains the avrOS.h header file. 
+__.../avrOS__ Root contains the avrOS.h header file. 
 
 **avrOS/app/avrOS_example** contains the makefile, avrOSConfig.h, main.c, and avrOS.x
 files. The avrOSConfig.h file selects the components to be included in the
@@ -59,15 +59,15 @@ updating it to include the required sections and symbols. For more
 information regarding this, see the *avrOS Linker Script* page in the avrOS
 wiki.
 
-**main.c** source file contains the entry point `main()` for your application.
-Main calls sysInit() to perform the runtime initialization of avrOS. It then
-enters an endless while loop calling fsmDispatch() and sysSleep(). This
+__main.c__ source file contains the entry point `main()` for your application.
+Main calls `sysInit()` to perform the runtime initialization of avrOS. It then
+enters an endless while loop calling `fsmDispatch()` and `sysSleep()`. This
 function implements the finite state machine scheduler. This scheduler walks
 the state machine and state tables to determine which state to run. The
 scheduler will continue to call states until the "ready" queue is empty. At
-that time, it will return. The loop in main() then calls sysSleep(). This
+that time, it will return. The loop in `main()` then calls `sysSleep()`. This
 function puts the processor into a sleep state and stops execution. Execution
-will resume and sysSleep() will return once an external interrupt is triggered.
+will resume and `sysSleep()` will return once an external interrupt is triggered.
 The loop then repeats.
 
 **makefile** is the make script to build, clean, and flash your application.
@@ -211,8 +211,8 @@ int main(void)
     }
 }
 ```
-'sysInit()' initializes all of the system objects, services, and device drivers. The
-while loop implements the system run time. The 'fsmDispatch()' function implements
+`sysInit()` initializes all of the system objects, services, and device drivers. The
+while loop implements the system run time. The `fsmDispatch()` function implements
 the finite state machine. This function will step through all the of the state
 machines in the ready queue in priority order calling the current state function for
 each. The function only returns when there are no longer any state machines in the
@@ -226,7 +226,7 @@ they are waiting on an event.
 
 ### Finite State Machine (fsm)
 The state machine dispatcher in avrOS maintains a table of state machine descriptors
-in flash. This table is built using the ADD_STATE_MACHINE() macro in the user code.
+in flash. This table is built using the `ADD_STATE_MACHINE()` macro in the user code.
 These data structures maintain the name of the state machine, a pointer to a state
 machine status data structure in RAM, a pointer to the initialization function for
 that state machine, the state machine's priority, and a void pointer that can be used
@@ -236,7 +236,7 @@ the current state, a pointer to the next state, a boolean that notes if this is 
 first call to this state since the prior state change, a tick count for a wait timer
 event, a next pointer used for the ready and wait queues, and a pointer back to the
 descriptor in flash described above. State transitions are handled in the state code
-itself by calling fsmSetNextState(state_machine_name, state_function_pointer).
+itself by calling `fsmSetNextState(state_machine_name, state_function_pointer)`.
 
 The code to implement a state machine looks something like this.
 
