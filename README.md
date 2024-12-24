@@ -38,36 +38,36 @@ for remote development using VsCode, Zed, or ssh with your favorite text mode ed
 
 ## avrOS Features
 ### System Services:
-* **System Tick** (sys) - Provides a system tick and timers
+* **System** (sys) - Provides a system initialization, system timer, and sleep
 * **Finite State Machine manager** (fsm) - Manages user defined state machines implementing prioritized scheduling and power management
 * **Queues API** (que) - Inter-State Machine communication mechanism. It can be used to synchronize or pass data between two or more state machines
 * **Events API** (evnt) - An Asynchronous event system that device drivers and state machines can use to notify the system of various occurances. One or more state machines can wait on a single event
-* **Heap memory manager** (heap) - Implements user defined heaps with dynamic fixed block sized memory allocation and free. This provides a mechanism for dynamic memory allocation that is not prone to memory fragmentation
+* **Memory Pools**[^3] (mpl) - Implements user defined heaps with dynamic fixed block sized memory allocation and free. This provides a mechanism for dynamic memory allocation that is not prone to memory fragmentation
 * **Extensible Command Line Interface** (cli) - Simplifies debugging by providing a simple method to create command line "apps" that exercise or provide status on system functions
 * **Logging API** (log) - Provides a mechanism to insert log messages in code this can be filtered on severity or conditionally compiled out of the application
-* **Alarm manager** (alrm) - Provides a mechanism for an application to implement alarms that can be acknowledged by the user
-* **Modbus protocol** (mod) - Modbus RTU server and client protocol stacks to enable off-board communication using RS-232 or RS-485 serial interfaces
+* **Alarm manager**[^3] (alrm) - Provides a mechanism for an application to implement alarms that can be acknowledged by the user
+* **Modbus protocol**[^3] (mod) - Modbus RTU server and client protocol stacks to enable off-board communication using RS-232 or RS-485 serial interfaces
 * **Pulse Code Modulated sound player** (pcm) - Plays PCM encoded sound converted from various sound file formats using the wav2c utility
 
 ### AVR DA device drivers:
 * **General purpose I/O** (gpio) - Manipulate the AVR general purpose I/O pins
 * **Universal async recevier/transmitter** (uart) - Buffered serial interface driver
-* **Digital to analog converter** (dac) - Output analog values on the AVR DAC pin
-* **Analog to digital converter** (adc) - Capture analog values from the AVR ADC pin(s)
+* **Digital to analog converter**[^3] (dac) - Output analog values on the AVR DAC pin
+* **Analog to digital converter**[^3] (adc) - Capture analog values from the AVR ADC pin(s)
 * **Internal CPU oscillator** (cpu) - Configure internal clock used for the system tick
 * **Memory map/stack/usage diagnostics** (mem) - Determine RAM and Flash memory usage
 
 ### Physical device drivers:
-* **Button/switch** (btn) - Digital button or switch driver with de-bounce 
-* **Rotary Encoder** (rot) - Rotary encoder driver
-* **PCM Audio** (pcm) - PCM audio player that works with the Sound Converter Utility
-* **7 segment LED display** (7seg) - Matrixed 7 Segment LED display driver
-* **PS/2 keyboard interface** (ps2) - PS/2 keyboard/mouse protocol driver 
+* **Button/switch**[^3] (btn) - Digital button or switch driver with de-bounce 
+* **Rotary Encoder**[^3] (rot) - Rotary encoder driver
+* **PCM Audio**[^3] (pcm) - PCM audio player that works with the Sound Converter Utility
+* **7 segment LED display**[^3] (7seg) - Matrixed 7 Segment LED display driver
+* **PS/2 keyboard interface**[^3] (ps2) - PS/2 keyboard/mouse protocol driver 
 
 ### Linux based utilities and scripts:
-* **avrOS Command Center** (avrcc) - Linux text mode application to connect to avrOS applications using the CLI, logging, and/or alarm services. This application enables these services to share the same serial interface thus reducing the resources (pins) required for an application user/debug interface
-* **avrOS Dash Board** (arvdb) - Example Linux graphical application using the Grafana data visualization tool, Prometheus time series database, and the avrOS modbus service
-* **Installation Scripts** - Bash shell scripts that automate the installation of a fully functional AVR development system on Debian based Linux distributions such as Debian, Ubuntu, and Raspberry Pi OS. These scripts install freely available open source tools such as avr-gcc, binutils, Cppcheck static code analyzer, GNU code complexity analyzer, AVR DA family library and header files, a variety of program editors/IDEs, and avrDude. There's even a script to setup a Raspberry Pi as a headless development environment with serial connectivity and avr UPDI programming. This setup can be remotely accessed using VsCode, Zed, or even ssh from your desktop development PC
+* **avrOS Command Center**[^3] (avrcc) - Linux text mode application to connect to avrOS applications using the CLI, logging, and/or alarm services. This application enables these services to share the same serial interface thus reducing the resources (pins) required for an application user/debug interface
+* **avrOS Dash Board**[^3] (arvdb) - Example Linux graphical application using the Grafana data visualization tool, Prometheus time series database, and the avrOS modbus service
+* **Installation Scripts**[^3] - Bash shell scripts that automate the installation of a fully functional AVR development system on Debian based Linux distributions such as Debian, Ubuntu, and Raspberry Pi OS. These scripts install freely available open source tools such as avr-gcc, binutils, Cppcheck static code analyzer, GNU code complexity analyzer, AVR DA family library and header files, a variety of program editors/IDEs, and avrDude. There's even a script to setup a Raspberry Pi as a headless development environment with serial connectivity and avr UPDI programming. This setup can be remotely accessed using VsCode, Zed, or even ssh from your desktop development PC
 * **Sound Converter Utility** (snd2c) - Utility to convert various sound file formats to C code data structures that can be linked with user applications
 * **Serial Keyboard Service** (serkey) - Linux user mode serial keyboard/HMI device service. It can be used with avrOS applications to implement HMI devices connected to a Linux device using a serial port
 
@@ -241,3 +241,4 @@ appropiate package manager.
 [^1]: The make flash target will build and program the application into flash
 [^2]: If you are using a different programmer that is supported by AVRDUDE, 
 change PRG in the makefile to the string AVRDUDE uses for your programmer
+[^3]: This is a planned future feature
