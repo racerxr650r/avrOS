@@ -76,49 +76,6 @@ The loop then repeats.
 
 **makefile** is the make script to build, clean, and flash your application.
 
-## Building avrOS Application
-
-An application is built from the avrOS/app/application_name directory. avrOS
-comes with a avrOS/app/avrOS_example directory and application code example.
-`make all` from the command line in the application directory will build the
-application .hex file. When building the application, the makefile creates a
-./build directory in the application directory. It's here you will find the
-.hex file and the other generated object files.
-
-The `make clean` command will delete the avrOS/build directory and it's contents
-
-To create your own application, make a new directory in ./app directory. Then,
-copy the makefile, avrOS.x, avrConfig.h, and main.c files from the
-./app/avrOS_example to your new directory. 
-
-The makefile will build your application without any changes. If you choose to
-rename main.c, you will have to modify the PRJ variable in the makefile to the
-same name of your renamed main.c file excluding the .c file extension.
-
-
-avrOS also comes with a makefile and instructions to setup a development
-environment and build applications on a Linux desktop PC, chromebook, or even a
-Raspberry PI. There's no need to use Atmel Studio and Windows for AVR application
-development.
-
-## Loading and Running avrOS Application
-
-The makefile uses [AVRDUDE](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
-to program the target CPU. By default, it uses the Atmel Ice as the programmer.
-To change this, modify the PRG variable in the makefile.
-
-```
-# avr programmer (and port if necessary)
-# e.g. PRG = atmelice_updi -or- PRG = serialupdi -P /dev/ttyUSB0
-# The current programmer if the Atmel ICE w/UPDI interface
-PRG = atmelice_updi
-```
-
-`make flash` will program the application .hex file into the AVR flash program
-memory and reset the processor.
-
-`make test` will test the connectivity to the programmer.
-
 ## System
 
 avrOS provides the following system objects and functions:
@@ -230,3 +187,156 @@ developer can select precisely the features and drivers required by their
 implementation. For instance, a debug version of application may include the
 CLI and Logger services. But, the release version of the same application may
 not include either of these services.
+
+## avrOS Application Development
+
+As previously mentioned, avrOS builds a series of tables that describes the OS
+and driver configuration. These tables are stored in non-volatile flash memory
+wherever possible. To facilitate this, avrOS provides macros to declare and
+define OS objects, services, and drivers. The following sections describe the
+various OS modules and drivers, how to declare and define them, and API to use
+them in your application.
+
+### System (sys)
+
+### Finite State Machine (fsm)
+The state machine dispatcher in avrOS maintains a table of state machine descriptors
+in flash. This table is built using the ADD_STATE_MACHINE() macro in the user code.
+These data structures maintain the name of the state machine, a pointer to a state
+machine status data structure in RAM, a pointer to the initialization function for
+that state machine, the state machine's priority, and a void pointer that can be used
+to point to a customer data structure with additional user information related to the
+state machine. The state machine status data structure in RAM contains a pointer to
+the current state, a pointer to the next state, a boolean that notes if this is the
+first call to this state since the prior state change, a tick count for a wait timer
+event, a next pointer used for the ready and wait queues, and a pointer back to the
+descriptor in flash described above. State transitions are handled in the state code
+itself by calling fsmSetNextState(state_machine_name, state_function_pointer).
+
+The code to implement a state machine looks something like this.
+
+```code
+// My State Machine Configuration ------------------------------------------------
+ADD_STATE_MACHINE(My_State_Machine_Name,MyStateMachineInit, FSM_APP | 10);
+ 
+int MyStateMachineInit(volatile fsmStateMachine_t *stateMachine);
+int MyState1(volatile fsmStateMachine_t *stateMachine);
+int MyState2(volatile fsmStateMachine_t *stateMachine);
+int MyState3(volatile fsmStateMachine_t *stateMachine);
+ 
+// My State Machine Status --------------------------------------------------------
+int MyStatus;
+ 
+// My State Machine Initialization ------------------------------------------------
+int MyStateMachineInit(volatile fsmStateMachine_t *stateMachine)
+{
+    // Do something here
+    blah blah blah;
+ 
+    MyStatus = GOTO_STATE_2;
+    fsmSetNextState(stateMachine,MyState1);
+    return(0);
+}
+ 
+int MyState1(volatile fsmStateMachine_t *stateMachine)
+{
+    // Do Something here
+    blah blah blah;
+ 
+    // If this is the second call to this state since the last transition...
+    if(!fsmIsInitialCall())
+    {
+        if(MyStatus == GOTO_STATE_2)
+            fsmSetNextState(stateMachine,MyState2);
+        else if(MyStatus == GOTO_STATE_3)
+            fsmSetNextState(stateMachine,MyState3);
+    }
+ 
+    // Wait for 250 systems ticks (250 mSec)
+    fsmWaitTicks(stateMachine, 250);
+    return(0);
+}
+ 
+int MyState2(volatile fsmStateMachine_t *stateMachine)
+{
+    // Do Something here
+    blah blah blah;
+    MyStatus = GOTO_STATE_3;
+ 
+    fsmSetNextState(stateMachine,MyState1);
+ 
+    // Wait for 250 systems ticks (250 mSec)
+    fsmWaitTicks(stateMachine, 250);
+    return(0);
+}
+ 
+int MyState3(volatile fsmStateMachine_t *stateMachine)
+{
+    // Do Something here
+    blah blah blah;
+    MyStatus = GOTO_STATE_2;
+ 
+    fsmSetNextState(stateMachine,MyState1);
+ 
+    // Wait for 250 systems ticks (250 mSec)
+    fsmWaitTicks(stateMachine, 250);
+    return(0);
+}
+```
+
+### Events (evnt)
+
+### Queues (que)
+
+### Command Line Interface (cli)
+
+### Logging (log)
+
+### Testing (tst)
+
+
+
+## Building, Programming, and Running Applications
+
+### Building avrOS Application
+
+An application is built from the avrOS/app/application_name directory. avrOS
+comes with a avrOS/app/avrOS_example directory and application code example.
+`make all` from the command line in the application directory will build the
+application .hex file. When building the application, the makefile creates a
+./build directory in the application directory. It's here you will find the
+.hex file and the other generated object files.
+
+The `make clean` command will delete the avrOS/build directory and it's contents
+
+To create your own application, make a new directory in ./app directory. Then,
+copy the makefile, avrOS.x, avrConfig.h, and main.c files from the
+./app/avrOS_example to your new directory. 
+
+The makefile will build your application without any changes. If you choose to
+rename main.c, you will have to modify the PRJ variable in the makefile to the
+same name of your renamed main.c file excluding the .c file extension.
+
+
+avrOS also comes with a makefile and instructions to setup a development
+environment and build applications on a Linux desktop PC, chromebook, or even a
+Raspberry PI. There's no need to use Atmel Studio and Windows for AVR application
+development.
+
+### Programming and Running avrOS Application
+
+The makefile uses [AVRDUDE](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
+to program the target CPU. By default, it uses the Atmel Ice as the programmer.
+To change this, modify the PRG variable in the makefile.
+
+```
+# avr programmer (and port if necessary)
+# e.g. PRG = atmelice_updi -or- PRG = serialupdi -P /dev/ttyUSB0
+# The current programmer if the Atmel ICE w/UPDI interface
+PRG = atmelice_updi
+```
+
+`make flash` will program the application .hex file into the AVR flash program
+memory and reset the processor.
+
+`make test` will test the connectivity to the programmer.
