@@ -362,6 +362,37 @@ int myCmd(int argc, char *argv[])
 >current and max usage of the system's queues. Lastly, there's a memory commands to
 >report the flash and RAM usage including the max stack usage.
 
+Typing `help` or `?` from the avrOS command line will list all of the enabled CLI
+commands compiled in the application.
+
+```
+avrOS> help
+    evnt (-r)
+    fsmReset 
+    fsmStart 
+    fsmStop 
+    fsm (-r)
+    que (-r)
+    tickFreq 
+    tick (-r)
+    reset 
+    gpioRdOut 
+    gpioRdIn (-r)
+    gpioWrOut 
+    gpioTgl 
+    gpioClr 
+    gpioSet 
+    gpio (-r)
+    rom (-r)
+    ram (-r)
+    uart (-r)
+    clear 
+    ? 
+    help 
+OK
+avrOS> 
+```
+
 ### Logging
 
 ### Testing
