@@ -193,7 +193,7 @@ System provides the functions that initialize the system, manage the system
 tick, and put the system to sleep. These are used in the application code that 
 implements the system loop.
 
-```code
+```C
 // Application entry point and system loop ------------------------------------
 int main(void)
 {
@@ -241,7 +241,7 @@ itself by calling fsmSetNextState(state_machine_name, state_function_pointer).
 
 The code to implement a state machine looks something like this.
 
-```code
+```C
 // My State Machine Configuration ------------------------------------------------
 ADD_STATE_MACHINE(My_State_Machine_Name,MyStateMachineInit, FSM_APP | 10);
  
