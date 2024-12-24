@@ -318,6 +318,12 @@ checks if this is the initial call to this state since the last state transition
 
 ### Queues
 
+### Alarms
+***Future Feature***
+
+### Memory Pools
+***Future Feature***
+
 ### Command Line Interface
 
 ### Logging
@@ -325,13 +331,13 @@ checks if this is the initial call to this state since the last state transition
 ### Testing
 
 ### Modbus
-Future Feature
+***Future Feature***
 
 ### General Purpose I/O
 
 ### UART Serial Interface
 
-### Memory Usage
+### Memory Usage Diagnostics
 
 ## Building, Programming, and Running Applications
 ### Building avrOS Application
