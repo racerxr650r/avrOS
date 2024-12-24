@@ -220,7 +220,7 @@ each. The function only returns when there are no longer any state machines in t
 ready queue. This implies that all of the state machines have either ended and/or
 they are waiting on an event.
 
->[Note!]
+>[!NOTE]
 >Events are important to system power management. All state machines must eventually
 >wait on an event if the system is to go into sleep mode. If there is just one state
 >machine that does not wait on an event, the system will never go into sleep mode.
