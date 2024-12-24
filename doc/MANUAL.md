@@ -308,6 +308,11 @@ int MyState3(volatile fsmStateMachine_t *stateMachine)
     return(0);
 }
 ```
+In the code above, `MyStateMachineInit()` is called once during the `sysInit()`
+called from the application `main()` [See System Section](###System (sys)). Each
+state tells the state machine dispatcher to wait for 250 milliseconds before
+calling the next state. And, `MyState1()` is called twice each time because it
+checks if this is the initial call to this state since the last state transition.
 
 ### Events (evnt)
 
