@@ -224,7 +224,7 @@ they are waiting on an event.
 >wait on an event if the system is to go into sleep mode. If there is just one state
 >machine that does not wait on an event, the system will never go into sleep mode.
 
-### Finite State Machine (fsm)
+### Finite State Machine
 The state machine dispatcher in avrOS maintains a table of state machine descriptors
 in flash. This table is built using the `ADD_STATE_MACHINE()` macro in the user code.
 These data structures maintain the name of the state machine, a pointer to a state
@@ -314,24 +314,24 @@ state tells the state machine dispatcher to wait for 250 milliseconds before
 calling the next state. And, `MyState1()` is called twice each time because it
 checks if this is the initial call to this state since the last state transition.
 
-### Events (evnt)
+### Events
 
-### Queues (que)
+### Queues
 
-### Command Line Interface (cli)
+### Command Line Interface
 
-### Logging (log)
+### Logging
 
-### Testing (tst)
+### Testing
 
-### Modbus (mod)
+### Modbus
 Future Feature
 
-### General Purpose I/O (gpio)
+### General Purpose I/O
 
-### UART Serial Interface (uart)
+### UART Serial Interface
 
-### Memory Usage (mem)
+### Memory Usage
 
 ## Building, Programming, and Running Applications
 ### Building avrOS Application
