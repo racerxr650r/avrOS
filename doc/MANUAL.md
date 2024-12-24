@@ -45,7 +45,7 @@ finite state machine manager, and the OS objects (flags and queues).
 
 ***avrOS/util*** contains host utility programs.
 
-### Application (app)
+### app (Application)
 The avrOS/app directory contains a sub-directory for each application. The
 app directory should contain at least the following files.
 
@@ -72,7 +72,7 @@ The loop then repeats.
 
 ***makefile*** is the make script to build, clean, and flash your application.
 
-### System (sys)
+### sys (System)
 avrOS provides the following system objects and functions:
 
 * Finite State Machine manager (fsm)
@@ -81,14 +81,14 @@ avrOS provides the following system objects and functions:
 * Queues API (que)
 * Timers API (tmr)
 
-### Services (srv)
+### srv (Services)
 avrOS provides the following system services:
 
 * Command Line Interface (cli)
 * Logger (log)
 * Pulse Code Modulated sound player API (pcm)
 
-### Drivers (drv)
+### drv (Drivers)
 avrOS provides the following AVR DA device drivers:
 
 * UART
@@ -96,7 +96,7 @@ avrOS provides the following AVR DA device drivers:
 * DAC
 * Internal CPU Oscillator API
 
-### Utilities (util)
+###  util (Utilities)
 avrOS includes a Linux command line utility `wav2c` to convert a 
 number of sound and video file formats to a C file that can be linked with
 your application and played with the PCM sound player API.
@@ -309,7 +309,7 @@ int MyState3(volatile fsmStateMachine_t *stateMachine)
 }
 ```
 In the code above, `MyStateMachineInit()` is called once during the `sysInit()`
-called from the application `main()`; [See System](#system-(sys)-1). Each
+called from the application `main()`; [See System](#system-(sys)). Each
 state tells the state machine dispatcher to wait for 250 milliseconds before
 calling the next state. And, `MyState1()` is called twice each time because it
 checks if this is the initial call to this state since the last state transition.
