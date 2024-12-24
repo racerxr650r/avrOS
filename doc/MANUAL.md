@@ -43,8 +43,7 @@ you are reading now and the avrOS logo graphic files.
 **avrOS/sys** contains the source files that implement system initialization, the
 finite state machine manager, and the OS objects (flags and queues). 
 
-**avrOS
-/util** contains host utility programs.
+**avrOS/util** contains host utility programs.
 
 ### Application (app)
 The avrOS/app directory contains a sub-directory for each application. The
