@@ -187,7 +187,7 @@ define OS objects, services, and drivers. The following sections describe the
 various OS modules and drivers, how to declare and define them, and API to use
 them in your application.
 
-### System (sys)
+### System
 System provides the functions that initialize the system, manage the system
 tick, and put the system to sleep. These are used in the application code that 
 implements the system loop.
@@ -309,7 +309,7 @@ int MyState3(volatile fsmStateMachine_t *stateMachine)
 }
 ```
 In the code above, `MyStateMachineInit()` is called once during the `sysInit()`
-called from the application `main()`; [See System](#system-(sys)). Each
+called from the application `main()`; [See System](#system)). Each
 state tells the state machine dispatcher to wait for 250 milliseconds before
 calling the next state. And, `MyState1()` is called twice each time because it
 checks if this is the initial call to this state since the last state transition.
