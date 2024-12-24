@@ -394,7 +394,7 @@ avrOS>
 In the example of the help command above, some of the commands have `(-r)` postpended.
 These commands passed `true` as the third parameter in the `ADD_COMMAND()` macro call.
 This means the command can be called with a `-r` flag. When this is done, the CLI will
-call the command function repeatedly until the user presses <cntrl>-C. An example is
+call the command function repeatedly until the user presses `<cntrl>-C`. An example is
 the `que -r` command.
 ```
 cliUart_RxQue        Capacity:        8 Max:       1
