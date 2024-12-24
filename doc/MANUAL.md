@@ -1,7 +1,7 @@
 [![avrOS](./avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
 ---
 # User Manual
-**avrOS** - _Operating Environment for AVR DA_, is a scalable operating environment 
+***avrOS*** - _Operating Environment for AVR DA_, is a scalable operating environment 
 including drivers for the AVR DA family of microcontrollers. It uses macros, a 
 custom linker script, and the linker to build the system tables (state machines,
 states, drivers, services, CLI callbacks, Events, Queues, and Timers) at compile/link 
@@ -26,40 +26,40 @@ avrOS
 +-- util
     +-- wav2c
 ```
-__.../avrOS__ Root contains the avrOS.h header file. 
+***.../avrOS*** Root contains the avrOS.h header file. 
 
-**avrOS/app/avrOS_example** contains the makefile, avrOSConfig.h, main.c, and avrOS.x
+***avrOS/app/avrOS_example*** contains the makefile, avrOSConfig.h, main.c, and avrOS.x
 files. The avrOSConfig.h file selects the components to be included in the
 build. The avrOS.x file is a linker script. The main.c file contains the main()
 entry point and the user application state machine and system objects.
 
-**avrOS/doc** contains relavent documents and graphic files. This includes the document
+***avrOS/doc*** contains relavent documents and graphic files. This includes the document
 you are reading now and the avrOS logo graphic files.
 
-**avrOS/drv** contains the device drivers.
+***avrOS/drv*** contains the device drivers.
 
-**avrOS/srv** contains the system services such as the CLI manager and Logging.
+***avrOS/srv*** contains the system services such as the CLI manager and Logging.
 
-**avrOS/sys** contains the source files that implement system initialization, the
+***avrOS/sys*** contains the source files that implement system initialization, the
 finite state machine manager, and the OS objects (flags and queues). 
 
-**avrOS/util** contains host utility programs.
+***avrOS/util*** contains host utility programs.
 
 ### Application (app)
 The avrOS/app directory contains a sub-directory for each application. The
 app directory should contain at least the following files.
 
-**avrConfig.h** configures the system, driver, and service files to be
+***avrConfig.h*** configures the system, driver, and service files to be
 included with your application. It's self documenting with a signficant
 number of comments included in the file.
 
-**avrOS.x** is the linker script for your application. avrOS is dependent
+***avrOS.x*** is the linker script for your application. avrOS is dependent
 on this linker file. Do not replace it with a standard linker script without
 updating it to include the required sections and symbols. For more
 information regarding this, see the *avrOS Linker Script* page in the avrOS
 wiki.
 
-__main.c__ source file contains the entry point `main()` for your application.
+***main.c*** source file contains the entry point `main()` for your application.
 Main calls `sysInit()` to perform the runtime initialization of avrOS. It then
 enters an endless while loop calling `fsmDispatch()` and `sysSleep()`. This
 function implements the finite state machine scheduler. This scheduler walks
@@ -70,7 +70,7 @@ function puts the processor into a sleep state and stops execution. Execution
 will resume and `sysSleep()` will return once an external interrupt is triggered.
 The loop then repeats.
 
-**makefile** is the make script to build, clean, and flash your application.
+***makefile*** is the make script to build, clean, and flash your application.
 
 ### System (sys)
 avrOS provides the following system objects and functions:
