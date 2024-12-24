@@ -325,6 +325,42 @@ checks if this is the initial call to this state since the last state transition
 ***Future Feature***
 
 ### Command Line Interface
+The Command Line Interface (cli) uses one of the serial ports and is enabled with
+the following commands. It provides an easy to implement User interface, a mechanism
+to aid debugging, and a simple way to analyze system performance.
+
+```C
+ADD_UART_RW(cliUart, CLI_USART, CLI_BAUDRATE, CLI_PARITY, CLI_DATA_BITS, CLI_STOP_BITS, CLI_TX_QUEUE_SIZE, CLI_RX_QUEUE_SIZE);
+ADD_CLI(command_line,UART_FILE_PTR(cliUart));
+```
+Once the UART and CLI has been setup, the following will add a user specified CLI
+command. myCmd will be called when the user of the CLI types mycmd at the command
+prompt. Any arguments after mycmd will be passed to the function as well. In this
+case, argc and argv work just like they do for main(). Just like the
+ADD_STATE_MACHINE() macro, you can add CLI commands in any source file. The linker
+collects the commands from the various source files and builds the CLI command
+table.
+```C
+ADD_COMMAND("mycmd",myCmd,true);
+ 
+int myCmd(int argc, char *argv[])
+{
+    int err_state = 0;
+ 
+    // Do something here using printf or other stdio output to stdout.
+    // Since the third parameter in the ADD_COMMAND() is true, if the CLI user calls mycmd -r
+    // myCmd will be called contiously until the user types <cntrl>-C
+ 
+    return(err_state);
+}
+```
+>[!NOTE]
+>You can optionally enable CLI commands for any of the drivers or system services you
+>include in your app. These commands provide usage stats for that driver or service.
+>For instance, you can see the number of bytes sent/received by the UART(s) or the
+>number of different errors detected by the UART(s). There's a command to get the
+>current and max usage of the system's queues. Lastly, there's a memory commands to
+>report the flash and RAM usage including the max stack usage.
 
 ### Logging
 
