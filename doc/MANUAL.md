@@ -364,7 +364,6 @@ int myCmd(int argc, char *argv[])
 
 Typing `help` or `?` from the avrOS command line will list all of the enabled CLI
 commands compiled in the application.
-
 ```
 avrOS> help
     evnt (-r)
@@ -391,6 +390,23 @@ avrOS> help
     help 
 OK
 avrOS> 
+```
+In the example of the help command above, some of the commands have `(-r)` postpended.
+These commands passed `true` as the third parameter in the `ADD_COMMAND()` macro call.
+This means the command can be called with a `-r` flag. When this is done, the CLI will
+call the command function repeatedly until the user presses <cntrl>-C. An example is
+the `que -r` command.
+```
+cliUart_RxQue        Capacity:        8 Max:       1
+	In:      79	Out:      79	Overflow:       0
+cliUart_TxQue        Capacity:     1024 Max:     498
+	In:  458342	Out:  458218	Overflow:       0
+logUart_TxQue        Capacity:      255 Max:     211
+	In:    1408	Out:    1408	Overflow:       0
+evntQue              Capacity:        4 Max:       4
+	In:419360630	Out:419360626	Overflow:    6396
+
+<<< Press [Ctrl-C] to return to command prompt >>>
 ```
 
 ### Logging
