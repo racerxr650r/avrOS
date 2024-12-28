@@ -18,17 +18,18 @@
 # parameters (change this stuff accordingly)
 # project name
 PRJ = main
+
 # avr mcu
 MCU = avr128da28
 # mcu clock frequency
 CLK = 24000000
-# annual salary used to calculate cost for the SLOC estimation
-SALARY=100000
+
 # avr programmer (and port if necessary)
 # e.g. PRG = atmelice_updi -or- PRG = serialupdi -P /dev/ttyUSB0
 # The current programmer if the Atmel ICE w/UPDI interface
 PRG = serialupdi -P /dev/ttyAMA2
 #PRG = serialupdi -P /dev/ttyUSB2
+
 # program source files (not including external libraries)
 SRC = $(PRJ).c
 # Device Family Pack directory (update this if you update the DFP)
@@ -40,6 +41,7 @@ EXT = ../.. ../../sys ../../drv ../../srv
 BUILD_DIR = ./build/
 # include path
 INCLUDE := $(foreach dir, $(EXT), -I$(dir))
+
 # c flags
 CFLAGS    = -Wall -Wno-unused-function -Og -g2 -DDEBUG -mmcu=$(MCU) -B $(DFP)/gcc/dev/$(MCU) -funsigned-char -funsigned-bitfields -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -std=gnu99 -MMD -I$(DFP)/include -I. $(INCLUDE)
 # any aditional flags for c++
@@ -54,6 +56,17 @@ OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
 SIZE    = avr-size --format=avr -B $(DFP)/gcc/dev/$(MCU) --mcu=$(MCU)
 CC      = avr-gcc
+
+# annual salary used to calculate cost for the SLOC estimation (Source indeed.com)
+SALARY = 119623
+# Effort factor used to calculate effort in the SLOC estimation (Semidetached)
+EFFORT_FACTOR = 3
+# Effort exponent used to calculate effort in the SLOC estimation (Semidetached)
+EFFORT_EXPONENT = 1.12
+# Schedule factor used to calculate schedule in the SLOC estimation (Semidetached)
+SCHEDULE_FACTOR = 2.5
+# Schedule exponent used to calculate schedule in the SLOC estimation (Semidetached)
+SCHEDULE_EXPONENT = 0.35
 
 # generate list of objects
 VPATH  = $(EXT)
@@ -107,7 +120,7 @@ analyze: build
 
 # SLOC Count
 sloc: build
-	sloccount --personcost $(SALARY) --datadir ./build . $(EXT)
+	sloccount --personcost $(SALARY) --effort $(EFFORT_FACTOR) $(EFFORT_EXPONENT) --schedule $(SCHEDULE_FACTOR) $(SCHEDULE_EXPONENT) --datadir ./build . $(EXT)
 
 # generate disassembly files for debugging
 disasm: $(PRJ).elf
