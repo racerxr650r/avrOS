@@ -40,14 +40,16 @@ for remote development using VsCode, Zed, or ssh with your favorite text mode ed
 ### System Services:
 * **System** (sys) - Provides a system initialization, system timer, and sleep
 * **Finite State Machine manager** (fsm) - Manages user defined state machines implementing prioritized scheduling and power management
-* **Queues API** (que) - Inter-State Machine communication mechanism. It can be used to synchronize or pass data between two or more state machines
 * **Events API** (evnt) - An Asynchronous event system that device drivers and state machines can use to notify the system of various occurances. One or more state machines can wait on a single event
+* **Queues API** (que) - Inter-State Machine communication mechanism. It can be used to synchronize or pass data between two or more state machines
+* **Lists API** (lst) - Linked list manipulation API. Used to build and manage singly linked lists.
 * **Memory Pools**[^3] (mpl) - Implements user defined heaps with dynamic fixed block sized memory allocation and free. This provides a mechanism for dynamic memory allocation that is not prone to memory fragmentation
 * **Extensible Command Line Interface** (cli) - Simplifies debugging by providing a simple method to create command line "apps" that exercise or provide status on system functions
 * **Logging API** (log) - Provides a mechanism to insert log messages in code this can be filtered on severity or conditionally compiled out of the application
+* **Test Manager**[^3] (tst) - Unit test manager, maintains tests in groups that can be run individually, as a group, or all at once. Provides tests results and summary.
 * **Alarm manager**[^3] (alrm) - Provides a mechanism for an application to implement alarms that can be acknowledged by the user
 * **Modbus protocol**[^3] (mod) - Modbus RTU server and client protocol stacks to enable off-board communication using RS-232 or RS-485 serial interfaces
-* **Pulse Code Modulated sound player** (pcm) - Plays PCM encoded sound converted from various sound file formats using the wav2c utility
+* **Pulse Code Modulated sound player**[^3] (pcm) - Plays PCM encoded sound converted from various sound file formats using the wav2c utility
 
 ### AVR DA device drivers:
 * **General purpose I/O** (gpio) - Manipulate the AVR general purpose I/O pins
@@ -69,11 +71,11 @@ for remote development using VsCode, Zed, or ssh with your favorite text mode ed
 * **avrOS Dash Board**[^3] (arvdb) - Example Linux graphical application using the Grafana data visualization tool, Prometheus time series database, and the avrOS modbus service
 * **Installation Scripts** - Bash shell scripts that automate the installation of a fully functional AVR development system on Debian based Linux distributions such as Debian, Ubuntu, and Raspberry Pi OS. These scripts install freely available open source tools such as avr-gcc, binutils, Cppcheck static code analyzer, GNU code complexity analyzer, AVR DA family library and header files, a variety of program editors/IDEs, and avrDude. There's even a script to setup a Raspberry Pi as a headless development environment with serial connectivity and avr UPDI programming. This setup can be remotely accessed using VsCode, Zed, or even ssh from your desktop development PC
 * **Sound Converter Utility** (snd2c) - Utility to convert various sound file formats to C code data structures that can be linked with user applications
-* **Serial Keyboard Service** (serkey) - Linux user mode serial keyboard/HMI device service. It can be used with avrOS applications to implement HMI devices connected to a Linux device using a serial port
+* **Serial Keyboard Service** (serkey) - Linux user mode serial keyboard/HMI device daemon. It can be used with avrOS applications and others to implement HMI devices connected to a Linux device using a serial port
 
 ## Project Status and Additional Resources
-avrOS is still in it's sub 1.0 development stage. So there are lots of new 
-features and drivers coming. For more information regarding avrOS, refer to
+avrOS is still in it's sub 1.0 development stage. So there are lots of features 
+and drivers still under development. For more information regarding avrOS, refer to
 the [User Manual](./doc/MANUAL.md).
 
 For an example of Raspberry Pi 4 based development environment, see the
