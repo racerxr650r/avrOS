@@ -318,6 +318,8 @@ checks if this is the initial call to this state since the last state transition
 
 ### Queues
 
+### Lists
+
 ### Alarms
 ***Future Feature***
 
