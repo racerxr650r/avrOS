@@ -196,13 +196,13 @@ implements the system loop.
 // Application entry point and system loop ------------------------------------
 int main(void)
 {
-	// Initialize the system --------------------------------------------------
-	sysInit();
+    // Initialize the system --------------------------------------------------
+    sysInit();
     // *** Insert custom initialization code here ***
-	// Loop forever -----------------------------------------------------------
+    // Loop forever -----------------------------------------------------------
     while (1) 
     {
-	    // Call the main state machine dispatcher
+        // Call the main state machine dispatcher
         fsmDispatch();
         // *** Insert custom logic prior to going asleep here ***
         // Go to sleep until the next interrupt
