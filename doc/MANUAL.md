@@ -101,7 +101,7 @@ avrOS includes a Linux command line utility `snd2c` to convert a
 number of sound and video file formats to a C file that can be linked with
 your application and played with the PCM sound player API.
 
-## Install the host tools to target the AVR
+## Install the host tools to target the AVR microcontroller
 Go to the `.../avrOS` directory and run the following command to set the
 environment variable used by the install scripts to locate files in the
 appropriate directory.
