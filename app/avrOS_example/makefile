@@ -46,6 +46,8 @@ CFLAGS    = -Wall -Wno-unused-function -Og -g2 -DDEBUG -mmcu=$(MCU) -B $(DFP)/gc
 CPPFLAGS =
 # linker flags
 LINKFLAGS = -Wl,-Map="$(OutputFileName).map" -Wl,--cref -Wl,--start-group -Wl,-lm -Wl,--end-group -Wl,--gc-sections -mmcu=avr128da28 -B $(DFP)/gcc/dev/$(MCU) -Wl,-T avrOS.x 
+# name of new project directory
+NAME = project
 
 # executables
 #AVRDUDE = /usr/local/bin/avrdude -c $(PRG) -p $(MCU)
@@ -86,7 +88,6 @@ terminal:
 # flash program to mcu
 flash: all
 	$(AVRDUDE) -U flash:w:$(BUILD_DIR)$(PRJ).elf:e
-#	$(AVRDUDE) -U flash:w:$(BUILD_DIR)$(PRJ).hex:i
 
 # write fuses to mcu
 fuses: all
@@ -112,6 +113,14 @@ sloc: build
 # generate disassembly files for debugging
 disasm: $(PRJ).elf
 	$(OBJDUMP) -d $(BUILD_DIR)$(PRJ).elf
+
+# create new project directory
+project:
+	mkdir ../$(NAME)
+	cp avrOS.x ../$(NAME)
+	cp avrOSConfig.h ../$(NAME)
+	cp main.c ../$(NAME)
+	cp makefile ../$(NAME)
 
 # remove compiled files
 clean:

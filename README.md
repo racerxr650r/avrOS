@@ -210,7 +210,7 @@ of AVRDUDE and this step is not required
    make
    ```
 
-9. Program the .hex image into the MCU flash [^1] [^2]
+9. Program the .elf image into the MCU flash [^1] [^2]
 
    ```console
    make flash

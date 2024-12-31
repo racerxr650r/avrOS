@@ -101,83 +101,190 @@ avrOS includes a Linux command line utility `wav2c` to convert a
 number of sound and video file formats to a C file that can be linked with
 your application and played with the PCM sound player API.
 
-## avrOS Theory of Operation
-### The Problem
-RAM is a precious commodity on microcontrollers. Especially for 8 bit 
-microcontrollers like the AVR. The AVR DA family only has 16K of RAM. 
-Therefore, avrOS is designed to use as little RAM as possible.
+## Create a New Application Project Directory
+To create a new project, goto the `.../avrOS/app/avrOS_example` directory and run
+the following make command.
 
-Classic realtime operating systems use threaded multitasking. The OS has a 
-scheduler that controls which thread is currently running. The scheduler uses a
-thread priority value to determine which thread runs next. To implement the 
-thread context, each thread has it's own stack. The stack is stored in RAM and
-is used for passing and returning values and storing local variables for 
-functions. This same stack also stores the context for any interrupts that 
-happen during the thread execution. The scheduler then points the CPU stack
-register to the scheduled thread stack to implement a context switch. With 
-multiple threads, this requires reserving enough RAM for the deepest call stack
-plus the largest interrupt context for each thread. This is not the efficient
-use of RAM. A more efficient approach would use a single stack for all 
-"threads".
+```console
+make project
+```
 
-Another feature of classic realtime operating systems is a modular design that 
-organizes the system code into functional blocks. The application code
-interacts using an API that declares and defines the objects these functional
-blocks implement. To abstract the data structures that represent the instance
-of an object and prevent the developer from having to edit system source files
-containing arrays of these structures, classic operating systems dynamically
-allocate memory at runtime to store these arrays of data structures. In
-practice, significant portions of these data structures are populated with
-constant values. Reading constant data from ROM/Flash memory to initialize an
-object at runtime requires the functional block to allocate memory from RAM.
-This is another inefficient use of RAM. It also requires additional code to
-test and handle the condition when not enough RAM is available.
+This will create a new application project directory in the `.../avrOS/app`
+directory. The new directory will be named `project`. This directory can be
+remaned.
 
-### The Solution
-avrOS uses an Automata-based programming paradigm. The system scheduler relies
-on a cooperative multitasking implementation of the application code. It
-implements a finite state machine manager. Instead of threads, it manages a
-number of state machines and their states.
+Optionally, you can use the following command to create the new project
+directory with the provide name.
 
-To use RAM as efficiently as possible, avrOS implements a form of cooperative
-multitasking. This requires that the application code does not block or busy
-wait. Instead it will check the status of various variables or objects to 
-detemine if it should do something, do it, change state if applicable, notify
-the OS that it will wait on an OS event if applicable, and then return. 
-By doing this, avrOS is able to efficiently use a single stack for all the 
-system threads and interrupt contexts.
+```console
+make project NAME=new_directory_name_here
+```
 
-avrOS does not implement threading. The AVR microcontrollers have a very rich
-set of interrupts to handle asynchronous events. Handlers for these interrupts
-are "scheduled" asynchronously and the thread context is stored on the shared 
-OS stack by the AVR interrupt controller. avrOS objects such as events and 
-queues can be used by the handler to signal and pass data to the user 
-application code.
+Once the new project directory is created, it will contain a base main.c source
+file, makefile, avrOSConfig.h file, and avrOS.x linker file. These are based on
+the example application. You may begin modifying main.c and adding new source
+files as needed.
 
-In addition, the avrOS scheduler uses a finite state machine paradigm. The user
-application and system services register state machines and a set of states.
-The finite state machine manager (fsm) provides an API for the developer to
-control the state progression of the state machine. The scheduler uses a table
-of state machines and states to determine which to call next. The constant data
-in these tables is stored in FLASH. Only the dynamic state information is
-stored in RAM. 
+If you choose to rename main.c, you will have to modify the `PRJ` variable in
+the makefile to the same name of your renamed main.c file excluding the .c file
+extension.
 
-These tables are built at compile time and the linker determines that there is
-enough FLASH and RAM to store them. Therefore, there is no need for user code
-to call APIs to create objects at runtime and include additional code to handle
-conditions when there is not enough RAM to create a new object.
+## Building, Programming, and Running Applications
+### Building avrOS Application
+An application is built from the avrOS/app/application_name directory.
+`make all` from the command line in the application directory will build the
+application .elf file. When building the application, the makefile creates a
+./build directory in the application directory. It's here you will find the
+.elf file and the other generated object files.
 
-To enable this feature and maintain an object oriented approach to software
-development, avrOS provides a set of macros for user code to define system
-objects. These macros "allocate" instances of state machines, states, queues,
-flags, timers, CLI commands, alarms, etc. at compile time and stores much of
-the data in flash where it will stay at runtime.
+The `make clean` command will delete the avrOS/build directory and it's contents
 
-Lastly, avrOS is highly scalable. Using the avrOSConfig.h file, an application
-developer can select precisely the features and drivers required by their
-implementation. For instance, a debug version of application may include the
-CLI and Logger services. But, the release version of the same application may
-not include either of these services.
+To create your own application, make a new directory in ./app directory. Then,
+copy the makefile, avrOS.x, avrConfig.h, and main.c files from the
+./app/avrOS_example to your new directory. 
+
+The makefile will build your application without any changes. If you choose to
+rename main.c, you will have to modify the PRJ variable in the makefile to the
+same name of your renamed main.c file excluding the .c file extension.
+
+avrOS also comes with bash shell scripts and instructions to setup a development
+environment and build applications on a Linux desktop PC, chromebook, or even a
+Raspberry PI. There's no need to use Atmel Studio and Windows for AVR application
+development.
+
+### Programming and Running avrOS Application
+By default, it uses the Atmel Ice as the programmer.
+To change this, modify the PRG variable in the makefile.
+
+```
+# avr programmer (and port if necessary)
+# e.g. PRG = atmelice_updi -or- PRG = serialupdi -P /dev/ttyUSB0
+# The current programmer if the Atmel ICE w/UPDI interface
+PRG = atmelice_updi
+```
+
+`make flash` will program the application .elf file into the AVR flash program
+memory and reset the processor.
+
+`make test` will test the connectivity to the programmer.
+
+## Build, Program, and Run an Application
+To build an application, goto the `.../avrOS/app/app_directory_name_here`
+directory. avrOS comes with a `.../avrOS/app/avrOS_example` application
+example. From this application directory, run the following command.
+
+```console
+make all
+```
+
+This will build the application .elf file. The generated object and binary
+files will be found in the newly created `./build` directory.
+
+The makefile uses [AVRDUDE](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
+to program the target CPU. The following commands program various memory areas
+of the AVR controller. To use these commands in your environment, you will need
+to set the `PRG` variable in the makefile. By default, this is set to use the
+`/dev/ttyAMA2` serial port and the `serialupdi` interface to program the device
+using the UPDI pin. The hardware to enable this is a 1k resistor wired inline on
+the Tx line that is then shorted to the Rx line. See [this manual entry](https://avrdudes.github.io/avrdude/7.3/avrdude_21.html)
+on the avrdudes github page for more details.
+
+If you are using another device such as the Atmel ICE to program the controller,
+you'll need to look up the appropriate avrdude flag(s). In the case of the 
+Atmel ICE, `PRG` should be set to `atmelice_updi`.
+
+To confirm that the `avrdude` programmer flag and the hardware is setup
+correctly, run the following command.
+
+```console
+make test
+```
+
+This command confirms that `avrdude` is able to connect to the controller and
+read the various memory spaces. A successful connection will generate output
+that is similar to this.
+
+```console
+$ make test
+/usr/bin/avrdude -c serialupdi -P /dev/ttyAMA2 -p avr128da28 -v
+
+avrdude: Version 7.1
+         Copyright the AVRDUDE authors;
+         see https://github.com/avrdudes/avrdude/blob/main/AUTHORS
+
+         System wide configuration file is /etc/avrdude.conf
+         User configuration file is /home/john/.avrduderc
+         User configuration file does not exist or is not a regular file, skipping
+
+         Using Port                    : /dev/ttyAMA2
+         Using Programmer              : serialupdi
+         AVR Part                      : AVR128DA28
+         RESET disposition             : dedicated
+         RETRY pulse                   : SCK
+         Serial program mode           : yes
+         Parallel program mode         : yes
+         Memory Detail                 :
+
+                                           Block Poll               Page                       Polled
+           Memory Type Alias    Mode Delay Size  Indx Paged  Size   Size #Pages MinW  MaxW   ReadBack
+           ----------- -------- ---- ----- ----- ---- ------ ------ ---- ------ ----- ----- ---------
+           fuse0       wdtcfg      0     0     0    0 no          1    1      0     0     0 0x00 0x00
+           fuse1       bodcfg      0     0     0    0 no          1    1      0     0     0 0x00 0x00
+           fuse2       osccfg      0     0     0    0 no          1    1      0     0     0 0x00 0x00
+           fuse4       tcd0cfg     0     0     0    0 no          1    1      0     0     0 0x00 0x00
+           fuse5       syscfg0     0     0     0    0 no          1    1      0     0     0 0x00 0x00
+           fuse6       syscfg1     0     0     0    0 no          1    1      0     0     0 0x00 0x00
+           fuse7       codesize    0     0     0    0 no          1    1      0     0     0 0x00 0x00
+           fuse8       bootsize    0     0     0    0 no          1    1      0     0     0 0x00 0x00
+           fuses                   0     0     0    0 no          9   16      0     0     0 0x00 0x00
+           lock                    0     0     0    0 no          4    1      0     0     0 0x00 0x00
+           tempsense               0     0     0    0 no          2    1      0     0     0 0x00 0x00
+           signature               0     0     0    0 no          3    1      0     0     0 0x00 0x00
+           prodsig                 0     0     0    0 no        125  125      0     0     0 0x00 0x00
+           sernum                  0     0     0    0 no         16    1      0     0     0 0x00 0x00
+           userrow     usersig     0     0     0    0 no         32   32      0     0     0 0x00 0x00
+           data                    0     0     0    0 no          0    1      0     0     0 0x00 0x00
+           eeprom                  0     0     0    0 no        512    1      0     0     0 0x00 0x00
+           flash                   0     0     0    0 no     131072  512      0     0     0 0x00 0x00
+
+         Programmer Type : serialupdi
+         Description     : SerialUPDI
+
+avrdude: device is in SLEEP mode
+avrdude: NVM type 2: 24-bit, word oriented write
+avrdude: entering NVM programming mode
+avrdude: AVR device initialized and ready to accept instructions
+avrdude: device signature = 0x1e970a (probably avr128da28)
+avrdude: leaving NVM programming mode
+
+avrdude done.  Thank you.
+```
+
+To program the contoller fuses, run the following command.
+
+```console
+make fuses
+```
+
+This command will run `avrdude` to program the controller's fuses.
+
+To program the controller lock bits, run the following command.
+
+```console
+make lock_bits
+```
+
+This command runs `avrdude` to program the controller's lock bits.
+
+To program the application binary into microcontroller flash memory, reset the
+controller, run the application, type the following command from the same
+directory you ran the prior make command.
+
+```console
+make flash
+```
+
+This command will run `avrdude` to program the controller's flash memory.
 
 ## avrOS Application Development
 As previously mentioned, avrOS builds a series of tables that describes the OS
@@ -424,44 +531,81 @@ evntQue              Capacity:        4 Max:       4
 
 ### Memory Usage Diagnostics
 
-## Building, Programming, and Running Applications
-### Building avrOS Application
-An application is built from the avrOS/app/application_name directory. avrOS
-comes with a avrOS/app/avrOS_example directory and application code example.
-`make all` from the command line in the application directory will build the
-application .hex file. When building the application, the makefile creates a
-./build directory in the application directory. It's here you will find the
-.hex file and the other generated object files.
+## avrOS Theory of Operation
+### The Problem
+RAM is a precious commodity on microcontrollers. Especially for 8 bit 
+microcontrollers like the AVR. The AVR DA family only has 16K of RAM. 
+Therefore, avrOS is designed to use as little RAM as possible.
 
-The `make clean` command will delete the avrOS/build directory and it's contents
+Classic realtime operating systems use threaded multitasking. The OS has a 
+scheduler that controls which thread is currently running. The scheduler uses a
+thread priority value to determine which thread runs next. To implement the 
+thread context, each thread has it's own stack. The stack is stored in RAM and
+is used for passing and returning values and storing local variables for 
+functions. This same stack also stores the context for any interrupts that 
+happen during the thread execution. The scheduler then points the CPU stack
+register to the scheduled thread stack to implement a context switch. With 
+multiple threads, this requires reserving enough RAM for the deepest call stack
+plus the largest interrupt context for each thread. This is not the efficient
+use of RAM. A more efficient approach would use a single stack for all 
+"threads".
 
-To create your own application, make a new directory in ./app directory. Then,
-copy the makefile, avrOS.x, avrConfig.h, and main.c files from the
-./app/avrOS_example to your new directory. 
+Another feature of classic realtime operating systems is a modular design that 
+organizes the system code into functional blocks. The application code
+interacts using an API that declares and defines the objects these functional
+blocks implement. To abstract the data structures that represent the instance
+of an object and prevent the developer from having to edit system source files
+containing arrays of these structures, classic operating systems dynamically
+allocate memory at runtime to store these arrays of data structures. In
+practice, significant portions of these data structures are populated with
+constant values. Reading constant data from ROM/Flash memory to initialize an
+object at runtime requires the functional block to allocate memory from RAM.
+This is another inefficient use of RAM. It also requires additional code to
+test and handle the condition when not enough RAM is available.
 
-The makefile will build your application without any changes. If you choose to
-rename main.c, you will have to modify the PRJ variable in the makefile to the
-same name of your renamed main.c file excluding the .c file extension.
+### The Solution
+avrOS uses an Automata-based programming paradigm. The system scheduler relies
+on a cooperative multitasking implementation of the application code. It
+implements a finite state machine manager. Instead of threads, it manages a
+number of state machines and their states.
 
+To use RAM as efficiently as possible, avrOS implements a form of cooperative
+multitasking. This requires that the application code does not block or busy
+wait. Instead it will check the status of various variables or objects to 
+detemine if it should do something, do it, change state if applicable, notify
+the OS that it will wait on an OS event if applicable, and then return. 
+By doing this, avrOS is able to efficiently use a single stack for all the 
+system threads and interrupt contexts.
 
-avrOS also comes with a makefile and instructions to setup a development
-environment and build applications on a Linux desktop PC, chromebook, or even a
-Raspberry PI. There's no need to use Atmel Studio and Windows for AVR application
-development.
+avrOS does not implement threading. The AVR microcontrollers have a very rich
+set of interrupts to handle asynchronous events. Handlers for these interrupts
+are "scheduled" asynchronously and the thread context is stored on the shared 
+OS stack by the AVR interrupt controller. avrOS objects such as events and 
+queues can be used by the handler to signal and pass data to the user 
+application code.
 
-### Programming and Running avrOS Application
-The makefile uses [AVRDUDE](https://github.com/avrdudes/avrdude/wiki/Building-AVRDUDE-for-Linux)
-to program the target CPU. By default, it uses the Atmel Ice as the programmer.
-To change this, modify the PRG variable in the makefile.
+In addition, the avrOS scheduler uses a finite state machine paradigm. The user
+application and system services register state machines and a set of states.
+The finite state machine manager (fsm) provides an API for the developer to
+control the state progression of the state machine. The scheduler uses a table
+of state machines and states to determine which to call next. The constant data
+in these tables is stored in FLASH. Only the dynamic state information is
+stored in RAM. 
 
-```
-# avr programmer (and port if necessary)
-# e.g. PRG = atmelice_updi -or- PRG = serialupdi -P /dev/ttyUSB0
-# The current programmer if the Atmel ICE w/UPDI interface
-PRG = atmelice_updi
-```
+These tables are built at compile time and the linker determines that there is
+enough FLASH and RAM to store them. Therefore, there is no need for user code
+to call APIs to create objects at runtime and include additional code to handle
+conditions when there is not enough RAM to create a new object.
 
-`make flash` will program the application .hex file into the AVR flash program
-memory and reset the processor.
+To enable this feature and maintain an object oriented approach to software
+development, avrOS provides a set of macros for user code to define system
+objects. These macros "allocate" instances of state machines, states, queues,
+flags, timers, CLI commands, alarms, etc. at compile time and stores much of
+the data in flash where it will stay at runtime.
 
-`make test` will test the connectivity to the programmer.
+Lastly, avrOS is highly scalable. Using the avrOSConfig.h file, an application
+developer can select precisely the features and drivers required by their
+implementation. For instance, a debug version of application may include the
+CLI and Logger services. But, the release version of the same application may
+not include either of these services.
+
