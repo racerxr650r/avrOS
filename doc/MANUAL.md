@@ -101,6 +101,32 @@ avrOS includes a Linux command line utility `wav2c` to convert a
 number of sound and video file formats to a C file that can be linked with
 your application and played with the PCM sound player API.
 
+## Install the host tools to target the AVR
+Go to the `.../avrOS` directory and run the following command to set the
+environment variable used by the install scripts to locate files in the
+appropriate directory.
+
+```console
+export AVROSHOME=$(pwd)
+```
+
+Then run the applicable install script(s) found in the $AVROSHOME/util/scripts
+directory. The following table describes each of these scripts
+
+   | Script               | Description                                     |
+   |----------------------|-------------------------------------------------|
+   | install_cli_tools.sh | Installs the required command line tools (gcc, binutils, avrdude, tio, Microchip Device Family Pack, etc.), builds the example application, and sets up git |
+   | install_gui_tools.sh | Installs a set of helpful GUI development tools (geany, git-cola, meld, gtkterm, and vscode) |
+   | install_all_tools.sh | Installs both the CLI and GUI tools mentioned above |
+   | install_remote_pi.sh | Installs the command line tools (plus btm), sets up configurations for tio, tmux, and bash, and configures the /boot/config.txt to enable serial console and uarts 2, 3, and 4. This script should only be run on a Raspberry Pi intended for headless remote development. See the [Raspberry PI 4 model B Development Platform](./doc/PI4_Dev_Station.md) document for more details |
+   | install_avrdude.sh   | Downloads, boulds, and installs avrdude from the latest version on github |
+   | setup_git.sh         | Prompts and configures the username and email for git. install_cli_tools.sh calls this script |
+
+>[NOTE!]
+>These automated scripts will install additional software
+>software packages and possibly update config files. I encourage you to
+>review these scripts before running any of them.
+
 ## Create a New Application Project Directory
 To create a new project, goto the `.../avrOS/app/avrOS_example` directory and run
 the following make command.
@@ -129,30 +155,7 @@ If you choose to rename main.c, you will have to modify the `PRJ` variable in
 the makefile to the same name of your renamed main.c file excluding the .c file
 extension.
 
-## Building, Programming, and Running Applications
-### Building avrOS Application
-An application is built from the avrOS/app/application_name directory.
-`make all` from the command line in the application directory will build the
-application .elf file. When building the application, the makefile creates a
-./build directory in the application directory. It's here you will find the
-.elf file and the other generated object files.
-
-The `make clean` command will delete the avrOS/build directory and it's contents
-
-To create your own application, make a new directory in ./app directory. Then,
-copy the makefile, avrOS.x, avrConfig.h, and main.c files from the
-./app/avrOS_example to your new directory. 
-
-The makefile will build your application without any changes. If you choose to
-rename main.c, you will have to modify the PRJ variable in the makefile to the
-same name of your renamed main.c file excluding the .c file extension.
-
-avrOS also comes with bash shell scripts and instructions to setup a development
-environment and build applications on a Linux desktop PC, chromebook, or even a
-Raspberry PI. There's no need to use Atmel Studio and Windows for AVR application
-development.
-
-### Programming and Running avrOS Application
+## Programming and Running avrOS Application
 By default, it uses the Atmel Ice as the programmer.
 To change this, modify the PRG variable in the makefile.
 
