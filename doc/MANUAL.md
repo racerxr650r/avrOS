@@ -97,7 +97,7 @@ avrOS provides the following AVR DA device drivers:
 * Internal CPU Oscillator API
 
 ###  util (Utilities)
-avrOS includes a Linux command line utility `wav2c` to convert a 
+avrOS includes a Linux command line utility `snd2c` to convert a 
 number of sound and video file formats to a C file that can be linked with
 your application and played with the PCM sound player API.
 
@@ -110,7 +110,7 @@ appropriate directory.
 export AVROSHOME=$(pwd)
 ```
 
-Then run the applicable install script(s) found in the $AVROSHOME/util/scripts
+Then run the applicable install script(s) found in the `$AVROSHOME/util/scripts`
 directory. The following table describes each of these scripts
 
    | Script               | Description                                     |
@@ -122,10 +122,10 @@ directory. The following table describes each of these scripts
    | install_avrdude.sh   | Downloads, boulds, and installs avrdude from the latest version on github |
    | setup_git.sh         | Prompts and configures the username and email for git. install_cli_tools.sh calls this script |
 
->[NOTE!]
+>[!NOTE]
 >These automated scripts will install additional software
->software packages and possibly update config files. I encourage you to
->review these scripts before running any of them.
+>packages and possibly update config files. It's good practice to review
+>these scripts before running any of them.
 
 ## Create a New Application Project Directory
 To create a new project, goto the `.../avrOS/app/avrOS_example` directory and run
