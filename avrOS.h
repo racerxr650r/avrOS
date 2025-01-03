@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
@@ -60,6 +61,7 @@
 #include "drv/gpio.h"
 
 #include "srv/cli.h"
+#include "srv/test.h"
 //#include "crtDrv.h"
 //#include "delaySrv.h"
 //#include "spiDrv.h"

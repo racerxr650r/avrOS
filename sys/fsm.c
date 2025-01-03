@@ -313,6 +313,10 @@ void fsmInit()
 		}
 	} // End of critical section
 
+#ifdef ENABLE_TEST
+	testRun(0,NULL);
+#endif
+
 	// Enable global interrupts
 	sei();
 }
