@@ -46,8 +46,21 @@ int testRun(int argC, char *argV[])
 {
 	testUnit_t *test = (testUnit_t *)&__start_TEST_TABLE;
 
-	for(; test < (testUnit_t *)&__stop_TEST_TABLE; ++test)
-		printf("    %s" FG_BLUE " %s\n\r" RESET,cmd->commandStr,cmd->repeatable?"(-r)":"");
+	// If no group or test name provided...
+	if(argC == 1)
+	{
+		for(; test < (testUnit_t *)&__stop_TEST_TABLE; ++test)
+	}
+	// Else if a group or test name provided...
+	else if(argC > 1)
+	{
+
+	}
 
 	return(0);
+}
+
+void testPrintResult(FILE *filePtr)
+{
+	static char resultString =
 }

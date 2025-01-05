@@ -31,16 +31,27 @@
 
 // Types ----------------------------------------------------------------------
 typedef char (*testHandler_t)();
+
+typedef enum
+{
+    UNTESTED,
+    PASS,
+    FAIL,
+    ERROR
+}testResult_t;
+
 typedef struct
 {
     char            *name, *group;
+    testResult_t    *result;
     testHandler_t   testFuncPtr;
 }testUnit_t;
 
 // Macros ---------------------------------------------------------------------
 // This macro adds a new unit test
 #define ADD_TEST(testFunc) \
-        const static SECTION(TEST_TABLE) CONCAT(testFunc,__COUNTER__) = { .name = #testFunc, .group = #__FILE__ , .funcPtr = &testFunc};
+        testResult_t CONCAT(testFunc,_result);
+        const static SECTION(TEST_TABLE) CONCAT(testFunc,__COUNTER__) = { .name = #testFunc, .group = #__FILE__ , .result = &CONCAT(testFunc,_result), .funcPtr = &testFunc};
 
 // This macro implements a test assert
 #define testAssert(expr, descr) \
