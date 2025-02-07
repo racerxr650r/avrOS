@@ -18,7 +18,7 @@ state machines that implement the system functionality. The state machine
 manager handles priortized scheduling of these state machine states and power 
 management when the system is idle waiting for asynchronous events. This
 state machine approach reduces the RAM requirements for applications by
-using just one stack for all of the system "processes". This differs from other
+using just one stack for all of the system "processes". This differs from
 real time operating systems that use threads or tasks that require individually
 reserved memory stacks in RAM. This partitioning of the system stack is
 complex, inefficient, and prone to issues that are difficult to debug.
