@@ -1,14 +1,20 @@
 [![avrOS](./avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
 ---
 # User Manual
-***avrOS*** - _Operating Environment for AVR DA_, is a scalable operating environment 
+***avrOS*** - _Operating System for AVR DA_, is a scalable operating system 
 including drivers for the AVR DA family of microcontrollers. It uses macros, a 
 custom linker script, and the linker to build the system tables (state machines,
 states, drivers, services, CLI callbacks, Events, Queues, and Timers) at compile/link 
 time. There is no need to edit a single source file containing all these system
 tables. Application code defining these objects can be distributed across several
-source files. In addition, these tables reside in FLASH where possible and the
+source files. In addition, these tables reside in FLASH where ever possible and the
 system does not require run-time registration and related fault handling code.
+Reducing the use of RAM.
+
+In addtion, the scheduler implements a state machine paradigm using cooperative
+multi-tasking to optimize the system stack. The user does not need to carve up
+the system stack for each thread context. This further optimizes the use of
+precious RAM and/or improves latency when handling hardware interrupts.
 
 ## avrOS File Organization
 avrOS is organized into 7 directories counting the root directory; ./, ./app,
