@@ -3,8 +3,8 @@
 # Getting Started
 
 ## avrOS - _The Operating System for AVR DA microcontrollers_
-**avrOS** is a scalable operating system 
-with drivers for the AVR DA family of microcontrollers. It provides macros and a 
+**avrOS** is a scalable prioritized cooperative multi-tasking operating system 
+with device drivers for the AVR DA family of microcontrollers. It provides macros and a 
 custom linker script to build the various system tables implementing state 
 machines, queues, events, memory heaps, command line commands, alarms, and modus 
 registers at compile time. These tables reside in FLASH where possible. So the 
