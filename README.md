@@ -11,17 +11,21 @@ registers at compile time. These tables reside in FLASH where possible. So the
 system doesn't require run-time registration and related fault handling code. 
 In addtion, there is no need to maintain a single source file containing all 
 these system tables. The macros that build these table can be distributed across
-several source files so they can be co-located with the associated logic.
+several source files so they can be co-located with the associated logic. This
+approach reduces the use of RAM, a precious commodity on this little
+microcontroller.
 
-**avrOS** provides a state machine manager. The developer defines one or more
-state machines that implement the system functionality. The state machine
-manager handles priortized scheduling of these state machine states and power 
-management when the system is idle waiting for asynchronous events. This
+**avrOS** provides a finite state machine manager (FSM). The developer defines
+one or more state machines that implement the system functionality. The FSM
+handles priortized scheduling of these state machine states. This
 state machine approach reduces the RAM requirements for applications by
 using just one stack for all of the system "processes". This differs from
-real time operating systems that use threads or tasks that require individually
-reserved memory stacks in RAM. This partitioning of the system stack is
-complex, inefficient, and prone to issues that are difficult to debug.
+preemptive real time operating systems that use threads or tasks that require
+individually reserved memory stacks in RAM. That partitioning of the system stack
+is complex, inefficient, can add latency to hardware interrupt handlers, and prone
+to issues that are difficult to debug. The FSM also provides a simple mechanism
+for the user to implement a custom power management scheme tailored to their
+hardware requirements.
 
 In addtion, **avrOS** provides event and queue services that enable inter-state
 machine and device driver communication and syncronization. This creates a
