@@ -1,0 +1,30 @@
+.TH SND2C 1
+.SH NAME
+snd2c \- Utility to convert sound files to C source arrays
+.SH SYNOPSIS
+.B snd2c
+[\fBOPTIONS\fR]
+<input sound file> ...
+.SH DESCRIPTION
+.B snd2c
+is a CLI app that converts various sound file formats into a C source code file
+that represents the sound data as a pulse code modulated (PCM) uint8_t or 
+int8_t array depending on the selected options. The name of the array is the
+same as the source file without the extension. If the output C source file
+already exists, snd2c will append the array to end of the existing file.
+.SH OPTIONS
+.TP
+.BR \-b " " <\fImax data buffer size\fR>
+Integer value for the maximum size of the data buffer (default: 64K)
+.BR \-c
+Compress the output using RLE (default:no compression)
+.BR \-d " " <\fIdeadband value\fR>
+Integer used for the deadband value of the RLE compression (default: 5)
+.BR \-f " " <\fIsample frequency\fR>
+Set the sample fequency in Hz (default:8000 Hz)
+.BR \-o " " <\fIfilename\fR>
+Name of the output C source code file (default:snd.c)
+.BR \-r
+Replace the output file if it already exists (default:append)
+.BR \-s
+Signed integer output (default:unsigned)
