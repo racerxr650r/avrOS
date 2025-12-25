@@ -35,9 +35,16 @@ built in power management even more efficient.
 
 > [!NOTE]
 > To reduce code size and minimize RAM usage, avrOS does not implement threading. It's
-multi-tasking model is cooperative. Therefore,an application developer should not
-consider the state machine code fully deterministic. all real-time functionality should be
-implemented in the CPU interrupt contexts.
+multi-tasking model is cooperative. Therefore, application developers should not
+consider state machine code fully deterministic. All "real-time" functionality should be
+implemented in the CPU interrupt contexts. To reduce jitter, these interrupt handlers
+should then use events and/or queues to dispatch information to one or more state
+machines that can handle processing the information in a less time critical fashion.
+An example of this would be a serial driver that pulls a byte from the hardware input
+buffer and copies it into a queue. The serial driver then returns from the interrupt
+context. A state machine, that implements a serial protocol, waiting on that queue
+can then process the byte received at a later time that is less time critical. This
+is a fundamental concept of all real time application development.
 
 Lastly, the **avrOS** ecosystem also provides instructions, makefiles, and scripts to 
 setup a development environment and build applications using the Linux operating
