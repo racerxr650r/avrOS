@@ -605,7 +605,7 @@ CPU interrupt contexts. To reduce jitter, these interrupt handlers can use event
 and/or queues to dispatch information to one or more state machines that process
 the information in a less time critical fashion. 
 
-> [!EXAMPLE]
+> [!NOTE]
 > An example of this would be a serial driver that pulls a byte from the hardware
 input buffer and copies it into a queue. The serial driver then returns from the
 interrupt context. A state machine, that implements a serial protocol, waiting on
