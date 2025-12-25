@@ -3,17 +3,17 @@
 # Getting Started
 
 ## avrOS - _The Operating System for AVR DA microcontrollers_
-**avrOS** is a scalable prioritized cooperative multi-tasking operating system 
+**avrOS** is an embedded scalable prioritized cooperative multi-tasking operating system 
 with device drivers for the AVR DA family of microcontrollers. It provides macros and a 
 custom linker script to build the various system tables implementing state 
 machines, queues, events, memory heaps, command line commands, alarms, and modus 
-registers at compile time. These tables reside in FLASH where possible. So the 
-system doesn't require run-time registration and related fault handling code. 
+registers at compile time. These tables reside in FLASH where ever possible. So the 
+system doesn't require run-time registration of application resources and related fault handling code. 
 In addtion, there is no need to maintain a single source file containing all 
-these system tables. The macros that build these table can be distributed across
+these system tables. The macros that build these tables can be distributed across
 several source files so they can be co-located with the associated logic. This
 approach reduces the use of RAM, a precious commodity on this little
-microcontroller.
+microcontroller, and improves the read-ability of the application source code.
 
 **avrOS** provides a finite state machine manager (FSM). The developer defines
 one or more state machines that implement the system functionality. The FSM
@@ -29,9 +29,15 @@ hardware requirements.
 
 In addtion, **avrOS** provides event and queue services that enable inter-state
 machine and device driver communication and syncronization. This creates a
-system that is interrupt/event driven and takes advantage of the AVR DS's rich
+system that is interrupt/event driven and takes advantage of the AVR DA's rich
 number of interrupt sources. This reduces CPU intensive polling and makes the
 built in power management even more efficient.
+
+> [!NOTE]
+> To reduce code size and minimize RAM usage, avrOS does not implement threading. It's
+multi-tasking model is cooperative. Therefore,an application developer should not
+consider the state machine code fully deterministic. all real-time functionality should be
+implemented in the CPU interrupt contexts.
 
 Lastly, the **avrOS** ecosystem also provides instructions, makefiles, and scripts to 
 setup a development environment and build applications using the Linux operating
