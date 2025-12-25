@@ -39,7 +39,7 @@ multi-tasking model is cooperative. Therefore, application developers should not
 consider state machine code fully deterministic. All "real-time" functionality should be
 implemented in the CPU interrupt contexts. To reduce jitter, these interrupt handlers
 should then use events and/or queues to dispatch information to one or more state
-machines that can handle processing the information in a less time critical fashion.
+machines that can process the information in a less time critical fashion.
 An example of this would be a serial driver that pulls a byte from the hardware input
 buffer and copies it into a queue. The serial driver then returns from the interrupt
 context. A state machine, that implements a serial protocol, waiting on that queue
