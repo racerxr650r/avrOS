@@ -103,9 +103,8 @@ avrOS provides the following AVR DA device drivers:
 * Internal CPU Oscillator API
 
 ###  util (Utilities)
-avrOS includes a Linux command line utility `snd2c` to convert a 
-number of sound and video file formats to a C file that can be linked with
-your application and played with the PCM sound player API.
+avrOS includes several Linux command line scripts to simply installation
+of the tools required for application development.
 
 ## Install the host tools to target the AVR microcontroller
 Go to the `.../avrOS` directory and run the following command to set the
