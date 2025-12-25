@@ -612,16 +612,17 @@ interrupt context. A state machine, that implements a serial protocol, waiting o
 that queue can then process the byte received at a later time that is less time
 critical. This is a fundamental concept of all real time application development.
 
-These tables are built at compile time and the linker determines that there is
-enough FLASH and RAM to store them. Therefore, there is no need for user code
-to call APIs to create objects at runtime and include additional code to handle
-conditions when there is not enough RAM to create a new object.
+The OS manages system objects in a series of tables. These tables are built at
+compile time and the linker determines that there is enough FLASH and RAM to store
+them. Therefore, there is no need for user code to call APIs to create objects at
+runtime and include additional code to handle conditions when there is not enough
+RAM to create a new object.
 
-To enable this feature and maintain an object oriented approach to software
-development, avrOS provides a set of macros for user code to define system
-objects. These macros "allocate" instances of state machines, states, queues,
-flags, timers, CLI commands, alarms, etc. at compile time and stores much of
-the data in flash where it will stay at runtime.
+To implement this feature and ensure the source code is easy to comprehend, avrOS
+provides a set of macros for user code to define system objects. These macros
+"allocate" instances of state machines, states, queues, flags, timers, CLI
+commands, alarms, etc. at compile time and stores much of the data in flash where
+it will stay at runtime.
 
 Lastly, avrOS is highly scalable. Using the avrOSConfig.h file, an application
 developer can select precisely the features and drivers required by their
