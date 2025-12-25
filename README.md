@@ -48,9 +48,10 @@ can then process the byte received at a later time that is less time critical.
 Lastly, the **avrOS** ecosystem also provides instructions, makefiles, and scripts to 
 setup a development environment and build applications using the Linux operating
 system and it's abundant open source development software and hardware resources.
-You no longer need to use Microsoft Windows for AVR application development. But
-if you prefer Windows on your desktop PC, you can setup a headless Raspberry Pi
-for remote development using VsCode, Zed, or ssh with your favorite text mode editor.
+Microsoft Windows is no longer required for AVR application development. But
+if you prefer Windows on your desktop PC, it's possible to setup a headless Raspberry Pi
+for remote development using VsCode, Zed, or ssh with your favorite text mode editor. Scripts
+provided in the repository simplify setting up the avrOS development on a Raspberry PI.
 
 ## avrOS Features
 ### System Services:
