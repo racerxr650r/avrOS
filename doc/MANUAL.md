@@ -586,20 +586,31 @@ the OS that it will wait on an OS event if applicable, and then return.
 By doing this, avrOS is able to efficiently use a single stack for all the 
 system threads and interrupt contexts.
 
-avrOS does not implement threading. The AVR microcontrollers have a very rich
-set of interrupts to handle asynchronous events. Handlers for these interrupts
-are "scheduled" asynchronously and the thread context is stored on the shared 
-OS stack by the AVR interrupt controller. avrOS objects such as events and 
-queues can be used by the handler to signal and pass data to the user 
-application code.
-
-In addition, the avrOS scheduler uses a finite state machine paradigm. The user
+The avrOS scheduler uses a finite state machine paradigm. The user
 application and system services register state machines and a set of states.
 The finite state machine manager (fsm) provides an API for the developer to
 control the state progression of the state machine. The scheduler uses a table
 of state machines and states to determine which to call next. The constant data
 in these tables is stored in FLASH. Only the dynamic state information is
 stored in RAM. 
+
+avrOS does not implement threading. The AVR microcontrollers have a very rich
+set of interrupts to handle asynchronous events. Handlers for these interrupts
+are "scheduled" asynchronously and the thread context is stored on the shared 
+OS stack by the AVR interrupt controller. avrOS objects such as events and 
+queues can be used by the handler to signal and pass data to the user 
+application code. Application developers should not consider state machine code
+fully deterministic. All "real-time" functionality should be implemented in the
+CPU interrupt contexts. To reduce jitter, these interrupt handlers can use events
+and/or queues to dispatch information to one or more state machines that process
+the information in a less time critical fashion. 
+
+> [!EXAMPLE]
+> An example of this would be a serial driver that pulls a byte from the hardware
+input buffer and copies it into a queue. The serial driver then returns from the
+interrupt context. A state machine, that implements a serial protocol, waiting on
+that queue can then process the byte received at a later time that is less time
+critical. This is a fundamental concept of all real time application development.
 
 These tables are built at compile time and the linker determines that there is
 enough FLASH and RAM to store them. Therefore, there is no need for user code
