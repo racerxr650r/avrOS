@@ -43,8 +43,7 @@ machines that can process the information in a less time critical fashion.
 An example of this would be a serial driver that pulls a byte from the hardware input
 buffer and copies it into a queue. The serial driver then returns from the interrupt
 context. A state machine, that implements a serial protocol, waiting on that queue
-can then process the byte received at a later time that is less time critical. This
-is a fundamental concept of all real time application development.
+can then process the byte received at a later time that is less time critical.
 
 Lastly, the **avrOS** ecosystem also provides instructions, makefiles, and scripts to 
 setup a development environment and build applications using the Linux operating
