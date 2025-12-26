@@ -14,6 +14,8 @@ else
     sudo apt full-upgrade -y
     # Install the command line tools
     $AVROSHOME/util/scripts/install_cli_tools.sh
+    # Install PI specific tools
+    sudo apt install xterm
 
     # Install Bottom (btm) system status tool
     echo "Installing Bottom (btm) system status tool"
