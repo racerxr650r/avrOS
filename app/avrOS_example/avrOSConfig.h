@@ -39,6 +39,9 @@
 #define SYS_TICK_TIMER  SYS_TIMER_TCB0	// System tick clock source (Timer/Counter type B)
 #define SYS_TICK_FREQ	1000			// System tick clock frequency in Hz
 
+// Unit Test Configuration ----------------------------------------------------
+#define ENABLE_TEST						// Enable unit tests
+
 // Logger Configuration -------------------------------------------------------
 #define LOG_QUEUE_SIZE		255
 #define LOG_USART			USART1
@@ -103,6 +106,7 @@
 #define CPU_CLI		// CPU commands
 #define EVNT_CLI    // Event commands
 #define GPIO_CLI    // GPIO commands
+#define TEST_CLI	// Unit test service command
 // Enabling stats also includes string names used by associated CLI commands
 #define FSM_STATS	    // Include string names of state machines and states
 #define UART_STATS		// Calculate and track uart statistics, requires additional RAM and CPU cycles

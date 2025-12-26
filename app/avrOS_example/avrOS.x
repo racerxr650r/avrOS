@@ -206,7 +206,13 @@ SECTIONS
     *(EVNT_TABLE)
     __stop_EVNT_TABLE = . ;
   } AT> text_window
-  GPIO_TABLE ADDR(EVNT_TABLE) + SIZEOF (EVNT_TABLE) :
+  TEST_TABLE ADDR(EVNT_TABLE) + SIZEOF (EVNT_TABLE) :
+  {
+    __start_TEST_TABLE = . ;
+    *(TEST_TABLE)
+    __stop_TEST_TABLE = . ;
+  } AT> text_window
+  GPIO_TABLE ADDR(TEST_TABLE) + SIZEOF (TEST_TABLE) :
   {
     __start_GPIO_TABLE = . ;
     *(GPIO_TABLE)
