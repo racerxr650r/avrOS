@@ -3,35 +3,50 @@
 # Getting Started
 
 ## avrOS - _The Operating System for AVR DA microcontrollers_
-**avrOS** is an embedded scalable prioritized cooperative multi-tasking operating system 
-with device drivers for the AVR DA family of microcontrollers. It provides macros and a 
-custom linker script to build the various system tables implementing state 
-machines, queues, events, memory heaps, command line commands, alarms, and modus 
-registers at compile time. These tables reside in FLASH where ever possible. So the 
-system doesn't require run-time registration of application resources and related fault handling code. 
-In addtion, there is no need to maintain a single source file containing all 
-these system tables. The macros that build these tables can be distributed across
-several source files so they can be co-located with the associated logic. This
-approach reduces the use of RAM, a precious commodity on this little
-microcontroller, and improves the read-ability of the application source code.
+**avrOS** is an embedded scalable prioritized cooperative multi-tasking operating
+system with various services and device drivers for the AVR DA family of
+microcontrollers. It's design takes advantage of the AVR microcontroller's
+interrupt controller to efficiently immplement real time responsiveness while
+supporting complex multi-featured applications.
 
-**avrOS** provides a finite state machine manager (FSM). The developer defines
-one or more state machines that implement the system functionality. The FSM
-handles priortized scheduling of these state machine states. This
+**avrOS** relies on the existing microcontroller's wealth of interrupt sources
+and the interrupt controller to support real-time responsiveness. Why would an
+OS waste precious FLASH and RAM to implement something that is already built
+into the hardware? **avrOS** doesn't make this mistake. It takes advantage of
+the interrupt controller's ability to manage contexts (stack frames) and 
+implement real-time responsiveness. It doesn't repeat this functionality in
+the OS source code. Instead, it implements a much more RAM friendly cooperative
+multi-tasking scheme for the lower priority system tasks. These tasks comprise
+a significant majority of an application's source code.
+
+**avrOS** also provides macros and a custom linker script to build the
+various system tables implementing state machines, queues, events, memory heaps,
+command line commands, alarms, and modbus registers at compile time. These tables
+reside in FLASH where ever possible. So the system doesn't require run-time
+registration of application resources and related fault handling code. In addtion,
+there is no need to maintain a single source file containing all these system
+tables. The macros that build these tables can be distributed across several
+source files so they can be co-located with the associated logic. This approach
+reduces the use of RAM, a precious commodity on this little microcontroller, and
+improves the read-ability of the application source code.
+
+**avrOS** provides a finite state machine manager (FSM). The application developer
+defines one or more state machines that implement the system functionality. The
+FSM then handles priortized scheduling of these state machine states. This
 state machine approach reduces the RAM requirements for applications by
 using just one stack for all of the system "processes". This differs from
-preemptive real time operating systems that use threads or tasks that require
-individually reserved memory stacks in RAM. That partitioning of the system stack
-is complex, inefficient, can add latency to hardware interrupt handlers, and prone
-to issues that are difficult to debug. The FSM also provides a simple mechanism
-for the user to implement a custom power management scheme tailored to their
-hardware requirements.
+preemptive real-time operating systems that use threads or tasks. These require
+more than one context stack reserved in RAM. That partitioning of the system stack
+is complex, inefficient, likely to introduce additional latency, and prone
+to stack overflow issues that are difficult to debug. The FSM also enables a simple
+mechanism for the user to implement a custom power management scheme tailored to
+their application requirements.
 
-In addtion, **avrOS** provides event and queue services that enable inter-state
-machine and device driver communication and syncronization. This creates a
-system that is interrupt/event driven and takes advantage of the AVR DA's rich
-number of interrupt sources. This reduces CPU intensive polling and makes the
-built in power management even more efficient.
+To connect the state machine and interrupt contexts, **avrOS** provides event and
+queue services that enable inter state machine and interrupt context communication
+and syncronization. This creates a system that is interrupt/event driven and takes
+advantage of the AVR DA's rich number of interrupt sources. This reduces CPU intensive
+polling and makes the AVR's built in power management even more efficient.
 
 > [!NOTE]
 > To reduce code size and minimize RAM usage, avrOS does not implement threading. It's
