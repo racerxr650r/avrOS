@@ -109,8 +109,9 @@ provided in the repository simplify setting up the avrOS development on a Raspbe
 
 ## Project Status and Additional Resources
 avrOS is still in it's sub 1.0 development stage. So there are lots of features 
-and drivers still under development. For more information regarding avrOS, refer to
-the [User Manual](./doc/MANUAL.md).
+and drivers still under development.
+
+For more information regarding avrOS, refer to the [User Manual](./doc/MANUAL.md).
 
 For an example of Raspberry Pi 4 based development environment, see the
 [Raspberry PI 4 model B Development Platform](./doc/PI4_Dev_Station.md) document.
