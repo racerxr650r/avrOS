@@ -7,7 +7,7 @@
 system with various services and device drivers for the AVR DA family of
 microcontrollers. It was designed from the ground up for the AVR microcontroller
 family and its Harvard arcitecture. It's not a port of a generic RTOS forced to
-fit into the AVRs small RAM and FLASH. It's design takes advantage of the AVR
+fit into the AVR's small RAM and FLASH. It's design takes advantage of the AVR
 microcontroller's interrupt controller to efficiently immplement real time
 responsiveness while supporting complex multi-featured applications.
 
