@@ -117,9 +117,9 @@ For an example of Raspberry Pi 4 based development environment, see the
 [Raspberry PI 4 model B Development Platform](./doc/PI4_Dev_Station.md) document.
 
 ## Install Development Environment and Build an avrOS Application
-avrOS is developed on a Linux workstation using the avr-gcc compiler, gnu make,
-and avrdude w/Atmel Ice jtag programmer. To recreate this development 
-environment on a debian based Linux distribution follow the instructions here:
+avrOS is developed on a Linux workstation oor Raspberry PI using the avr-gcc compiler,
+gnu make, and avrdude. The w/Atmel ICE JTAG programmer iis optioinal. To recreate this
+development environment on a debian based Linux distribution, follow the instructions here:
 
 1. From your "Projects" directory, clone avrOS from github
 
