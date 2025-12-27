@@ -18,8 +18,8 @@ into the hardware? **avrOS** doesn't make this mistake. It takes advantage of
 the interrupt controller's ability to manage contexts (stack frames) and 
 implement real-time responsiveness. It doesn't repeat this functionality in
 the OS source code. Instead, it implements a much more RAM friendly cooperative
-multi-tasking scheme for the lower priority system tasks. These tasks comprise
-a significant majority of an application's source code.
+multi-tasking scheme for the lower priority system tasks. These tasks should
+represent a majority of an application's source code.
 
 **avrOS** also provides macros and a custom linker script to build the
 various system tables implementing state machines, queues, events, memory heaps,
