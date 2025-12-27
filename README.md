@@ -5,11 +5,12 @@
 ## avrOS - _The Operating System for AVR DA microcontrollers_
 **avrOS** is an embedded scalable prioritized cooperative multi-tasking operating
 system with various services and device drivers for the AVR DA family of
-microcontrollers. It was designed from the ground up for the AVR microcontroller
+microcontrollers. It was designed from the ground up for the microcontroller
 family and its Harvard arcitecture. It's not a port of a generic RTOS forced to
-fit into the AVR's small RAM and FLASH. It's design takes advantage of the AVR
-microcontroller's interrupt controller to efficiently immplement real time
-responsiveness while supporting complex multi-featured applications.
+fit into the AVR's small RAM and FLASH. It's design takes full advantage of the
+microcontroller's interrupt controller and numerous interrupt sorces to
+efficiently immplement real-time responsiveness while supporting complex
+multi-featured applications.
 
 **avrOS** relies on the existing microcontroller's wealth of interrupt sources
 and the interrupt controller to support real-time responsiveness. Why would an
@@ -47,8 +48,8 @@ their application requirements.
 To connect the state machine and interrupt contexts, **avrOS** provides event and
 queue services that enable inter state machine and interrupt context communication
 and syncronization. This creates a system that is interrupt/event driven and takes
-advantage of the AVR DA's rich number of interrupt sources. This reduces CPU intensive
-polling and makes the AVR's built in power management even more efficient.
+advantage of the AVR DA's rich number of interrupt sources. Thus reducinig CPU
+intensive polling and takes advantagde of the AVR's built in power management.
 
 > [!NOTE]
 > It is best practice to assume the state machine code is less deterministic. This
