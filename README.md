@@ -50,16 +50,16 @@ advantage of the AVR DA's rich number of interrupt sources. This reduces CPU int
 polling and makes the AVR's built in power management even more efficient.
 
 > [!NOTE]
-> To reduce code size and minimize RAM usage, avrOS does not implement threading. It's
-multi-tasking model is cooperative. Therefore, application developers should not
-consider state machine code fully deterministic. All "real-time" functionality should be
-implemented in the CPU interrupt contexts. To reduce jitter, these interrupt handlers
-should then use events and/or queues to dispatch information to one or more state
-machines that can process the information in a less time critical fashion.
-An example of this would be a serial driver that pulls a byte from the hardware input
-buffer and copies it into a queue. The serial driver then returns from the interrupt
-context. A state machine, that implements a serial protocol, waiting on that queue
-can then process the byte received at a later time that is less time critical.
+> It is best practice to assume the state machine code is less deterministic. This
+quality is dependent on the application architecture and imiplementation. All
+functionality that is sensitive to latency and jitter should be implemented in the
+CPU interrupt contexts. To further reduce jitter, these interrupt handlers should
+then use events and/or queues to dispatch information to one or more state machines
+that can process the information in a less time critical fashion. An example of this
+would be a serial driver that pulls a byte from the AVR's small lhardware input buffer
+and copies it into a queue. The serial driver then returns from the interrupt context.
+A state machine, that implements a serial protocol, waiting on that queue can then
+process the byte received at a later time that is less time critical.
 
 Lastly, the **avrOS** ecosystem also provides instructions, makefiles, and scripts to 
 setup a development environment and build applications using the Linux operating
