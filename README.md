@@ -3,42 +3,73 @@
 # Getting Started
 
 ## avrOS - _The Operating System for AVR DA microcontrollers_
-**avrOS** is a scalable prioritized cooperative multi-tasking operating system 
-with device drivers for the AVR DA family of microcontrollers. It provides macros and a 
-custom linker script to build the various system tables implementing state 
-machines, queues, events, memory heaps, command line commands, alarms, and modus 
-registers at compile time. These tables reside in FLASH where possible. So the 
-system doesn't require run-time registration and related fault handling code. 
-In addtion, there is no need to maintain a single source file containing all 
-these system tables. The macros that build these table can be distributed across
-several source files so they can be co-located with the associated logic. This
-approach reduces the use of RAM, a precious commodity on this little
-microcontroller.
+**avrOS** is an embedded scalable prioritized cooperative multi-tasking operating
+system with various services and device drivers for the AVR DA family of
+microcontrollers. It was designed from the ground up for the microcontroller
+family and its Harvard arcitecture. It's not a port of a generic RTOS forced to
+fit into the AVR's small RAM and FLASH. It's design takes full advantage of the
+microcontroller's interrupt controller and numerous interrupt sources to
+efficiently immplement real-time responsiveness while supporting complex
+multi-featured applications.
 
-**avrOS** provides a finite state machine manager (FSM). The developer defines
-one or more state machines that implement the system functionality. The FSM
-handles priortized scheduling of these state machine states. This
+**avrOS** relies on the existing microcontroller's wealth of interrupt sources
+and the interrupt controller to support real-time responsiveness. Why would an
+OS waste precious FLASH and RAM to implement something that is already built
+into the hardware? **avrOS** doesn't make this mistake. It takes advantage of
+the interrupt controller's ability to manage contexts (stack frames) and 
+implement real-time responsiveness. It doesn't repeat this functionality in
+the OS source code. Instead, it implements a much more RAM friendly cooperative
+multi-tasking scheme for the lower priority system tasks. These tasks should
+represent a majority of an application's source code.
+
+**avrOS** also provides macros and a custom linker script to build the
+various system tables implementing state machines, queues, events, memory heaps,
+command line commands, alarms, and modbus registers at compile time. These tables
+reside in FLASH where ever possible. So the system doesn't require run-time
+registration of application resources and related fault handling code. In addtion,
+there is no need to maintain a single source file containing all these system
+tables. The macros that build these tables can be distributed across several
+source files so they can be co-located with the associated logic. This approach
+reduces the use of RAM, a precious commodity on this little microcontroller, and
+improves the read-ability of the application source code.
+
+**avrOS** provides a finite state machine manager (FSM). The application developer
+defines one or more state machines that implement the system functionality. The
+FSM then handles priortized scheduling of these state machine states. This
 state machine approach reduces the RAM requirements for applications by
 using just one stack for all of the system "processes". This differs from
-preemptive real time operating systems that use threads or tasks that require
-individually reserved memory stacks in RAM. That partitioning of the system stack
-is complex, inefficient, can add latency to hardware interrupt handlers, and prone
-to issues that are difficult to debug. The FSM also provides a simple mechanism
-for the user to implement a custom power management scheme tailored to their
-hardware requirements.
+preemptive real-time operating systems that use threads or tasks. These require
+more than one context stack reserved in RAM. That partitioning of the system stack
+is complex, inefficient, likely to introduce additional latency, and prone
+to stack overflow issues that are difficult to debug. The FSM also enables a simple
+mechanism for the user to implement a custom power management scheme tailored to
+their application requirements.
 
-In addtion, **avrOS** provides event and queue services that enable inter-state
-machine and device driver communication and syncronization. This creates a
-system that is interrupt/event driven and takes advantage of the AVR DS's rich
-number of interrupt sources. This reduces CPU intensive polling and makes the
-built in power management even more efficient.
+To connect the state machine and interrupt contexts, **avrOS** provides event and
+queue services that enable inter state machine and interrupt context communication
+and syncronization. This creates a system that is interrupt/event driven and takes
+advantage of the AVR DA's rich number of interrupt sources. Thus reducinig CPU
+intensive polling and takes advantagde of the AVR's built in power management.
+
+> [!NOTE]
+> It is best practice to assume the state machine code is less deterministic. This
+quality is dependent on the application architecture and implementation. All
+functionality that is sensitive to latency and jitter should be implemented in the
+CPU interrupt contexts. To further reduce jitter, these interrupt handlers should
+then use events and/or queues to dispatch information to one or more state machines
+that can process the information in a less time critical fashion. An example of this
+would be a serial driver that pulls a byte from the AVR's small lhardware input buffer
+and copies it into a queue. The serial driver then returns from the interrupt context.
+A state machine, that implements a serial protocol, waiting on that queue can then
+process the byte received at a later time that is less time critical.
 
 Lastly, the **avrOS** ecosystem also provides instructions, makefiles, and scripts to 
 setup a development environment and build applications using the Linux operating
 system and it's abundant open source development software and hardware resources.
-You no longer need to use Microsoft Windows for AVR application development. But
-if you prefer Windows on your desktop PC, you can setup a headless Raspberry Pi
-for remote development using VsCode, Zed, or ssh with your favorite text mode editor.
+Microsoft Windows is no longer required for AVR application development. But
+if you prefer Windows on your desktop PC, it's possible to setup a headless Raspberry Pi
+for remote development using VsCode, Zed, or ssh with your favorite text mode editor. Scripts
+provided in the repository simplify setting up the avrOS development on a Raspberry PI.
 
 ## avrOS Features
 ### System Services:
@@ -79,16 +110,17 @@ for remote development using VsCode, Zed, or ssh with your favorite text mode ed
 
 ## Project Status and Additional Resources
 avrOS is still in it's sub 1.0 development stage. So there are lots of features 
-and drivers still under development. For more information regarding avrOS, refer to
-the [User Manual](./doc/MANUAL.md).
+and drivers still under development.
+
+For more information regarding avrOS, refer to the [User Manual](./doc/MANUAL.md).
 
 For an example of Raspberry Pi 4 based development environment, see the
 [Raspberry PI 4 model B Development Platform](./doc/PI4_Dev_Station.md) document.
 
 ## Install Development Environment and Build an avrOS Application
-avrOS is developed on a Linux workstation using the avr-gcc compiler, gnu make,
-and avrdude w/Atmel Ice jtag programmer. To recreate this development 
-environment on a debian based Linux distribution follow the instructions here:
+avrOS is developed on a Linux workstation oor Raspberry PI using the avr-gcc compiler,
+gnu make, and avrdude. The w/Atmel ICE JTAG programmer iis optioinal. To recreate this
+development environment on a debian based Linux distribution, follow the instructions here:
 
 1. From your "Projects" directory, clone avrOS from github
 
