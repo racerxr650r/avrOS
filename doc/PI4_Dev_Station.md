@@ -12,7 +12,8 @@ for the optimal development experience. Since you can buy refurbished business
 class PCs for about the same you would spend on a Pi with case, power
 supply and keyboard, it's a no brainer.
 
-> :memo: **Note:** With the TPM requirement for Windows 11, you can find
+> [!NOTE]
+> With the TPM requirement for Windows 11, you can find
 refurbished bussiness class PC's very cheap. I just bought an HP EliteDesk 800
 G3 Mini Business Desktop PC with Intel Quad-Core i5-6500T and 16GB of ram for
 $115. This system runs resource hungry applications like vscode much better
@@ -81,7 +82,8 @@ responsive than using vim/nvim/micro/nano over ssh.
 
 ![AVR128DA28 Powered](./images/20231020_200450.jpg)
 
- > :memo: **Note:** In the image above, I also connected a 6 pin ISP breadboard adaptor for use with the Atmel ICE
+> [!NOTE]
+> In the image above, I also connected a 6 pin ISP breadboard adaptor for use with the Atmel ICE
 
 7. Connect Pi UART 2 to the UPDI pin. Connect the Rx (Pi pin 28) to the UPDI port pin
    on the AVR (AVR pin 19). Then connect the Tx (Pi pin 27) to a 1K ohm resistor and
@@ -256,9 +258,10 @@ breadboard for prototyping
 
    From the vscode extensions menu on the left, find and install the Remote-SSH extension
 
-   > :memo: **Note:** For information about installing and using this feature,
-   checkout the [Remote Development using SSH](https://code.visualstudio.com/docs/remote/ssh)
-   page on the Microsoft site.
+> [!NOTE]
+> For information about installing and using this feature,
+checkout the [Remote Development using SSH](https://code.visualstudio.com/docs/remote/ssh)
+page on the Microsoft site.
 
 Now that you have setup the hardware and your development environment, you can
 start building and running applications. See the [User Manual](MANUAL.md) for

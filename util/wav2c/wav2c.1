@@ -1,0 +1,33 @@
+.TH wav2c 1
+.SH NAME
+wav2c \- Utility to convert sound files to C source arrays
+.SH SYNOPSIS
+.B wav2c [OPTIONS] <input sound file>
+.SH DESCRIPTION
+.B wav2c
+is a CLI app that converts various sound file formats into a C source code file that represents the sound data as a pulse code modulated (PCM) uint8_t or int8_t array depending on the selected options. The name of the array is the same as the source file without the extension. If the output C source file already exists, by default snd2c will append the array to end of the existing file. If compression is enabled, a deadband will be used to encode a run length of similar values. This deadband value represents a plus/minus value. So, a deadband of 5 is actually +/- 5. Larger value will increase the compression with a negative impact to the sound quality.
+.SH OPTIONS
+.TP
+.BR \-b ", " \-\-buffer " " \fI<ArraySize>\fR
+Integer value for the maximum size of the data buffer (default: 64K)
+.TP
+.BR \-c ", " \-\-compress " " \fI\fR
+Compress the output using RLE (default:no compression)
+.TP
+.BR \-d ", " \-\-deadband " " \fI<DeadbandValue>\fR
++/- Integer value used for the deadband of the RLE compression (default: 5)
+.TP
+.BR \-f ", " \-\-frequency " " \fI<SampleFrequency>\fR
+Set the sample fequency of the ouput in Hz (default:8000 Hz)
+.TP
+.BR \-o ", " \-\-output " " \fI<Filename>\fR
+Name of the output C source code file (default:snd.c)
+.TP
+.BR \-r ", " \-\-replace " " \fI\fR
+Replace the output file if it already exists (default:append)
+.TP
+.BR \-s ", " \-\-signed " " \fI\fR
+Signed integer output (default:unsigned)
+.TP
+.BR \-\-man-page
+Generate a man page and exit

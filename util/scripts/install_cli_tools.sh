@@ -18,6 +18,9 @@ else
     # Install command line app tools
     sudo apt-get install -y minicom tio screen tmux micro tree devmon sloccount complexity cppcheck
 
+    # Install documentation applications
+    sudo apt-get install -y pandoc texlive-latex-base texlive-fonts-recommended texlive-fonts-extra
+
     # Get the AVR Dx DFP file for the AVR DA libs and header files
     echo "Installing the Microchip/Atmel Device Feature Pack for the AVR-Dx"
     #wget http://packs.download.atmel.com/Atmel.AVR-Dx_DFP.2.2.253.atpack

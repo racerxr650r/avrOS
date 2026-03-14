@@ -1,12 +1,15 @@
-/*
- * queue.c
+/**
+ * @file queue.c
+ * @brief Circular queue data structure implementation.
  *
- * Functions to implement circular queue data structure.  
+ * This file provides functions for managing circular queues.  It supports
+ * storing arbitrary data elements of a fixed size, or pointers.  Queues are implemented
+ * as circular buffers using a fixed-size memory block.
  *
- * Created: 2/19/2021 2:33:18 PM
- * Author: john anderson
+ * @date 2/19/2021
+ * @author John Anderson <racerxr650r@gmail.com>
  *
- * Copyright (C) 2021 by John Anderson <racerxr650r@gmail.com>
+ * Copyright (C) 2021 by John Anderson
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted.
