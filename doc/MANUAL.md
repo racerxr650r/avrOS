@@ -1,4 +1,4 @@
-[![avrOS](./avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
+[![avrOS](./images/avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
 ---
 # User Manual
 ***avrOS*** - _Operating System for AVR DA_, is a scalable operating system 

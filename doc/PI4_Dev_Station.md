@@ -1,4 +1,4 @@
-[![avrOS](./avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
+[![avrOS](./images/avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
 ---
 # Raspberry PI 4 model B Development Platform for avrOS
 

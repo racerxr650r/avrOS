@@ -12,6 +12,8 @@
 #   complexity: calculate and display the complexity of the complete source 
 #               code. See GNU Complexity
 #   disasm:     disassembles the code for debugging
+#   docs:       generates doxygen API documentation and PDF versions of
+#               markdown files in build/docs directory
 #   clean:      removes all .hex, .elf, and .o files in the source code and
 #               library directories
 
@@ -80,7 +82,7 @@ DEP    = $(OBJ:%.o=%.d)
 
 # user targets
 # compile all files
-all: build $(BUILD_DIR)$(PRJ).elf $(BUILD_DIR)cppcheck_report.txt $(BUILD_DIR)complexity_report.txt
+all: build docs $(BUILD_DIR)$(PRJ).elf $(BUILD_DIR)cppcheck_report.txt $(BUILD_DIR)complexity_report.txt
 
 # Create the build directory
 build:
@@ -89,6 +91,17 @@ build:
 
 # Generate the intel hex binary image
 hex: $(BUILD_DIR)$(PRJ).hex
+
+# generate html documentation
+docs: build
+	mkdir -p $(BUILD_DIR)docs
+	cd ../../doc && doxygen Doxyfile
+	mv ../../doc/api $(BUILD_DIR)docs/
+	cp ../../doc/readme.html $(BUILD_DIR)docs/
+	cp -r ../../doc/images $(BUILD_DIR)docs/
+	pandoc -s --resource-path=../../doc ../../doc/MANUAL.md -o $(BUILD_DIR)docs/MANUAL.html
+	pandoc -s --resource-path=../../doc ../../doc/SDD.md -o $(BUILD_DIR)docs/SDD.html
+	pandoc -s --resource-path=../../doc ../../doc/PI4_Dev_Station.md -o $(BUILD_DIR)docs/PI4_Dev_Station.html
 
 # test programmer connectivity
 test:

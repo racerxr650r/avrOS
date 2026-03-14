@@ -1,5 +1,6 @@
-# avrOS Software Design Document
-
+[![avrOS](./images/avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
+---
+## avrOS Software Design Document
 **Project:** avrOS  
 **Author:** John Anderson \<racerxr650r@gmail.com\>  
 **Date:** February 24, 2026  
