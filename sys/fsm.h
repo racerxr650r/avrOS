@@ -102,29 +102,40 @@ typedef struct STATE_MACHINE_DESCR_TYPE
 
 // Finite State Machine Macros ------------------------------------------------
 /**
- * Add state machine to the application
- * 
+ * @brief Add state machine to the application
+ *
  * Adds a new state machine to the list of state machines handled by the FSM manager
-*/
+ *
+ * @param stateMachineName	Name of the state machine to add to the application, type char*
+ * @param smInitHandler		Function pointer to the initial state for the state machine, type fsmHandler_t
+ * @param smPriority		Priority of the state machine, type fsmPriority_t
+ * @param ...				(Optional) pointer to additional data needed by the state machine, type void*
+ */
 #define ADD_STATE_MACHINE(stateMachineName, smInitHandler, smPriority, ...)	\
 		int smInitHandler(volatile fsmStateMachine_t *stateMachine); \
 		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr); \
 		volatile fsmStateMachine_t stateMachineName = {.currStateName = NULL, .prevStateName = NULL, .nextStateName = NULL, .initialCall = false, .prevState = NULL, .currState = NULL, .nextState = smInitHandler, .ticks = 0, .next = NULL, .stateMachineDescr = &CONCAT(stateMachineName,_descr)}; \
 		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = &stateMachineName, .handler.fsmHandler = smInitHandler, .priority = smPriority, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
 /**
- * Add an initializer to the application
- * 
+ * @brief Add an initializer to the application
+ *
  * Adds a new initializer called by the FSM manager at startup
- * 
- * @param stateMachineName	Name of the state machine to add to the application, type char*
- * @param smInitHandler		Function pointer to the initial state for the state machine, type fsmHandler_t
- * @param smPriority		Priority of the state machine, type fsmPriority_t
- * @param ...				(Optional) pointer to additional data needed by the state machine, type void*
-*/
+ *
+ * @param stateMachineName	Name of the initializer to add to the application, type char*
+ * @param smHandler			Function pointer to the initializer handler, type initHandler_t
+ * @param ...				(Optional) pointer to additional data needed by the initializer, type void*
+ */
 #define ADD_INITIALIZER(stateMachineName, smHandler, ...)	\
 		int smHandler(const fsmStateMachineDescr_t *stateMachineDescr); \
 		const static fsmStateMachineDescr_t SECTION(FSM_TABLE) CONCAT(stateMachineName,_descr) = { .name = #stateMachineName, .stateMachine = NULL, .handler.initHandler = smHandler, .priority = 0, .instance = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)};
-// Define fsmSetNextState to use fsmSetNextStateVerbose
+/**
+ * @brief Set the next state of the given state machine
+ *
+ * Wrapper macro that calls fsmSetNextStateVerbose() with the stringified state name.
+ *
+ * @param stateMachine	Pointer to state machine
+ * @param stateName	Function implementing the next state
+ */
 #define fsmSetNextState(stateMachine, stateName) \
 		fsmSetNextStateVerbose(stateMachine, stateName, #stateName)
 
@@ -145,153 +156,200 @@ typedef struct STATE_MACHINE_DESCR_TYPE
 #endif*/
 
 // Exported Functions --------------------------------------------------------
-/**----------------------------------------------------------------------------
- * Get the scan cycle count
+/**
+ * @brief Get the scan cycle count
  *
- * Returns the number times that fsmDispatch() has been called in the
+ * Returns the number of times that fsmDispatch() has been called in the
  * application main loop. On the initial call to fsmDispatch(), this value will
  * be 1.
-*/
+ *
+ * @return The current scan cycle count
+ */
 uint32_t fsmScanCycle();
-/**----------------------------------------------------------------------------
- * Get the current state machine name
+/**
+ * @brief Get the current state machine name
  *
  * Returns a pointer to the char* name of the current state machine that is
- * being executed by the finite state machine manager
+ * being executed by the finite state machine manager.
+ *
+ * @return Pointer to the name string of the current state machine
  */
 const char* fsmGetCurrentStateMachineName();
-/**----------------------------------------------------------------------------
- * Get the current state machine
+/**
+ * @brief Get the current state machine
  *
  * Returns a pointer to the current state machine that is being executed by the
- * finite state machine manager
+ * finite state machine manager.
+ *
+ * @return Pointer to the current state machine
  */
 volatile fsmStateMachine_t* fsmGetCurrentStateMachine();
-/******************************************************************************
- * Get the state machine instance
+/**
+ * @brief Get the state machine instance
  *
  * Returns a pointer to the state machine instance. The instance is state
  * machine specific information that is provided when the state machine is
- * added using the ADD_STATEMACHINE() macro
- */
-void* fsmGetInstance(volatile fsmStateMachine_t *stateMachine);	///< Pointer to the state machine
-/******************************************************************************
- * Get the state machine instance
+ * added using the ADD_STATE_MACHINE() macro.
  *
- * Returns a pointer to the state machine instance. The instance is state
- * machine specific information that is provided when the state machine is
- * added using the ADD_STATEMACHINE() macro
+ * @param stateMachine	Pointer to the state machine
+ * @return Pointer to the state machine instance data
  */
-void* initGetInstance(const fsmStateMachineDescr_t *stateMachineDescr);	///< Pointer to the state machine descriptor
-/**----------------------------------------------------------------------------
- * Initial call to the current state?
+void* fsmGetInstance(volatile fsmStateMachine_t *stateMachine);
+/**
+ * @brief Get the initializer instance
+ *
+ * Returns a pointer to the initializer instance. The instance is initializer
+ * specific information that is provided when the initializer is
+ * added using the ADD_INITIALIZER() macro.
+ *
+ * @param stateMachineDescr	Pointer to the state machine descriptor
+ * @return Pointer to the instance data
+ */
+void* initGetInstance(const fsmStateMachineDescr_t *stateMachineDescr);
+/**
+ * @brief Initial call to the current state?
  *
  * Returns true if this is the first call to the current state since the
- * previous state change
+ * previous state change.
+ *
+ * @return true if this is the first call to the current state, false otherwise
  */
 bool fsmIsInitialCall();
-/******************************************************************************
- * Get pointer to the current state machine state (function)
+/**
+ * @brief Get pointer to the current state machine state (function)
  *
  * Returns a function pointer that implements the given state machine's current
- * state
+ * state.
+ *
+ * @param stateMachine	[in] Pointer to state machine
+ * @return Function pointer to the current state handler
  */
-fsmHandler_t fsmGetCurrentState(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
-/******************************************************************************
- * Get the name of the current state machine state (function)
+fsmHandler_t fsmGetCurrentState(volatile fsmStateMachine_t *stateMachine);
+/**
+ * @brief Get the name of the current state machine state (function)
  *
  * Returns a pointer to the string name of the given state machine's current
- * state
+ * state.
+ *
+ * @param stateMachine	[in] Pointer to state machine
+ * @return Pointer to the current state name string
  */
-const char* fsmGetCurrentStateName(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
-/******************************************************************************
- * Get the name of the previous state machine state (function)
+const char* fsmGetCurrentStateName(volatile fsmStateMachine_t *stateMachine);
+/**
+ * @brief Get the name of the previous state machine state (function)
  *
  * Returns a pointer to the string name of the given state machine's previous
- * state
- */
-const char* fsmGetPreviousStateName(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
-/**----------------------------------------------------------------------------
- * Get pointer to the previous state
+ * state.
  *
- * Returns function pointer to the state previous state prior to the latest state change
+ * @param stateMachine	[in] Pointer to state machine
+ * @return Pointer to the previous state name string
  */
-fsmHandler_t fsmGetPreviousState(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
-/**----------------------------------------------------------------------------
- * Set the next state of the given state machine
- * 
+const char* fsmGetPreviousStateName(volatile fsmStateMachine_t *stateMachine);
+/**
+ * @brief Get pointer to the previous state
+ *
+ * Returns function pointer to the previous state prior to the latest state change.
+ *
+ * @param stateMachine	[in] Pointer to state machine
+ * @return Function pointer to the previous state handler
+ */
+fsmHandler_t fsmGetPreviousState(volatile fsmStateMachine_t *stateMachine);
+/**
+ * @brief Set the next state of the given state machine
+ *
  * Sets the next state of the state machine. The next time this state machine
  * is called by the state machine manager it will call the function provided by
- * the handler parameter
+ * the handler parameter.
+ *
+ * @param stateMachine	[in] Pointer to state machine
+ * @param handler		[in] Pointer to function implementing the next state
+ * @return 0 on success, non-zero on failure
  */
-int fsmSetNextStateBasic(volatile fsmStateMachine_t *stateMachine,	///< [in] Pointer to state machine
-						fsmHandler_t handler);						///< [in] Pointer to function implmenting the next state
-/**----------------------------------------------------------------------------
- * Set the next state of the given state machine
- * 
+int fsmSetNextStateBasic(volatile fsmStateMachine_t *stateMachine,
+						fsmHandler_t handler);
+/**
+ * @brief Set the next state of the given state machine (verbose)
+ *
  * Sets the next state of the state machine. The next time this state machine
  * is called by the state machine manager it will call the function provided by
- * the handler parameter
+ * the handler parameter.
+ *
+ * @param stateMachine	[in] Pointer to state machine
+ * @param handler		[in] Pointer to function implementing the next state
+ * @param name			[in] String containing the name of the next state
+ * @return 0 on success, non-zero on failure
  */
-int fsmSetNextStateVerbose(volatile fsmStateMachine_t *stateMachine,	///< [in] Pointer to state machine
-							fsmHandler_t handler,						///< [in] Pointer to function implmenting the next state
-							const char *name);								///< [in] String containing the name of the next state
-/**----------------------------------------------------------------------------
- * Initialize the Finite State Manager
+int fsmSetNextStateVerbose(volatile fsmStateMachine_t *stateMachine,
+							fsmHandler_t handler,
+							const char *name);
+/**
+ * @brief Initialize the Finite State Manager
  *
  * This function is called by sysInit() during the initialization phase. It
  * walks the const table of state machines and builds the ready queue for first
  * call of fsmDispatch() in the application main loop.
  */
 void fsmInit();
-/**----------------------------------------------------------------------------
- * Move the given state machine to the ready queue
+/**
+ * @brief Move the given state machine to the ready queue
  *
  * Moves the provided state machine to the ready queue that is maintained by
  * the finite state machine manager. The ready queue contains the state
- * machines that are ready to the be scheduled (called)
+ * machines that are ready to be scheduled (called).
+ *
+ * @param stateMachine	[in] Pointer to state machine
+ * @return 0 on success, non-zero on failure
  */
-int	fsmReady(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
-/**----------------------------------------------------------------------------
- * Move the given state machine to the wait queue
- * 
+int	fsmReady(volatile fsmStateMachine_t *stateMachine);
+/**
+ * @brief Move the given state machine to the wait queue
+ *
  * Moves the provided state machine to the wait queue that is maintained by the
  * finite state machine manager. The wait queue contains state machines that
- * are waiting on a timer or event
+ * are waiting on a timer or event.
+ *
+ * @param stateMachine	[in] Pointer to state machine
+ * @return 0 on success, non-zero on failure
  */
-int	fsmWait(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
-/**----------------------------------------------------------------------------
- * Move the given state machine to the stopped queue
- * 
+int	fsmWait(volatile fsmStateMachine_t *stateMachine);
+/**
+ * @brief Move the given state machine to the stopped queue
+ *
  * Moves the provided state machine to the stopped queue that is maintained by
  * the finite state machine manager. The stopped queue contains state machines
  * that have stopped execution. These state machines will not run again, unless
- * fsmReady() is called for that state machine
+ * fsmReady() is called for that state machine.
+ *
+ * @param stateMachine	[in] Pointer to state machine
+ * @return 0 on success, non-zero on failure
  */
-int	fsmStop(volatile fsmStateMachine_t *stateMachine);	///< [in] Pointer to state machine
-/**----------------------------------------------------------------------------
- * Update the state machines in the wait queue wating on the system timer
- * 
+int	fsmStop(volatile fsmStateMachine_t *stateMachine);
+/**
+ * @brief Update the state machines in the wait queue waiting on the system timer
  */
-void fsmUpdateWaitTicks();								///< [in] Pointer to state machine
-/**----------------------------------------------------------------------------
- * Set the state machine to sit in the wait queue for x ticks
- * 
+void fsmUpdateWaitTicks();
+/**
+ * @brief Set the state machine to sit in the wait queue for x ticks
+ *
+ * @param stateMachine	[in] Pointer to state machine
+ * @param ticks			[in] Number of ticks to wait
  */
-void fsmWaitTicks(volatile fsmStateMachine_t*stateMachine, uint32_t ticks);	///< [in] Pointer to state machine
-/**----------------------------------------------------------------------------
- * Set the state machine to sit in the wait queue for x milliseconds
- * 
+void fsmWaitTicks(volatile fsmStateMachine_t*stateMachine, uint32_t ticks);
+/**
+ * @brief Set the state machine to sit in the wait queue for x milliseconds
+ *
+ * @param stateMachine	[in] Pointer to state machine
+ * @param ms			[in] Number of milliseconds to wait
  */
-void fsmWaitMilliseconds(volatile fsmStateMachine_t*stateMachine, uint16_t ms);	///< [in] Pointer to state machine
-/**----------------------------------------------------------------------------
- * Execute the state machines in the ready queue
- * 
+void fsmWaitMilliseconds(volatile fsmStateMachine_t*stateMachine, uint16_t ms);
+/**
+ * @brief Execute the state machines in the ready queue
+ *
  * This function implements the state machine manager. It is called in the
  * application main loop. This function calls the state machines in the ready
  * queue in priority order. Once it has called all of the state machines in the
  * ready queue, it will cycle back to the head of the ready queue and start
- * again. It will return once there are no state machines in the ready queue
+ * again. It will return once there are no state machines in the ready queue.
  */
 void	fsmDispatch(void);
 
