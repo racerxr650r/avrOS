@@ -1,0 +1,79 @@
+/*
+ * btn.c
+ *
+ * Functions to implement hardware buttons/switches
+ *
+ * Created: 1/4/2023
+ * Author : john anderson
+ *
+ * Copyright (C) 2024 by John Anderson <racerxr650r@gmail.com>
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
+ * IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+#include "avrOS.h"
+
+// Externs ---------------------------------------------------------------------
+extern void *__start_BTN_TABLE,*__stop_BTN_TABLE;
+
+// Locals ----------------------------------------------------------------------
+
+// Command line interface ------------------------------------------------------
+#ifdef EVNT_CLI
+ADD_COMMAND("btn",btnCmd,true);
+#endif
+
+static int btnCmd(int argc, char *argv[])
+{
+	evntDescriptor_t    *descr = (evntDescriptor_t *)&__start_BTN_TABLE;
+	int                 ret = -1;
+
+	// Walk the table of events
+	for(; descr < (evntDescriptor_t *)&__stop_BTN_TABLE; ++descr)
+	{
+		if(argc<2 || (argc==2 && !strcmp(descr->name,argv[1])))
+		{
+			printf(UNDERLINE BOLD FG_BLUE "%s\n\r" RESET,descr->status->handler==NULL?"unarmed":"armed");
+#ifdef EVNT_STATS
+			printf("\tArmed: %8lu Triggered: %8lu  Handled: %8lu Unhandled: %8lu Error: %8lu\n\r",descr->status->stats.armed,descr->status->stats.handled+descr->status->stats.unhandled,descr->status->stats.handled,descr->status->stats.unhandled,descr->status->stats.error);
+#endif
+			ret = 0;
+		}
+	}
+	return(ret);
+}
+
+// Internal Functions ----------------------------------------------------------
+evntHandler_t btnHandler(volatile fsmStateMachine_t *stateMachine)
+{
+	fsmWaitTicks(stateMachine,DEBOUNCE_DELAY);
+}
+
+static int waitButtonChange(volatile fsmStateMachine_t *stateMachine)
+{
+	if(gpioReadInput())
+	{
+		if(state == false)
+		{
+
+		}
+	}
+}
+
+// External functions ----------------------------------------------------------
+int btnWait(btn_t *button, evntType_t filter/*, fsmHandler_t nextState*/)
+{
+	volatile fsmStateMachine_t *stateMachine = fsmGetCurrentStateMachine();
+
+	evntEnable(button->event,filter,btnHandler,stateMachine);
+
+}

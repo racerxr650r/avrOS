@@ -66,7 +66,7 @@ typedef struct EVENT_TYPE
 	evntHandler_t     				handler;
 #ifdef EVNT_STATS
 	const struct EVENT_DESCR_TYPE 	*descr;
-	evntStats_t       	stats;
+	evntStats_t       				stats;
 #endif
 }event_t;
 

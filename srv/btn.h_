@@ -1,0 +1,62 @@
+/*
+ * btn.h
+ *
+ * Data types, macros, and function declarations to implement hardware
+ * buttons/switches
+ *
+ * Created: 7/13/2023
+ * Author : john anderson
+ *
+ * Copyright (C) 2023 by John Anderson <racerxr650r@gmail.com>
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any 
+ * purpose with or without fee is hereby granted.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF 
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES 
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN 
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
+ * IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */ 
+#ifndef BTN_H_
+#define BTN_H_
+
+// Includes -------------------------------------------------------------------
+#include "../avrOS.h"
+
+// Constants ------------------------------------------------------------------
+#define BTN_CHANGE_EVENT        EVENT_TYPE_1
+#define BTN_PRESS_EVENT         EVENT_TYPE_2
+#define BTN_RELEASE_EVENT       EVENT_TYPE_3
+#define BTN_EDGE_EVENT			EVENT_TYPE_4
+
+#define DEBOUNCE_DELAY			10
+
+// Types ----------------------------------------------------------------------
+typedef struct
+{
+	uint16_t	press, release, handled;
+}btnStats_t;
+
+typedef struct 
+{
+	bool            state;
+	fsmHandler_t    *nextState;
+#ifdef BTN_STATS
+	btnStats_t;
+#endif
+}button_t;
+
+typedef struct
+{
+	gpio_t		*gpio;
+	button_t	*status;
+}btnDescr_t;
+
+
+// Macros ---------------------------------------------------------------------
+#define ADD_BUTTON(gpio)
+
+#endif // BTN_H_

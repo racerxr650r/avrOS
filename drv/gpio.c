@@ -65,8 +65,18 @@ static void isrInput(PORT_t *port)
 			// If this is the same pin..
 			if(gpio->pin && gpio->port->INTFLAGS)
 			{
-				// Call the registered handler
-				gpio->handler(gpio);
+				// If there is a handler registered...
+				if(gpio->handler)
+				{
+					// Call the registered handler
+					gpio->handler(gpio);
+				}
+				// Else if there is an event registered...
+				else if(gpio->event)
+				{
+					// Trigger the event
+					evntTrigger(gpio->event, gpio->eventType);
+				}
 				// Clear the interrupt flag
 				gpio->port->INTFLAGS = gpio->pin;
 				// Return from the interrupt

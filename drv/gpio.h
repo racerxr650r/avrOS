@@ -54,16 +54,22 @@ typedef struct
 	uint32_t	toggle;
 }gpioStats_t;
 
+/*typedef struct
+{
+	
+}gpio_t;*/
+
 typedef struct GPIO_TYPE
 {
 #ifdef GPIO_STATS
 	char	*name;
 #endif
-	PORT_t  *port;
-	uint8_t pin;
-	gpioDirection_t direction;
-	gpioHandler_t   handler;
-
+	PORT_t				*port;
+	uint8_t				pin;
+	gpioDirection_t		direction;
+	gpioHandler_t		handler;
+	volatile event_t	*event;
+	evntType_t			eventType;
 #ifdef GPIO_STATS
 	gpioStats_t		*stats;
 #endif
@@ -74,6 +80,10 @@ typedef struct GPIO_TYPE
 #ifdef GPIO_STATS
 #define ADD_GPIO(gpioName, gpioPort, gpioPin, gpioDirection, ...) \
 		const static gpio_t SECTION(GPIO_TABLE) gpioName = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)}; \
+		ADD_INITIALIZER(gpioName ## _GPIO,gpioInit,(void *)&gpioName);
+#define ADD_GPIO_EVENT(gpioName, gpioPort, gpioPin, gpioDirection, gpioEventType, ...) \
+		ADD_EVENT(gpioName ## _event); \
+		const static gpio_t SECTION(GPIO_TABLE) gpioName = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .event = &CONCAT(gpioName,_event), eventType = gpioEventType, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)}; \
 		ADD_INITIALIZER(gpioName ## _GPIO,gpioInit,(void *)&gpioName);
 #else
 #define ADD_GPIO(gpioName, gpioPort, gpioPin, gpioDirection, ...) \
