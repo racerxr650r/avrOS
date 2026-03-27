@@ -76,11 +76,36 @@ typedef struct GPIO_TYPE
 }gpio_t;
 
 // Gpio Macros -----------------------------------------------------------------
-// Adds a new state machine to the list of state machines handled by the FSM manager
+/**
+ * @brief Add a GPIO instance and register its initializer.
+ *
+ * Creates a static GPIO descriptor in the GPIO table and registers
+ * `gpioInit` to initialize the instance at startup.
+ *
+ * @param gpioName Name of the GPIO instance symbol.
+ * @param gpioPort Hardware port used by the GPIO.
+ * @param gpioPin Pin mask assigned to the GPIO.
+ * @param gpioDirection Initial direction (`GPIO_OUTPUT` or `GPIO_INPUT`).
+ * @param ... Optional GPIO handler callback.
+ */
 #ifdef GPIO_STATS
 #define ADD_GPIO(gpioName, gpioPort, gpioPin, gpioDirection, ...) \
 		const static gpio_t SECTION(GPIO_TABLE) gpioName = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)}; \
 		ADD_INITIALIZER(gpioName ## _GPIO,gpioInit,(void *)&gpioName);
+
+/**
+ * @brief Add a GPIO instance with an associated event source.
+ *
+ * Creates an event object, stores it in the GPIO descriptor, and registers
+ * `gpioInit` to initialize the event-driven GPIO instance at startup.
+ *
+ * @param gpioName Name of the GPIO instance symbol.
+ * @param gpioPort Hardware port used by the GPIO.
+ * @param gpioPin Pin mask assigned to the GPIO.
+ * @param gpioDirection Initial direction (`GPIO_OUTPUT` or `GPIO_INPUT`).
+ * @param gpioEventType Event trigger type associated with this GPIO.
+ * @param ... Optional GPIO handler callback.
+ */
 #define ADD_GPIO_EVENT(gpioName, gpioPort, gpioPin, gpioDirection, gpioEventType, ...) \
 		ADD_EVENT(gpioName ## _event); \
 		const static gpio_t SECTION(GPIO_TABLE) gpioName = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .event = &CONCAT(gpioName,_event), eventType = gpioEventType, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)}; \
@@ -92,51 +117,69 @@ typedef struct GPIO_TYPE
 #endif
 
 // External Functions -----------------------------------------------------------
-/**------------------------------------------------------------------------------
- * Sets the corresponding output pin(s)
- * 
- * Sets the output pins corresponding to value using the OUTSET register. If one 
- * or more pins in value are not part of this gpio, those pins are not set
+/**
+ * @brief Set output pin(s) selected by a bit mask.
+ *
+ * Sets output pins corresponding to `value` using the OUTSET register. Pins not
+ * included in this GPIO definition are ignored.
+ *
+ * @param gpio Pointer to the GPIO descriptor.
+ * @param value Bit mask of pin(s) to set.
  */
 void gpioSetOutput(const gpio_t *gpio, uint8_t value);
-/**------------------------------------------------------------------------------
- * Clears the corresponding output pin(s)
- * 
- * Clears the output pins corresponding to value using the OUTCLR register. If
- * one or more pins in value are not part of this gpio, those pins are not
- * cleared
+
+/**
+ * @brief Clear output pin(s) selected by a bit mask.
+ *
+ * Clears output pins corresponding to `value` using the OUTCLR register. Pins
+ * not included in this GPIO definition are ignored.
+ *
+ * @param gpio Pointer to the GPIO descriptor.
+ * @param value Bit mask of pin(s) to clear.
  */
 void gpioClearOutput(const gpio_t *gpio, uint8_t value);
-/**------------------------------------------------------------------------------
- * Toggles the corresponding output pin(s)
- * 
- * Toggles the output pins corresponding to value using the OUTTGL register. If
- * one or more pins in value are not part of this gpio, those pins are not
- * toggled 
+
+/**
+ * @brief Toggle output pin(s) selected by a bit mask.
+ *
+ * Toggles output pins corresponding to `value` using the OUTTGL register. Pins
+ * not included in this GPIO definition are ignored.
+ *
+ * @param gpio Pointer to the GPIO descriptor.
+ * @param value Bit mask of pin(s) to toggle.
  */
 void gpioToggleOutput(const gpio_t *gpio, uint8_t value);
-/**------------------------------------------------------------------------------
- * Writes the corresponding output pin(s)
- * 
- * Writes to the port OUT register. Before doing so, value is anded with the gpio
- * bit mask. Therefore, other pins on the same port that are not part of the gpio
- * are not affected
+
+/**
+ * @brief Write output state for GPIO-managed pin(s).
+ *
+ * Writes to the OUT register after masking `value` with the GPIO pin mask so
+ * that unrelated pins on the same port are not affected.
+ *
+ * @param gpio Pointer to the GPIO descriptor.
+ * @param value Desired output value bit mask.
  */
 void gpioWriteOutput(const gpio_t *gpio, uint8_t value);
-/**------------------------------------------------------------------------------
- * Reads the corresponding input pins(s)
- * 
- * Returns the current content of the IN register for the gpio port. The value is
- * anded with the gpio pin bit mask, so pins that are not part of this gpio will
- * always be zero
+
+/**
+ * @brief Read current input state for GPIO-managed pin(s).
+ *
+ * Returns the IN register value masked by the GPIO pin mask, so pins not part
+ * of this GPIO always read as zero.
+ *
+ * @param gpio Pointer to the GPIO descriptor.
+ * @return Masked input pin state.
  */
 uint8_t gpioReadInput(const gpio_t *gpio);
-/**------------------------------------------------------------------------------
- * Reads the corresponding output pins(s)
- * 
- * Returns the current content of the OUT register for the gpio port. The value
- * is anded with the gpio pin bit mask, so pins that are not part of this gpio
- * will always be zero
+
+/**
+ * @brief Read current output latch state for GPIO-managed pin(s).
+ *
+ * Returns the OUT register value masked by the GPIO pin mask, so pins not part
+ * of this GPIO always read as zero.
+ *
+ * @param gpio Pointer to the GPIO descriptor.
+ * @return Masked output pin state.
  */
 uint8_t gpioReadOutput(const gpio_t *gpio);
 

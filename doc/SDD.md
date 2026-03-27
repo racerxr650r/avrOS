@@ -76,6 +76,30 @@ avrOS is a cooperative, event-driven operating system built around a finite stat
 
 The OS makes no use of dynamic memory allocation after initialization. All data structures — FSM descriptors, UART instances, GPIO instances, CLI commands, and queue buffers — are placed in dedicated linker sections in flash (ROM) at compile time.
 
+At runtime, the kernel follows a deterministic scan-loop model:
+
+1. Wake from idle on a timer tick interrupt.
+2. Dispatch each registered FSM once according to priority.
+3. Drain pending events and apply state-transition requests.
+4. Return to idle sleep until the next interrupt source occurs.
+
+Event dispatch is performed at least once at the start of each scan cycle and rechecked during FSM traversal if new events are triggered. This does not reprocess the same queued event; each queued event is consumed once per enqueue, but additional events raised mid-scan can be handled in the same cycle.
+
+This model keeps execution predictable and avoids preemption-related race conditions in application code. State handlers are expected to be short, non-blocking functions that defer long operations across multiple scans.
+
+Module discovery and composition are link-time driven. Subsystems register descriptors through `ADD_STATE_MACHINE`, `ADD_INITIALIZER`, and similar macros that place records into named sections. During startup, `sysInit()` and the FSM manager iterate these tables to assemble the running system without manual registry code in `main()`.
+
+Because objects are statically allocated, RAM usage is fixed and analyzable before deployment. The design targets resource-constrained AVR-Dx devices where bounded memory, small code size, and repeatable timing are primary requirements. Combined with a single-threaded cooperative scheduler, this supports straightforward worst-case execution analysis and simplifies debugging on hardware.
+
+The architecture separates concerns into four layers:
+
+- Drivers (`drv/`) provide hardware abstraction for CPU, UART, GPIO, DAC, and memory.
+- System modules (`sys/`) provide core OS services such as eventing, queues, FSM dispatch, and tick management.
+- Services (`srv/`) provide reusable features (CLI, logging, PCM) built on the system layer.
+- Applications (`app/`) define product-specific behavior by composing FSMs and service interfaces.
+
+In normal operation, timing is anchored by the system tick ISR, while work execution remains in foreground cooperative context. This yields low interrupt complexity: ISRs signal events or update counters, and functional processing is performed by FSM handlers in the main loop.
+
 ---
 
 ## 3. Architecture
@@ -100,8 +124,10 @@ The OS makes no use of dynamic memory allocation after initialization. All data 
 
 - Cooperative, round-robin dispatch within priority bands.
 - Four priority levels: `FSM_DRV` (highest), `FSM_SYS`, `FSM_SRV`, `FSM_APP` (lowest).
-- Each FSM state handler is called once per scan cycle; it must return without blocking.
+- Each FSM state handler in the ready queue is called once per scan cycle; it must return without blocking.
 - State transitions are requested via `fsmSetNextState()` and take effect on the next dispatch.
+- State machines can be moved to the wait queue when they request to wait on one or more events
+- State machines are then returned to the ready queue when an event they are waiting on is triggered
 
 ### 3.3 Startup Sequence
 
@@ -157,6 +183,7 @@ The OS makes no use of dynamic memory allocation after initialization. All data 
 - Maintain a table of all registered FSMs and initializers.
 - Dispatch FSM state handlers in priority order each scan cycle.
 - Manage state transitions and track current/previous/next state names.
+- Call the evntDispatcher() at the start of each scan cycle and after each state is called
 - Provide the `ADD_STATE_MACHINE` and `ADD_INITIALIZER` registration macros.
 
 #### 4.2.2 Data Structures
@@ -200,7 +227,7 @@ The OS makes no use of dynamic memory allocation after initialization. All data 
 
 #### 4.3.1 Responsibilities
 
-- Provide a mechanism for FSMs to wait on hardware or software conditions.
+- Provide a mechanism for FSMs to wait on more than one hardware or software conditions.
 - Allow ISRs and other FSMs to signal events that wake waiting state machines.
 
 #### 4.3.2 Key Interfaces
@@ -208,12 +235,15 @@ The OS makes no use of dynamic memory allocation after initialization. All data 
 | Function / Macro | Description |
 |-----------------|-------------|
 | `evntWait(event, condition)` | Suspend the current FSM until `condition` is met on `event`. |
-| `evntSignal(event, condition)` | Signal an event condition, resuming all waiting FSMs. |
+| `evntTrigger(event, condition)` | Signal an event condition, resuming all waiting FSMs. |
 
 #### 4.3.3 Design Notes
 
 - `EVENT_TYPE_TICK` is predefined for system tick synchronization (see `sys.h`).
 - Queue events (`QUE_EVENT_NOT_EMPTY`, `QUE_EVENT_EMPTY`) are used by the FIO layer.
+- A linked list of events is maintained for each state machine's `fsmStateMachine_t` data structure
+- `evntWait()` adds a new event to the state machine's data structure and puts the state machine in the wait queue if it's not already there.
+- `evntTrigger()` scans the wait queue for all state machines waiting on this event. For each state machine it finds, it clears the entire linked list of events and puts the state machine back on the ready queue in priority order.
 
 ---
 

@@ -27,7 +27,11 @@
 #define QUEUE_H_
 
 // Constants ------------------------------------------------------------------
-/** @brief Maximum size of a queue (limited by the uint16_t indexing). */
+/**
+ * @brief Maximum supported queue size.
+ *
+ * Limited by queue indexing constraints.
+ */
 #define QUE_MAX_SIZE		255
 
 // Data Types -----------------------------------------------------------------
@@ -128,33 +132,68 @@ static inline bool queIsFull(volatile queue_t *que)
 	return(que->tail == que->descr->capacity?true:false);
 }
 
+/**
+ * @brief Get the configured queue capacity.
+ *
+ * @param que Pointer to the queue.
+ * @return Queue capacity in elements.
+ */
 static inline uint8_t queGetCapacity(volatile queue_t *que)
 {
 	return(que->descr->capacity);
 }
 
+/**
+ * @brief Get the event associated with a queue.
+ *
+ * @param que Pointer to the queue.
+ * @return Pointer to the queue event object.
+ */
 static inline volatile event_t *queGetEvent(volatile queue_t *que)
 {
 	return(que->descr->event);
 }
 
-//#ifdef QUE_STATS
+/**
+ * @brief Get the maximum observed queue occupancy.
+ *
+ * @param que Pointer to the queue.
+ * @return Maximum number of elements seen in the queue.
+ */
 static inline uint32_t queGetMaxSize(volatile queue_t *que)
 {
 	return(que->max);
 }
 
 #ifdef QUE_STATS
+/**
+ * @brief Get total number of enqueue operations.
+ *
+ * @param que Pointer to the queue.
+ * @return Number of successful insertions.
+ */
 static inline uint32_t queGetIn(volatile queue_t *que)
 {
 	return(que->stats.in);
 }
 
+/**
+ * @brief Get total number of dequeue operations.
+ *
+ * @param que Pointer to the queue.
+ * @return Number of successful removals.
+ */
 static inline uint32_t queGetOut(volatile queue_t *que)
 {
 	return(que->stats.out);
 }
 
+/**
+ * @brief Get total number of queue overflow events.
+ *
+ * @param que Pointer to the queue.
+ * @return Number of failed inserts due to full queue.
+ */
 static inline uint32_t queGetOverflow(volatile queue_t *que)
 {
 	return(que->stats.overflow);
@@ -184,10 +223,26 @@ extern uint16_t queGetSize(volatile queue_t *que);
  * @return True if an element was successfully retrieved, false otherwise.
  */
 extern bool queGet(volatile queue_t *que, void *element);
+
+/**
+ * @brief Get a byte from the queue.
+ *
+ * @param que Pointer to the queue.
+ * @param byte Pointer to destination byte.
+ * @return True if a byte was retrieved, false otherwise.
+ */
 static inline bool queGetByte(volatile queue_t *que, uint8_t *byte)
 {
 	return(queGet(que, byte));
 }
+
+/**
+ * @brief Get a 16-bit word from the queue.
+ *
+ * @param que Pointer to the queue.
+ * @param word Pointer to destination word.
+ * @return True if a word was retrieved, false otherwise.
+ */
 static inline bool queGetWord(volatile queue_t *que, uint16_t *word)
 {
 	return(queGet(que, word));
@@ -219,10 +274,26 @@ static inline bool queGetPtr(volatile queue_t *que, void **ptr)
  * @return True if the element was successfully added, false otherwise.
  */
 extern bool quePut(volatile queue_t *que, void *element);
+
+/**
+ * @brief Put a byte into the queue.
+ *
+ * @param que Pointer to the queue.
+ * @param byte Byte value to add.
+ * @return True if the byte was queued, false otherwise.
+ */
 static inline bool quePutByte(volatile queue_t *que, uint8_t byte)
 {
 	return(quePut(que, (void *)&byte));
 }
+
+/**
+ * @brief Put a 16-bit word into the queue.
+ *
+ * @param que Pointer to the queue.
+ * @param word Word value to add.
+ * @return True if the word was queued, false otherwise.
+ */
 static inline bool quePutWord(volatile queue_t *que, uint16_t word)
 {
 	return(quePut(que, (void *)&word));

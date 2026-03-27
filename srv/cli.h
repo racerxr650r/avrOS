@@ -133,6 +133,15 @@ struct cliCommand_struct
 #define BG_DEFAULT          "\e[49m"
 
 // External Functions----------------------------------------------------------
+/**
+ * @brief Call the command handler for a parsed command line.
+ *
+ * Parses the supplied command string into arguments, locates the matching
+ * command token in the CLI table, and invokes the associated handler.
+ *
+ * @param commandLine Null-terminated command line buffer to execute.
+ * @return Result code returned by the matched command handler.
+ */
 extern int cliCallFunction(char *commandLine);
 
 #endif /* __CLI_H */

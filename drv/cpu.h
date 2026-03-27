@@ -24,16 +24,48 @@
 #define CPU_H_
 
 // Macros ---------------------------------------------------------------------
+/**
+ * @brief Disable global CPU interrupts.
+ */
 #define DISABLE_INTERRUPTS()	cli()
+
+/**
+ * @brief Enable global CPU interrupts.
+ */
 #define ENABLE_INTERRUPTS()		sei()
 
 // Function Prototypes --------------------------------------------------------
-// Enable or Disable the CPU/Peripheral clock output to external pin
+/**
+ * @brief Enable or disable the CPU/peripheral clock output to an external pin.
+ *
+ * @param enable Set to true to enable clock output, false to disable it.
+ */
 void cpuClockOut(bool enable);
-// Set the internal high frequency oscillator as the source clock and configure
+
+/**
+ * @brief Set and configure the internal high-frequency oscillator.
+ *
+ * Configures the oscillator frequency and optional clock prescaler settings.
+ *
+ * @param frequency Target oscillator frequency selector.
+ * @param prescalerEnable Set to true to enable the CPU clock prescaler.
+ * @param prescaler Prescaler division value to apply when enabled.
+ */
 void cpuSetOSCHF(CLKCTRL_FRQSEL_t frequency, bool prescalerEnable, CLKCTRL_PDIV_t prescaler);
-// Calculate the CPU frequency using the Clock Controller settings. Note: If an external clock is being used, this function will return 0
+
+/**
+ * @brief Get the current CPU frequency derived from clock controller settings.
+ *
+ * Returns 0 if an external clock source is active and cannot be derived from
+ * internal clock controller configuration.
+ *
+ * @return Current CPU frequency in Hz, or 0 when not derivable.
+ */
 uint16_t cpuGetFrequency();
+
+/**
+ * @brief Reset the CPU.
+ */
 void cpuReset();
 
 #endif /* CPU_H_ */
