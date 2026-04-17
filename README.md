@@ -1,75 +1,52 @@
-[![avrOS](doc/avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
+# avrOS: The Zero-Overhead, Event-Driven Runtime for AVR
+
+[![avrOS](./images/avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
+
 ---
-# Getting Started
+**avrOS** is a minimalist, single-stack, event-driven operating system designed to extract maximum performance and **maximum determinism** from 8-bit AVR microcontrollers. It is not a traditional RTOS with a complex software scheduler and memory-hungry task stacks; it is a minimalist framework that empowers the developer to be the master of system timing and power efficiency. 
 
-## avrOS - _The Operating System for AVR DA microcontrollers_
-**avrOS** is an embedded scalable prioritized cooperative multi-tasking operating
-system with various services and device drivers for the AVR DA family of
-microcontrollers. It was designed from the ground up for the microcontroller
-family and its Harvard arcitecture. It's not a port of a generic RTOS forced to
-fit into the AVR's small RAM and FLASH. It's design takes full advantage of the
-microcontroller's interrupt controller and numerous interrupt sources to
-efficiently immplement real-time responsiveness while supporting complex
-multi-featured applications.
+By delegating task switching and power management to the AVR's own hardware, **avrOS** redefines what it means to be a "lean" kernel—ensuring that your application's execution is as predictable as the silicon itself.
 
-**avrOS** relies on the existing microcontroller's wealth of interrupt sources
-and the interrupt controller to support real-time responsiveness. Why would an
-OS waste precious FLASH and RAM to implement something that is already built
-into the hardware? **avrOS** doesn't make this mistake. It takes advantage of
-the interrupt controller's ability to manage contexts (stack frames) and 
-implement real-time responsiveness. It doesn't repeat this functionality in
-the OS source code. Instead, it implements a much more RAM friendly cooperative
-multi-tasking scheme for the lower priority system tasks. These tasks should
-represent a majority of an application's source code.
+![avrOS vs Traditional RTOS](./images/avrOS_vs_RTOS.png)
 
-**avrOS** also provides macros and a custom linker script to build the
-various system tables implementing state machines, queues, events, memory heaps,
-command line commands, alarms, and modbus registers at compile time. These tables
-reside in FLASH where ever possible. So the system doesn't require run-time
-registration of application resources and related fault handling code. In addtion,
-there is no need to maintain a single source file containing all these system
-tables. The macros that build these tables can be distributed across several
-source files so they can be co-located with the associated logic. This approach
-reduces the use of RAM, a precious commodity on this little microcontroller, and
-improves the read-ability of the application source code.
+---
 
-**avrOS** provides a finite state machine manager (FSM). The application developer
-defines one or more state machines that implement the system functionality. The
-FSM then handles priortized scheduling of these state machine states. This
-state machine approach reduces the RAM requirements for applications by
-using just one stack for all of the system "processes". This differs from
-preemptive real-time operating systems that use threads or tasks. These require
-more than one context stack reserved in RAM. That partitioning of the system stack
-is complex, inefficient, likely to introduce additional latency, and prone
-to stack overflow issues that are difficult to debug. The FSM also enables a simple
-mechanism for the user to implement a custom power management scheme tailored to
-their application requirements.
+## Core Principles and Architecture
 
-To connect the state machine and interrupt contexts, **avrOS** provides event and
-queue services that enable inter state machine and interrupt context communication
-and syncronization. This creates a system that is interrupt/event driven and takes
-advantage of the AVR DA's rich number of interrupt sources. Thus reducinig CPU
-intensive polling and takes advantagde of the AVR's built in power management.
+### 1. Hardware-Centric Task "Switching"
+**avrOS** eliminates the biggest RAM and CPU cost in an RTOS: **software context switching**.
+* **One Stack:** The entire system—including all state machines and ISRs—runs on a single shared stack. This makes the most efficient use of the limited SRAM found on AVR microcontrollers.
+* **No Software Scheduler:** **avrOS** does not have a "tick" or a complex task manager. Instead, it relies on the AVR's robust **hardware interrupt controller** to handle all preemption and priority management. An interrupt triggers a vector, which is the ultimate, minimal latency "context switch."
 
-> [!NOTE]
-> It is best practice to assume the state machine code is less deterministic. This
-quality is dependent on the application architecture and implementation. All
-functionality that is sensitive to latency and jitter should be implemented in the
-CPU interrupt contexts. To further reduce jitter, these interrupt handlers should
-then use events and/or queues to dispatch information to one or more state machines
-that can process the information in a less time critical fashion. An example of this
-would be a serial driver that pulls a byte from the AVR's small lhardware input buffer
-and copies it into a queue. The serial driver then returns from the interrupt context.
-A state machine, that implements a serial protocol, waiting on that queue can then
-process the byte received at a later time that is less time critical.
+### 2. Decentralized, Prioritized Initialization (Linker Sets)
+System modularity is achieved through a **static allocation model** using custom linker sections.
+* **Distributed Tables:** Developers can declare Finite State Machines (FSMs), drivers, and events in multiple, separate source files. The GCC linker automatically collects and coalesces these declarations into a single contiguous table at build time.
+* **No Central "Master" List:** This "Linker Set" pattern decouples files, simplifying development and maintenance.
+* **Static Initialization:** During the Initialization (Startup) phase, the kernel walks this prioritized table once, calling initialization functions to set up the hardware before any runtime code executes. This mirrors the "Configuration Table" concept of safety-critical systems like ARINC 653.
 
-Lastly, the **avrOS** ecosystem also provides instructions, makefiles, and scripts to 
-setup a development environment and build applications using the Linux operating
-system and it's abundant open source development software and hardware resources.
-Microsoft Windows is no longer required for AVR application development. But
-if you prefer Windows on your desktop PC, it's possible to setup a headless Raspberry Pi
-for remote development using VsCode, Zed, or ssh with your favorite text mode editor. Scripts
-provided in the repository simplify setting up the avrOS development on a Raspberry PI.
+![Decentralized System Tables](./images/distributed_system_tables.png)
+
+### 3. Purely Responsive, Event-Driven FSM
+The heart of **avrOS** is a **prioritized scan loop** that moves FSMs between specialized queues.
+* **Stateful Event Pipeline:** Events are managed in their own prioritized queues and exist in one of three states: **Disarmed**, **Armed**, or **Triggered**.
+* **FSM Dispatcher:** The FSM kernel walks the prioritized **Ready Queue**. It executes a single, concise, non-blocking state function ("continuation") per "ready" state machine and then returns control to the dispatcher. This continues until there are no FSMs in the Ready queue. At this time, the FSM dispatcher returns to the application's main loop where it can implement sleep management via an avrOS provided API.
+* **Rescheduling on Event:** When an event is triggered (e.g., from an ISR), the FSM schedules the corresponding state machine. To ensure responsiveness, if a higher-priority FSM is made ready, the dispatcher **resets to the top** of the queue, ensuring the most critical code runs next.
+
+### 4. The "Race to Sleep" Power Model
+**avrOS** prioritizes efficiency. Power consumption is directly proportional to event density.
+* **"Sleep on Idle" Loop:** The main application loop is exceptionally lean. It dispatches all work until the Ready Queue is empty, then calls the processor’s `sleep` instruction.
+* **Zero Polling:** The CPU does not pace, poll, or check status while idle. It sleeps, consuming minimal power, and is woken only by a hardware interrupt.
+* **Developer Control:** **avrOS** exposes the `main()` loop to the developer, providing ultimate flexibility. The developer has total control over which sleep mode to use and when, allowing for precise dynamic power scaling based on application needs.
+
+![Optimized Power Consumption](./images/power_consumption.png)
+
+### 5. Developer-Controlled Determinism (Correctness by Construction)
+Determinism in **avrOS** is not an OS variable; it is a direct reflection of application code quality.
+* **Run-to-Completion:** All state functions must be concise and non-blocking. Large algorithms must be broken into "manageable chunks" that fit within a single scan cycle.
+* **No Priority Inversion:** To keep the RAM footprint tiny and the code simple, **avrOS** uses fixed priority. The system relies on the developer to manage timing through task decomposition and stateful transitions.
+* **Total Transparency:** This model removes all "magic" from the scheduler, providing 100% predictable execution. If a state transition must happen in a specific window, the developer has the direct visibility needed to ensure it does.
+
+---
 
 ## avrOS Features
 ### System Services:

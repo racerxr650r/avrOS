@@ -629,3 +629,72 @@ implementation. For instance, a debug version of application may include the
 CLI and Logger services. But, the release version of the same application may
 not include either of these services.
 
+### The Solution #2
+**avrOS** is an embedded scalable prioritized cooperative multi-tasking operating
+system with various services and device drivers for the AVR DA family of
+microcontrollers. It was designed from the ground up for the microcontroller
+family and its Harvard arcitecture. It's not a port of a generic RTOS forced to
+fit into the AVR's small RAM and FLASH. It's design takes full advantage of the
+microcontroller's interrupt controller and numerous interrupt sources to
+efficiently immplement real-time responsiveness while supporting complex
+multi-featured applications.
+
+**avrOS** relies on the existing microcontroller's wealth of interrupt sources
+and the interrupt controller to support real-time responsiveness. Why would an
+OS waste precious FLASH and RAM to implement something that is already built
+into the hardware? **avrOS** doesn't make this mistake. It takes advantage of
+the interrupt controller's ability to manage contexts (stack frames) and 
+implement real-time responsiveness. It doesn't repeat this functionality in
+the OS source code. Instead, it implements a much more RAM friendly cooperative
+multi-tasking scheme for the lower priority system tasks. These tasks should
+represent a majority of an application's source code.
+
+**avrOS** also provides macros and a custom linker script to build the
+various system tables implementing state machines, queues, events, memory heaps,
+command line commands, alarms, and modbus registers at compile time. These tables
+reside in FLASH where ever possible. So the system doesn't require run-time
+registration of application resources and related fault handling code. In addtion,
+there is no need to maintain a single source file containing all these system
+tables. The macros that build these tables can be distributed across several
+source files so they can be co-located with the associated logic. This approach
+reduces the use of RAM, a precious commodity on this little microcontroller, and
+improves the read-ability of the application source code.
+
+**avrOS** provides a finite state machine manager (FSM). The application developer
+defines one or more state machines that implement the system functionality. The
+FSM then handles priortized scheduling of these state machine states. This
+state machine approach reduces the RAM requirements for applications by
+using just one stack for all of the system "processes". This differs from
+preemptive real-time operating systems that use threads or tasks. These require
+more than one context stack reserved in RAM. That partitioning of the system stack
+is complex, inefficient, likely to introduce additional latency, and prone
+to stack overflow issues that are difficult to debug. The FSM also enables a simple
+mechanism for the user to implement a custom power management scheme tailored to
+their application requirements.
+
+To connect the state machine and interrupt contexts, **avrOS** provides event and
+queue services that enable inter state machine and interrupt context communication
+and syncronization. This creates a system that is interrupt/event driven and takes
+advantage of the AVR DA's rich number of interrupt sources. Thus reducinig CPU
+intensive polling and takes advantagde of the AVR's built in power management.
+
+> [!NOTE]
+> It is best practice to assume the state machine code is less deterministic. This
+quality is dependent on the application architecture and implementation. All
+functionality that is sensitive to latency and jitter should be implemented in the
+CPU interrupt contexts. To further reduce jitter, these interrupt handlers should
+then use events and/or queues to dispatch information to one or more state machines
+that can process the information in a less time critical fashion. An example of this
+would be a serial driver that pulls a byte from the AVR's small lhardware input buffer
+and copies it into a queue. The serial driver then returns from the interrupt context.
+A state machine, that implements a serial protocol, waiting on that queue can then
+process the byte received at a later time that is less time critical.
+
+Lastly, the **avrOS** ecosystem also provides instructions, makefiles, and scripts to 
+setup a development environment and build applications using the Linux operating
+system and it's abundant open source development software and hardware resources.
+Microsoft Windows is no longer required for AVR application development. But
+if you prefer Windows on your desktop PC, it's possible to setup a headless Raspberry Pi
+for remote development using VsCode, Zed, or ssh with your favorite text mode editor. Scripts
+provided in the repository simplify setting up the avrOS development on a Raspberry PI.
+
