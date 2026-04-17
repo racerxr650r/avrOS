@@ -1,13 +1,13 @@
-# avrOS: The Zero-Overhead, Event-Driven Runtime for AVR
+[![avrOS](./doc/images/avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
 
-[![avrOS](./images/avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
+# avrOS: Minimal-Overhead, Event-Driven OS for AVR
 
 ---
 **avrOS** is a minimalist, single-stack, event-driven operating system designed to extract maximum performance and **maximum determinism** from 8-bit AVR microcontrollers. It is not a traditional RTOS with a complex software scheduler and memory-hungry task stacks; it is a minimalist framework that empowers the developer to be the master of system timing and power efficiency. 
 
 By delegating task switching and power management to the AVR's own hardware, **avrOS** redefines what it means to be a "lean" kernel—ensuring that your application's execution is as predictable as the silicon itself.
 
-![avrOS vs Traditional RTOS](./images/avrOS_vs_RTOS.png)
+![avrOS vs Traditional RTOS](./doc/images/avrOS_vs_RTOS.png)
 
 ---
 
@@ -24,7 +24,7 @@ System modularity is achieved through a **static allocation model** using custom
 * **No Central "Master" List:** This "Linker Set" pattern decouples files, simplifying development and maintenance.
 * **Static Initialization:** During the Initialization (Startup) phase, the kernel walks this prioritized table once, calling initialization functions to set up the hardware before any runtime code executes. This mirrors the "Configuration Table" concept of safety-critical systems like ARINC 653.
 
-![Decentralized System Tables](./images/distributed_system_tables.png)
+![Decentralized System Tables](./doc/images/distributed_system_tables.png)
 
 ### 3. Purely Responsive, Event-Driven FSM
 The heart of **avrOS** is a **prioritized scan loop** that moves FSMs between specialized queues.
@@ -38,7 +38,7 @@ The heart of **avrOS** is a **prioritized scan loop** that moves FSMs between sp
 * **Zero Polling:** The CPU does not pace, poll, or check status while idle. It sleeps, consuming minimal power, and is woken only by a hardware interrupt.
 * **Developer Control:** **avrOS** exposes the `main()` loop to the developer, providing ultimate flexibility. The developer has total control over which sleep mode to use and when, allowing for precise dynamic power scaling based on application needs.
 
-![Optimized Power Consumption](./images/power_consumption.png)
+![Optimized Power Consumption](./doc/images/power_consumption.png)
 
 ### 5. Developer-Controlled Determinism (Correctness by Construction)
 Determinism in **avrOS** is not an OS variable; it is a direct reflection of application code quality.
