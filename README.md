@@ -1,9 +1,8 @@
 [![avrOS](./doc/images/avrOS.gif "avrOS")](https://github.com/racerxr650r/avrOS)
 # avrOS: Minimal-Overhead, Event-Driven OS for AVR
----
-**avrOS** is a minimalist, single-stack, event-driven operating system designed to extract maximum performance and **maximum determinism** from 8-bit AVR microcontrollers. It is not a traditional RTOS with a complex software scheduler and memory-hungry task stacks; it is a minimalist framework that empowers the developer to be the master of system timing and power efficiency. 
+**avrOS** is a minimalist, single-stack, event-driven operating system designed to extract performance and **maximum determinism** from 8-bit AVR microcontrollers. It is not a traditional RTOS with a complex software scheduler and memory-hungry task stacks; it is a minimalist framework that empowers the developer to be the master of system timing and power efficiency. 
 
-By delegating task switching and power management to the AVR's own hardware, **avrOS** redefines what it means to be a "lean" kernel—ensuring that your application's execution is as predictable as the silicon itself.
+By delegating task switching and power management to the AVR's own hardware, **avrOS** redefines what it means to be a "lean" kernel—ensuring that your application's execution is as predictable and power efficient as the silicon itself.
 
 ![avrOS vs Traditional RTOS](./doc/images/avrOS_vs_RTOS.png)
 ---
@@ -13,10 +12,11 @@ By delegating task switching and power management to the AVR's own hardware, **a
 **avrOS** eliminates the biggest RAM and CPU cost in an RTOS: **software context switching**.
 * **One Stack:** The entire system—including all state machines and ISRs—runs on a single shared stack. This makes the most efficient use of the limited SRAM found on AVR microcontrollers.
 * **No Software Scheduler:** **avrOS** does not have a "tick" or a complex task manager. Instead, it relies on the AVR's robust **hardware interrupt controller** to handle all preemption and priority management. An interrupt triggers a vector, which is the ultimate, minimal latency "context switch."
+* **Cooperative multitasking:** A **Finite State Machine Manager (FSM)** implements prioritized scheduling of application specific states and state machines.
 
 ### 2. Decentralized, Prioritized Initialization (Linker Sets)
 System modularity is achieved through a **static allocation model** using custom linker sections.
-* **Distributed Tables:** Developers can declare Finite State Machines (FSMs), drivers, and events in multiple, separate source files. The GCC linker automatically collects and coalesces these declarations into a single contiguous table at build time.
+* **Distributed Tables:** Developers can declare Finite State Machines, drivers, and events in multiple, separate source files. The GCC linker automatically collects and coalesces these declarations into a single contiguous table at build time.
 * **No Central "Master" List:** This "Linker Set" pattern decouples files, simplifying development and maintenance.
 * **Static Initialization:** During the Initialization (Startup) phase, the kernel walks this prioritized table once, calling initialization functions to set up the hardware before any runtime code executes. This mirrors the "Configuration Table" concept of safety-critical systems like ARINC 653.
 
@@ -38,15 +38,16 @@ The heart of **avrOS** is a **prioritized scan loop** that moves FSMs between sp
 
 ### 5. Developer-Controlled Determinism (Correctness by Construction)
 Determinism in **avrOS** is not an OS variable; it is a direct reflection of application code quality.
-* **Run-to-Completion:** All state functions must be concise and non-blocking. Large algorithms must be broken into "manageable chunks" that fit within a single scan cycle.
+* **Run-to-Completion:** All state and event handlers must be concise and non-blocking. Large algorithms should be broken into "manageable chunks" that fit within a single scan cycle.
 * **No Priority Inversion:** To keep the RAM footprint tiny and the code simple, **avrOS** uses fixed priority. The system relies on the developer to manage timing through task decomposition and stateful transitions.
 * **Total Transparency:** This model removes all "magic" from the scheduler, providing 100% predictable execution. If a state transition must happen in a specific window, the developer has the direct visibility needed to ensure it does.
+* **State and Event handlers:** The cooperative nature of these handlers and the fact that they all run in the same system context means fewer atomic operations are required. These disable interrupts and cause system jitter.
 ---
 ## Project Status and Additional Resources
 avrOS is still in it's sub 1.0 development stage. So there are lots of features 
 and drivers still under development.
 
-For more information regarding avrOS, refer to [Getting Started](./doc/Getting_Started.md) and [User Manual](./doc/MANUAL.md).
+For more information regarding avrOS, refer to the [Getting Started](./doc/Getting_Started.md) and/or the [User Manual](./doc/MANUAL.md).
 
-For an example of Raspberry Pi 4 based development environment, see the
+For an example of a Raspberry Pi 4 based development environment for avrOS complete with AVR programming, see the
 [Raspberry PI 4 model B Development Platform](./doc/PI4_Dev_Station.md) document.
