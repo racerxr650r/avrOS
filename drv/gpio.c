@@ -75,7 +75,7 @@ static void isrInput(PORT_t *port)
 				else if(gpio->event)
 				{
 					// Trigger the event
-					evntTrigger(gpio->event, gpio->eventType);
+					evntTrigger(gpio->event);
 				}
 				// Clear the interrupt flag
 				gpio->port->INTFLAGS = gpio->pin;

@@ -1,5 +1,6 @@
-/*
- * dac.h
+/**
+ * @file dac.h
+ * @brief DAC driver — AVR-Dx 10-bit DAC initialization and output.
  *
  * Created: 7/11/2021 11:57:01 PM
  * Author: john anderson
@@ -21,6 +22,10 @@
 #ifndef DAC_H_
 #define DAC_H_
 
+/** @addtogroup dac_driver
+ * @{
+ */
+
 // Constants ------------------------------------------------------------------
 #define DAC_MAX		0x03ff
 #define DAC_MID		0x01ff
@@ -29,5 +34,7 @@
 // External Functions ---------------------------------------------------------
 void dacInit(VREF_REFSEL_t vRef, register16_t output);
 void dacOutput(int value);
+
+/** @} */ // end of dac_driver
 
 #endif /* DAC_H_ */

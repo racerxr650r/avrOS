@@ -1,5 +1,6 @@
-/*
- * mem.h
+/**
+ * @file mem.h
+ * @brief Memory driver — RAM/ROM usage reporting and stack watermarking.
  *
  * Created: 4/24/2021 12:04:39 AM
  *  Author: admin
@@ -8,6 +9,10 @@
 
 #ifndef MEM_H_
 #define MEM_H_
+
+/** @addtogroup mem_driver
+ * @{
+ */
 
 // Externals ------------------------------------------------------------------
 extern uint16_t __data_start,__data_end,__heap_start, *__brkval;
@@ -152,5 +157,7 @@ void memRomStatus(FILE *file);
  * @param file Output stream that receives RAM status information.
  */
 void memRamStatus(FILE *file);
+
+/** @} */ // end of mem_driver
 
 #endif /* MEM_H_ */

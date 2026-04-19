@@ -1,0 +1,1337 @@
+/*
+ * github-dark.css
+ *
+ * Custom CSS that mimics the GitHub dark mode markdown style.
+ * Intended for use with pandoc-generated HTML documentation.
+ *
+ * Usage (pandoc): --css github-dark.css
+ *
+ * Color palette sourced from GitHub's dark theme design tokens.
+ */
+
+/* ── Reset & base ─────────────────────────────────────────────────────────── */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+:root {
+    /* Canvas */
+    --color-canvas-default:     #0d1117;
+    --color-canvas-subtle:      #161b22;
+    --color-canvas-inset:       #010409;
+
+    /* Foreground */
+    --color-fg-default:         #e6edf3;
+    --color-fg-muted:           #8b949e;
+    --color-fg-subtle:          #6e7681;
+
+    /* Borders */
+    --color-border-default:     #30363d;
+    --color-border-muted:       #21262d;
+
+    /* Accent (links) */
+    --color-accent-fg:          #3fb950;
+    --color-accent-subtle:      #2ea04326;
+
+    /* Visited link — muted sage green: same hue as accent, lower luminosity */
+    --color-link-visited:       #6a9f6a;
+
+    /* Semantic */
+    --color-danger-fg:          #f85149;
+    --color-success-fg:         #3fb950;
+    --color-attention-fg:       #d29922;
+    --color-done-fg:            #a371f7;
+
+    /* Inline code */
+    --color-neutral-muted:      rgba(110,118,129,0.4);
+
+    /* Table */
+    --color-table-header-bg:    #161b22;
+    --color-table-row-odd:      #0d1117;
+    --color-table-row-even:     #161b22;
+
+    /* Typography */
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+                 Helvetica, Arial, sans-serif, "Apple Color Emoji",
+                 "Segoe UI Emoji";
+    --font-mono: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas,
+                 "Liberation Mono", monospace;
+    --font-size-base:   16px;
+    --line-height-base: 1.6;
+}
+
+/* ── Page layout ──────────────────────────────────────────────────────────── */
+
+html {
+    font-size: var(--font-size-base);
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: var(--line-height-base);
+    color: var(--color-fg-default);
+    background-color: var(--color-canvas-default);
+    margin: 0;
+    padding: 0;
+}
+
+/* Centre the content and cap its width, matching GitHub's markdown container */
+.markdown-body,
+article,
+main,
+body > section {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+}
+
+/* When pandoc dumps everything as direct children of <body> (no wrapper div),
+   center each block individually.  Use margin shorthand so top/bottom are
+   preserved and only left/right are forced to auto. */
+body > p,
+body > h1, body > h2, body > h3,
+body > h4, body > h5, body > h6,
+body > ul, body > ol, body > dl,
+body > blockquote, body > pre,
+body > table, body > figure,
+body > hr, body > details {
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Pandoc wraps syntax-highlighted code in <div class="sourceCode">.  Its
+   embedded <style> sets div.sourceCode { margin: 1em 0 } at specificity
+   (0,1,1), which beats body > div (0,0,2).  Use body > div.sourceCode
+   (0,1,2) to win and restore the centered column. */
+body > div.sourceCode,
+body > div.sourceCode > pre.sourceCode {
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ── Headings ─────────────────────────────────────────────────────────────── */
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--color-fg-default);
+    margin-top: 1.75em;
+    margin-bottom: 0.5em;
+}
+
+h1 {
+    font-size: 2em;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid var(--color-border-muted);
+}
+
+h2 {
+    font-size: 1.5em;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid var(--color-border-muted);
+}
+
+h3 { font-size: 1.25em; }
+h4 { font-size: 1em; }
+h5 { font-size: 0.875em; }
+h6 {
+    font-size: 0.85em;
+    color: var(--color-fg-muted);
+}
+
+/* ── Body text ────────────────────────────────────────────────────────────── */
+
+p {
+    margin-top: 0;
+    margin-bottom: 1em;
+}
+
+strong { font-weight: 600; }
+
+em { font-style: italic; }
+
+del { color: var(--color-fg-muted); }
+
+/* ── Links ────────────────────────────────────────────────────────────────── */
+
+a {
+    color: var(--color-accent-fg);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* ── Lists ────────────────────────────────────────────────────────────────── */
+
+ul, ol {
+    margin-top: 0;
+    margin-bottom: 1em;
+    padding-left: 2em;
+}
+
+li + li {
+    margin-top: 0.25em;
+}
+
+li > ul,
+li > ol {
+    margin-top: 0.25em;
+    margin-bottom: 0;
+}
+
+dl { margin-bottom: 1em; }
+
+dt {
+    font-weight: 600;
+    margin-top: 0.5em;
+}
+
+dd {
+    margin-left: 1.5em;
+    margin-bottom: 0.25em;
+}
+
+/* ── Blockquote ───────────────────────────────────────────────────────────── */
+
+blockquote {
+    margin: 0 0 1em;
+    padding: 0 1em;
+    color: var(--color-fg-muted);
+    border-left: 0.25em solid var(--color-border-default);
+}
+
+blockquote > :first-child { margin-top: 0; }
+blockquote > :last-child  { margin-bottom: 0; }
+
+/* ── Horizontal rule ──────────────────────────────────────────────────────── */
+
+hr {
+    border: none;
+    border-top: 1px solid var(--color-border-default);
+    margin: 1.5em 0;
+    height: 0;
+}
+
+/* ── Inline code ──────────────────────────────────────────────────────────── */
+
+code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    padding: 0.2em 0.4em;
+    background-color: var(--color-neutral-muted);
+    border-radius: 6px;
+    white-space: break-spaces;
+}
+
+/* Don't double-wrap code inside a pre */
+pre code {
+    background-color: transparent;
+    padding: 0;
+    font-size: 100%;
+    white-space: pre;
+    border-radius: 0;
+    border: none;
+}
+
+/* ── Code blocks ──────────────────────────────────────────────────────────── */
+
+pre {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    line-height: 1.55;
+    background-color: var(--color-canvas-subtle);
+    border-radius: 6px;
+    padding: 1em 1.25em;
+    overflow: auto;
+    margin: 0 0 1em;
+    border: 1px solid var(--color-border-muted);
+}
+
+/* ── Syntax highlighting (pandoc --highlight-style=kate or similar) ───────── */
+/* Pandoc's embedded <style> block uses the same code span.XX selectors at
+   the same specificity (0,1,1).  Our external stylesheet is linked AFTER
+   the inline <style>, so equal-specificity rules here win by document order.
+   These GitHub dark-theme colours therefore override pandoc's light theme. */
+
+code span.kw { color: #ff7b72; font-weight: 600; }  /* Keyword         */
+code span.dt { color: #ff7b72; }                     /* DataType        */
+code span.dv { color: #79c0ff; }                     /* DecVal (number) */
+code span.bn { color: #79c0ff; }                     /* BaseN           */
+code span.fl { color: #79c0ff; }                     /* Float           */
+code span.ch { color: #a5d6ff; }                     /* Char            */
+code span.st { color: #a5d6ff; }                     /* String          */
+code span.co { color: #8b949e; font-style: italic; } /* Comment         */
+code span.ot { color: #d2a8ff; }                     /* Other           */
+code span.fu { color: #d2a8ff; }                     /* Function        */
+code span.al { color: #f85149; font-weight: 600; }   /* Alert           */
+code span.er { color: #f85149; font-weight: 600; }   /* Error           */
+code span.wa { color: #d29922; font-style: italic; } /* Warning         */
+code span.cn { color: #79c0ff; }                     /* Constant        */
+code span.sc { color: #a5d6ff; }                     /* SpecialChar     */
+code span.vs { color: #a5d6ff; }                     /* VerbatimString  */
+code span.ss { color: #a5d6ff; }                     /* SpecialString   */
+code span.im { color: #ff7b72; }                     /* Import          */
+code span.va { color: #ffa657; }                     /* Variable        */
+code span.cf { color: #ff7b72; font-weight: 600; }   /* ControlFlow     */
+code span.op { color: #e6edf3; }                     /* Operator        */
+code span.bu { color: #3fb950; }                     /* BuiltIn         */
+code span.ex { color: #3fb950; }                     /* Extension       */
+code span.pp { color: #8b949e; }                     /* Preprocessor    */
+code span.at { color: #ffa657; }                     /* Attribute       */
+code span.do { color: #8b949e; font-style: italic; } /* Documentation   */
+code span.an { color: #8b949e; font-style: italic; } /* Annotation      */
+code span.in { color: #8b949e; font-style: italic; } /* Information     */
+code span.cv { color: #8b949e; font-style: italic; } /* CommentVar      */
+
+/* ── Tables ───────────────────────────────────────────────────────────────── */
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1em;
+    overflow: auto;
+    display: block;
+}
+
+thead {
+    background-color: var(--color-table-header-bg);
+}
+
+th, td {
+    border: 1px solid var(--color-border-default);
+    padding: 0.375em 0.8em;
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    font-weight: 600;
+}
+
+tbody tr:nth-child(odd)  { background-color: var(--color-table-row-odd);  }
+tbody tr:nth-child(even) { background-color: var(--color-table-row-even); }
+
+/* ── Images ───────────────────────────────────────────────────────────────── */
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 6px;
+}
+
+/* ── Details / summary ────────────────────────────────────────────────────── */
+
+details {
+    border: 1px solid var(--color-border-default);
+    border-radius: 6px;
+    padding: 0.5em 1em;
+    margin-bottom: 1em;
+    background-color: var(--color-canvas-subtle);
+}
+
+summary {
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--color-accent-fg);
+}
+
+summary:hover { text-decoration: underline; }
+
+/* ── Keyboard / mark ──────────────────────────────────────────────────────── */
+
+kbd {
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+    padding: 0.15em 0.4em;
+    background-color: var(--color-canvas-subtle);
+    border: 1px solid var(--color-border-default);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+}
+
+mark {
+    background-color: #bb800026;
+    color: var(--color-attention-fg);
+    border-radius: 3px;
+    padding: 0 0.2em;
+}
+
+/* ── Title block (pandoc metadata) ───────────────────────────────────────── */
+
+header, .title-block-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border-muted);
+}
+
+.title  { font-size: 2em; font-weight: 600; }
+.author { color: var(--color-fg-muted); }
+.date   { color: var(--color-fg-subtle); font-size: 0.9em; }
+
+/* ── Table of contents (pandoc --toc) ────────────────────────────────────── */
+
+nav#TOC,
+#TOC {
+    background-color: var(--color-canvas-subtle);
+    border: 1px solid var(--color-border-default);
+    border-radius: 6px;
+    padding: 1em 1.5em;
+    margin-bottom: 2em;
+    display: inline-block;
+    min-width: 200px;
+}
+
+nav#TOC ul,
+#TOC ul {
+    margin: 0;
+    padding-left: 1.25em;
+}
+
+nav#TOC > ul,
+#TOC > ul {
+    padding-left: 0;
+    list-style: none;
+}
+
+nav#TOC li,
+#TOC li {
+    margin: 0.2em 0;
+}
+
+nav#TOC a,
+#TOC a {
+    color: var(--color-accent-fg);
+}
+
+/* ── Footnotes ────────────────────────────────────────────────────────────── */
+
+section.footnotes {
+    border-top: 1px solid var(--color-border-default);
+    margin-top: 2em;
+    padding-top: 1em;
+    font-size: 0.85em;
+    color: var(--color-fg-muted);
+}
+
+/* ── Scrollbar (WebKit) ───────────────────────────────────────────────────── */
+
+::-webkit-scrollbar              { width: 8px; height: 8px; }
+::-webkit-scrollbar-track        { background: var(--color-canvas-inset); }
+::-webkit-scrollbar-thumb        { background: var(--color-border-default);
+                                   border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover  { background: var(--color-fg-subtle); }
+
+/* ── Selection ────────────────────────────────────────────────────────────── */
+
+::selection {
+    background-color: var(--color-accent-subtle);
+    color: var(--color-fg-default);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DOXYGEN-SPECIFIC OVERRIDES
+   These rules target the class names used in Doxygen-generated HTML so that
+   all elements — not just generic markdown elements — adopt the GitHub dark
+   theme consistently.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Page structure ───────────────────────────────────────────────────────── */
+
+div.header,
+#header {
+    background-color: var(--color-canvas-subtle) !important;
+    background-image: none !important;                   /* remove nav_h.png sprite */
+    border-bottom: 1px solid var(--color-border-default);
+}
+
+div.headertitle,
+div.title {
+    color: var(--color-fg-default);
+    font-weight: 600;
+}
+
+div.contents {
+    background-color: var(--color-canvas-default);
+    color: var(--color-fg-default);
+}
+
+#footer,
+div.footer {
+    background-color: var(--color-canvas-subtle);
+    border-top: 1px solid var(--color-border-default);
+    color: var(--color-fg-muted);
+    font-size: 0.8em;
+}
+
+#footer a,
+div.footer a {
+    color: var(--color-accent-fg);
+}
+
+/* ── Title / header bar ──────────────────────────────────────────────────── */
+
+/* The whole sticky header region */
+#top {
+    background-color: var(--color-canvas-subtle) !important;
+    border-bottom: 1px solid var(--color-border-default) !important;
+    box-shadow: none !important;
+}
+
+/* Project logo + name row */
+#titlearea {
+    background-color: var(--color-canvas-subtle) !important;
+    border-bottom: none !important;
+    padding: 0.5rem 1rem;
+}
+
+#titlearea table,
+#titlearea tbody,
+#titlearea tr,
+#titlearea td {
+    background-color: transparent !important;
+    border: none !important;
+}
+
+#projectname {
+    font-family: var(--font-body);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-fg-default) !important;
+}
+
+#projectbrief {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: var(--color-fg-muted) !important;
+}
+
+/* ── Main navigation bar (SmartMenus / .sm-dox) ──────────────────────────── */
+/*
+ * Doxygen 1.9.x uses SmartMenus (jQuery plugin) for its main nav. The menu
+ * chrome is driven by PNG sprites (tab_b.png, tab_a.png, tab_s.png) set in
+ * tabs.css.  We must override every background-image rule with 'none' and
+ * substitute GitHub dark theme colours.
+ */
+
+/* Container bar */
+#main-nav {
+    background-color: var(--color-canvas-subtle) !important;
+    border-top: 1px solid var(--color-border-default) !important;
+    border-bottom: 1px solid var(--color-border-default) !important;
+    padding: 0 !important;
+}
+
+/* Strip the PNG sprite from the menu bar itself */
+#main-nav .sm-dox,
+.sm-dox {
+    background-color: var(--color-canvas-subtle) !important;
+    background-image: none !important;
+    padding: 0 !important;
+    line-height: 40px;
+}
+
+/* ── Top-level nav items ─────────────────────────────────────────────────── */
+
+.sm-dox > li > a,
+.sm-dox > li > a:link,
+.sm-dox > li > a:visited,
+.sm-dox > li > a:focus,
+.sm-dox > li > a:active,
+.sm-dox > li > a.highlighted {
+    font-family: var(--font-body) !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    color: var(--color-fg-muted) !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    text-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 1rem !important;
+    line-height: 40px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+/* Hover & active state — accent underline, GitHub-style */
+.sm-dox > li > a:hover,
+.sm-dox > li > a.current {
+    color: var(--color-fg-default) !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    text-shadow: none !important;
+    border-bottom-color: var(--color-accent-fg) !important;
+}
+
+/* Separator PNG between items — replace with a thin border */
+.sm-dox > li > a,
+.sm-dox > li > a:focus,
+.sm-dox > li > a:active,
+.sm-dox > li > a:hover,
+.sm-dox > li > a.highlighted {
+    background-position: unset !important;
+    background-repeat: no-repeat !important;
+}
+
+/* Sub-menu arrow indicator */
+.sm-dox a span.sub-arrow {
+    background: transparent !important;
+    border-color: var(--color-fg-muted) transparent transparent transparent !important;
+    border-radius: 0 !important;
+}
+
+.sm-dox a:hover span.sub-arrow {
+    border-color: var(--color-fg-default) transparent transparent transparent !important;
+}
+
+/* ── Dropdown sub-menus ──────────────────────────────────────────────────── */
+
+.sm-dox ul {
+    background-color: var(--color-canvas-subtle) !important;
+    background-image: none !important;
+    border: 1px solid var(--color-border-default) !important;
+    border-radius: 6px !important;
+    box-shadow: 0 8px 24px rgba(1,4,9,0.48) !important;
+    padding: 0.25rem 0 !important;
+}
+
+/* Dropdown items */
+.sm-dox ul a,
+.sm-dox ul a:link,
+.sm-dox ul a:visited,
+.sm-dox ul a:focus,
+.sm-dox ul a:active,
+.sm-dox ul a.highlighted {
+    font-family: var(--font-body) !important;
+    font-size: 0.875rem !important;
+    font-weight: 400 !important;
+    color: var(--color-fg-default) !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    text-shadow: none !important;
+    border-left: none !important;
+    padding: 0.375rem 1rem !important;
+    line-height: 1.5 !important;
+}
+
+.sm-dox ul a:hover {
+    color: var(--color-fg-default) !important;
+    background-color: var(--color-border-muted) !important;
+    background-image: none !important;
+    text-shadow: none !important;
+}
+
+/* Dropdown caret pointer (triangle above dropdown) — hide the light PNG ones */
+.sm-dox > li > ul:before,
+.sm-dox > li > ul:after {
+    display: none !important;
+}
+
+/* Sub-menu arrow in dropdown items */
+.sm-dox ul a span.sub-arrow {
+    border-color: transparent transparent transparent var(--color-fg-muted) !important;
+}
+
+.sm-dox ul a:hover span.sub-arrow {
+    border-color: transparent transparent transparent var(--color-fg-default) !important;
+}
+
+/* Hamburger / mobile toggle icon */
+.main-menu-btn-icon,
+.main-menu-btn-icon:before,
+.main-menu-btn-icon:after {
+    background: var(--color-fg-muted) !important;
+}
+
+/* ── Navigation tabs (legacy div.tabs used on some pages) ────────────────── */
+
+div.tabs,
+div.tabs2,
+div.tabs3 {
+    background-color: var(--color-canvas-subtle) !important;
+    background-image: none !important;
+    border-bottom: 1px solid var(--color-border-default);
+}
+
+ul.tablist {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+ul.tablist li,
+ul.tablist li.current {
+    background: none !important;
+    background-image: none !important;
+    border: none;
+}
+
+ul.tablist a,
+ul.tablist a:link,
+ul.tablist a:visited {
+    color: var(--color-fg-muted);
+    background-color: transparent !important;
+    background-image: none !important;
+    padding: 0.4em 0.9em;
+    display: block;
+    text-decoration: none;
+    font-size: 0.875rem;
+    border-bottom: 2px solid transparent;
+    text-shadow: none !important;
+}
+
+ul.tablist li.current a,
+ul.tablist a:hover {
+    color: var(--color-fg-default);
+    background-image: none !important;
+    border-bottom-color: var(--color-accent-fg);
+    text-shadow: none !important;
+}
+
+/* ── Navigation breadcrumb ───────────────────────────────────────────────── */
+
+div#nav-path,
+div.navpath {
+    background-color: var(--color-canvas-subtle);
+    border-top: 1px solid var(--color-border-muted);
+}
+
+div.navpath ul {
+    margin: 0;
+    padding: 0.3em 0.8em;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2em;
+}
+
+div.navpath li.navelem a,
+div.navpath li.footer {
+    color: var(--color-fg-muted);
+    font-size: 0.85em;
+}
+
+div.navpath li.navelem a:hover {
+    color: var(--color-accent-fg);
+    text-decoration: underline;
+}
+
+/* ── Side navigation tree ────────────────────────────────────────────────── */
+
+#side-nav,
+#nav-tree,
+#nav-tree-contents {
+    background-color: var(--color-canvas-subtle);
+    border-right: 1px solid var(--color-border-default);
+}
+
+#nav-tree .item {
+    color: var(--color-fg-default);
+}
+
+#nav-tree a {
+    color: var(--color-fg-default);
+}
+
+#nav-tree a:hover,
+#nav-tree .selected a {
+    color: var(--color-accent-fg);
+    background-color: var(--color-accent-subtle);
+}
+
+/* ── Member declaration tables ───────────────────────────────────────────── */
+
+table.memberdecls {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+tr.heading h2.groupheader {
+    color: var(--color-fg-default);
+    border-bottom: 1px solid var(--color-border-default);
+    font-size: 1.1em;
+    font-weight: 600;
+    margin: 0.75em 0 0.25em;
+}
+
+/* Doxygen sets class="memitem:group__xxx" on <tr> elements — the colon makes
+   tr.memitem unreliable in CSS (parsed as pseudo-class). Target the <td>
+   children directly instead. */
+td.memItemLeft,
+td.memItemRight {
+    background-color: var(--color-canvas-subtle) !important;
+    border-top: 1px solid var(--color-border-muted);
+    color: var(--color-fg-default) !important;
+    padding: 0.3em 0.5em;
+}
+
+td.memItemLeft {
+    color: var(--color-fg-muted) !important;
+    white-space: nowrap;
+}
+
+td.mdescLeft,
+td.mdescRight {
+    background-color: var(--color-canvas-default) !important;
+    color: var(--color-fg-muted) !important;
+    padding: 0.2em 0.5em 0.4em;
+    font-size: 0.9em;
+}
+
+.memSeparator {
+    border-top: 1px solid var(--color-border-muted) !important;
+    background-color: var(--color-canvas-default) !important;
+}
+
+/* ── Member detail documentation ─────────────────────────────────────────── */
+
+div.memitem {
+    border: 1px solid var(--color-border-default);
+    border-radius: 6px;
+    margin-bottom: 1em;
+    overflow: hidden;
+}
+
+div.memproto {
+    background-color: var(--color-canvas-subtle);
+    border-bottom: 1px solid var(--color-border-default);
+    padding: 0.5em 1em;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    color: var(--color-fg-default);
+}
+
+div.memproto table.memname td {
+    color: var(--color-fg-default);
+    font-family: var(--font-mono);
+}
+
+div.memdoc {
+    background-color: var(--color-canvas-default);
+    padding: 0.75em 1em;
+    color: var(--color-fg-default);
+}
+
+div.memdoc p,
+div.memdoc dl,
+div.memdoc ul,
+div.memdoc ol {
+    margin-top: 0.25em;
+    color: var(--color-fg-default);
+}
+
+/* parameter / return value tables inside memdoc */
+dl.params dt,
+dl.retval dt,
+dl.exception dt {
+    font-weight: 600;
+    color: var(--color-fg-muted);
+}
+
+dl.params dd,
+dl.retval dd {
+    color: var(--color-fg-default);
+}
+
+table.params td.paramname,
+table.params td.paramname em {
+    color: var(--color-accent-fg);
+    font-style: normal;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+}
+
+/* ── textblock (detailed description paragraphs) ─────────────────────────── */
+
+div.textblock {
+    color: var(--color-fg-default);
+}
+
+div.textblock p { margin-bottom: 0.6em; }
+
+/* ── Directory / file listing ────────────────────────────────────────────── */
+
+table.directory {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table.directory tr.even {
+    background-color: var(--color-table-row-even);
+}
+
+table.directory tr.odd {
+    background-color: var(--color-table-row-odd);
+}
+
+table.directory td,
+table.directory th {
+    border: 1px solid var(--color-border-muted);
+    padding: 0.3em 0.6em;
+    color: var(--color-fg-default);
+}
+
+table.directory th {
+    background-color: var(--color-table-header-bg);
+    font-weight: 600;
+}
+
+/* ── Doxygen "el" links (cross-references) ───────────────────────────────── */
+
+a.el,
+a.elRef {
+    color: var(--color-accent-fg);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+}
+
+a.el:hover,
+a.elRef:hover {
+    text-decoration: underline;
+}
+
+/* ── Search box ──────────────────────────────────────────────────────────── */
+
+#MSearchBox,
+.MSearchBoxInactive,
+.MSearchBoxActive {
+    background-color: var(--color-canvas-subtle);
+    border: 1px solid var(--color-border-default);
+    border-radius: 6px;
+    color: var(--color-fg-default);
+}
+
+#MSearchField {
+    background-color: transparent;
+    color: var(--color-fg-default);
+    border: none;
+    outline: none;
+}
+
+#MSearchResultsWindow {
+    background-color: var(--color-canvas-subtle);
+    border: 1px solid var(--color-border-default);
+    border-radius: 6px;
+}
+
+/* ── Source listing (SOURCE_BROWSER = YES) ───────────────────────────────── */
+
+div.fragment,
+pre.fragment {
+    background-color: var(--color-canvas-subtle);
+    border: 1px solid var(--color-border-muted);
+    border-radius: 6px;
+    color: var(--color-fg-default);
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    line-height: 1.55;
+    overflow: auto;
+    padding: 0.8em 1em;
+}
+
+div.line {
+    color: var(--color-fg-default);
+    font-family: var(--font-mono);
+}
+
+div.line a {
+    color: var(--color-accent-fg);
+}
+
+span.lineno,
+div.lineno {
+    color: var(--color-fg-subtle);
+    background-color: var(--color-canvas-inset);
+    border-right: 1px solid var(--color-border-muted);
+    padding-right: 0.5em;
+    margin-right: 0.5em;
+    user-select: none;
+}
+
+/* source highlight tokens */
+span.keyword    { color: #ff7b72; font-weight: 600; }
+span.keywordtype{ color: #ff7b72; }
+span.keywordflow{ color: #ff7b72; font-weight: 600; }
+span.comment    { color: #8b949e; font-style: italic; }
+span.preprocessor { color: #8b949e; }
+span.stringliteral{ color: #a5d6ff; }
+span.charliteral  { color: #a5d6ff; }
+
+/* ── Note / warning / attention boxes ───────────────────────────────────── */
+
+dl.note,
+dl.warning,
+dl.attention,
+dl.pre,
+dl.post,
+dl.invariant,
+dl.deprecated,
+dl.todo,
+dl.test,
+dl.bug {
+    border-radius: 6px;
+    padding: 0.75em 1em;
+    margin: 1em 0;
+}
+
+dl.note      { background-color: #2ea04326; border-left: 4px solid var(--color-accent-fg);    }
+dl.warning   { background-color: #9e6a0326; border-left: 4px solid var(--color-attention-fg); }
+dl.attention { background-color: #9e6a0326; border-left: 4px solid var(--color-attention-fg); }
+dl.deprecated{ background-color: #6e1b1b26; border-left: 4px solid var(--color-danger-fg);    }
+dl.todo      { background-color: #1a1f3226; border-left: 4px solid var(--color-done-fg);      }
+dl.bug       { background-color: #6e1b1b26; border-left: 4px solid var(--color-danger-fg);    }
+
+dl.note dt,
+dl.warning dt,
+dl.attention dt,
+dl.deprecated dt,
+dl.todo dt,
+dl.bug dt {
+    font-weight: 600;
+    margin-bottom: 0.25em;
+}
+
+dl.note dt      { color: var(--color-accent-fg);    }
+dl.warning dt   { color: var(--color-attention-fg); }
+dl.attention dt { color: var(--color-attention-fg); }
+dl.deprecated dt{ color: var(--color-danger-fg);    }
+dl.todo dt      { color: var(--color-done-fg);      }
+dl.bug dt       { color: var(--color-danger-fg);    }
+
+/* ── Inheritance / collaboration graphs (SVG fallback text) ──────────────── */
+
+/* ── Embedded main page (htmlinclude from pandoc fragment) ───────────────── */
+/*
+ * \htmlinclude embeds the pandoc body fragment inside Doxygen's
+ * div.contents > div.textblock.  Pandoc's layout selectors (body > *)
+ * no longer match, so we replicate the key constraints here.
+ */
+
+div.textblock {
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Figures produced by pandoc for block-level images */
+div.textblock figure {
+    margin: 1.5em auto;
+    text-align: center;
+    max-width: 100%;
+}
+
+div.textblock figure img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    border-radius: 6px;
+    filter: none;   /* figures on the main page are not dot graphs */
+}
+
+div.textblock figcaption {
+    color: var(--color-fg-muted);
+    font-size: 0.85em;
+    margin-top: 0.4em;
+}
+
+/* ── Dot / GraphViz graphs ───────────────────────────────────────────────── */
+/*
+ * Doxygen renders dot graphs as PNG images (raster), so CSS cannot repaint
+ * individual nodes.  The standard dark-mode workaround is a CSS filter:
+ *   invert(1)         — flips light↔dark (white bg → black, black text → white)
+ *   hue-rotate(180deg)— rotates hue 180° to approximately undo the hue shift
+ *                       introduced by inversion, preserving node colours.
+ * DOT_TRANSPARENT=YES in the Doxyfile removes the white fill before this, so
+ * the page's own dark background shows through rather than a pure-black square.
+ */
+
+div.center img,
+.dyncontent img {
+    filter: invert(1) hue-rotate(180deg);
+    border-radius: 6px;
+}
+
+/* ── Project title area ──────────────────────────────────────────────────── */
+
+#projectname {
+    color: var(--color-fg-default);
+    font-weight: 600;
+}
+
+#projectbrief {
+    color: var(--color-fg-muted);
+    font-size: 0.9em;
+}
+
+#projectlogo img {
+    max-height: 55px;
+}
+
+/* ── Member title bar ────────────────────────────────────────────────────── */
+/* .memtitle is the rounded tab above each member; it uses nav_f.png sprite */
+
+.memtitle {
+    background-color: var(--color-canvas-subtle) !important;
+    background-image: none !important;                   /* remove nav_f.png sprite */
+    border-color: var(--color-border-default) !important;
+    color: var(--color-fg-default) !important;
+    text-shadow: none !important;
+}
+
+/* Small nav box on detail pages */
+.memnav {
+    background-color: var(--color-canvas-subtle) !important;
+    border: 1px solid var(--color-border-default) !important;
+    color: var(--color-fg-default);
+}
+
+/* Template parameter strip above memproto */
+.memtemplate {
+    color: var(--color-fg-muted) !important;
+}
+
+/* Template param row in member tables */
+.memTemplParams,
+.memTemplItemLeft,
+.memTemplItemRight {
+    background-color: var(--color-canvas-subtle) !important;
+    color: var(--color-fg-muted) !important;
+    border-top: 1px solid var(--color-border-muted);
+}
+
+/* reflist (used by some Doxygen pages like deprecated list) */
+dl.reflist dt {
+    background-color: var(--color-canvas-subtle) !important;
+    background-image: none !important;
+    border-color: var(--color-border-default) !important;
+    color: var(--color-fg-default) !important;
+    text-shadow: none !important;
+}
+
+dl.reflist dd {
+    background-color: var(--color-canvas-default) !important;
+    background-image: none !important;
+    border-color: var(--color-border-default) !important;
+    color: var(--color-fg-default);
+}
+
+/* ── Index pages (Files, Classes, Namespaces) ────────────────────────────── */
+
+td.indexkey {
+    background-color: var(--color-canvas-subtle) !important;
+    border-color: var(--color-border-muted) !important;
+    color: var(--color-fg-default) !important;
+}
+
+td.indexvalue {
+    background-color: var(--color-canvas-default) !important;
+    border-color: var(--color-border-muted) !important;
+    color: var(--color-fg-default) !important;
+}
+
+tr.memlist {
+    background-color: var(--color-canvas-subtle) !important;
+}
+
+/* Class index alternating rows */
+.classindex dl.even {
+    background-color: var(--color-canvas-default) !important;
+}
+
+.classindex dl.odd {
+    background-color: var(--color-canvas-subtle) !important;
+}
+
+/* ── Field / parameter tables ────────────────────────────────────────────── */
+
+table.fieldtable {
+    border-color: var(--color-border-default) !important;
+}
+
+.fieldtable th {
+    background-color: var(--color-canvas-subtle) !important;
+    background-image: none !important;                   /* remove nav_f.png sprite */
+    color: var(--color-fg-muted) !important;
+    border-color: var(--color-border-muted) !important;
+    text-shadow: none !important;
+}
+
+.fieldtable td,
+.fieldtable td.fieldtype,
+.fieldtable td.fieldname,
+.fieldtable td.fielddoc {
+    background-color: var(--color-canvas-default) !important;
+    border-color: var(--color-border-muted) !important;
+    color: var(--color-fg-default) !important;
+}
+
+/* ── General Doxygen tables ──────────────────────────────────────────────── */
+
+table.doxtable th,
+th.markdownTableHeadLeft,
+th.markdownTableHeadRight,
+th.markdownTableHeadCenter,
+th.markdownTableHeadNone {
+    background-color: var(--color-canvas-subtle) !important;
+    color: var(--color-fg-default) !important;
+    border-color: var(--color-border-muted) !important;
+}
+
+table.doxtable td,
+td.markdownTableBodyLeft,
+td.markdownTableBodyRight,
+td.markdownTableBodyCenter {
+    border-color: var(--color-border-muted) !important;
+    color: var(--color-fg-default) !important;
+}
+
+/* Directory listing alternating table */
+th.dirtab {
+    background-color: var(--color-canvas-subtle) !important;
+    color: var(--color-fg-muted) !important;
+    border-color: var(--color-border-muted) !important;
+}
+
+.dirtab {
+    border-color: var(--color-border-muted) !important;
+}
+
+/* ── Doxygen in-page TOC (float box) ─────────────────────────────────────── */
+/* Note: pandoc TOC is nav#TOC; Doxygen's is div.toc */
+
+div.toc {
+    background-color: var(--color-canvas-subtle) !important;
+    border: 1px solid var(--color-border-default) !important;
+    border-radius: 6px !important;
+}
+
+div.toc h3 {
+    color: var(--color-fg-muted) !important;
+    border-bottom: 1px solid var(--color-border-muted);
+    padding-bottom: 0.3em;
+}
+
+div.toc li {
+    background-image: none !important;                   /* remove bdwn.png arrow icon */
+    color: var(--color-fg-muted);
+    padding-left: 0.5em;
+}
+
+div.toc li a {
+    color: var(--color-accent-fg);
+}
+
+/* ── PowerTip (hover tooltip popup) ─────────────────────────────────────── */
+
+#powerTip {
+    background-color: var(--color-canvas-subtle) !important;
+    border: 1px solid var(--color-border-default) !important;
+    color: var(--color-fg-default) !important;
+    box-shadow: 0 8px 24px rgba(1,4,9,0.5) !important;
+    border-radius: 6px !important;
+}
+
+/* Triangle pointer arrows — match the popup background */
+#powerTip.n:after,  #powerTip.ne:after, #powerTip.nw:after  { border-top-color:    var(--color-canvas-subtle) !important; }
+#powerTip.s:after,  #powerTip.se:after, #powerTip.sw:after  { border-bottom-color: var(--color-canvas-subtle) !important; }
+#powerTip.w:after                                           { border-left-color:   var(--color-canvas-subtle) !important; }
+#powerTip.e:after                                           { border-right-color:  var(--color-canvas-subtle) !important; }
+
+/* Border arrows — match the popup border */
+#powerTip.n:before,  #powerTip.ne:before, #powerTip.nw:before  { border-top-color:    var(--color-border-default) !important; }
+#powerTip.s:before,  #powerTip.se:before, #powerTip.sw:before  { border-bottom-color: var(--color-border-default) !important; }
+#powerTip.w:before                                             { border-left-color:   var(--color-border-default) !important; }
+#powerTip.e:before                                             { border-right-color:  var(--color-border-default) !important; }
+
+/* ── SmartMenus scroll arrows ────────────────────────────────────────────── */
+
+.sm-dox span.scroll-up,
+.sm-dox span.scroll-down {
+    background: var(--color-canvas-subtle) !important;
+    border: 1px solid var(--color-border-default);
+}
+
+.sm-dox span.scroll-up:hover,
+.sm-dox span.scroll-down:hover {
+    background: var(--color-border-muted) !important;
+}
+
+.sm-dox span.scroll-up-arrow,
+.sm-dox span.scroll-down-arrow {
+    border-color: transparent transparent var(--color-fg-muted) transparent !important;
+}
+
+.sm-dox span.scroll-down-arrow {
+    border-color: var(--color-fg-muted) transparent transparent transparent !important;
+}
+
+.sm-dox span.scroll-up:hover span.scroll-up-arrow,
+.sm-dox span.scroll-up:hover span.scroll-down-arrow {
+    border-color: transparent transparent var(--color-accent-fg) transparent !important;
+}
+
+.sm-dox span.scroll-down:hover span.scroll-down-arrow {
+    border-color: var(--color-accent-fg) transparent transparent transparent !important;
+}
+
+/* ── Navigation tree icons & arrows ─────────────────────────────────────── */
+
+.arrow {
+    color: var(--color-fg-subtle) !important;
+}
+
+/* Type / member icon badges (C / F / V etc.) */
+.icon {
+    background-color: #2ea043 !important;    /* green to match link accent */
+    color: #ffffff !important;
+}
+
+/* ── General link colour corrections for Doxygen pages ──────────────────── */
+
+.contents a,
+.contents a:link {
+    color: var(--color-accent-fg);
+}
+
+.contents a:visited {
+    color: var(--color-link-visited);
+}
+
+/* ── Doxygen blockquote (inside memdoc / textblock) ─────────────────────── */
+
+.memdoc blockquote,
+.textblock blockquote,
+div.contents blockquote {
+    background-color: var(--color-canvas-subtle) !important;
+    border-left-color: var(--color-border-default) !important;
+}
+
+/* ── hr separators ───────────────────────────────────────────────────────── */
+
+hr {
+    border-top-color: var(--color-border-default) !important;
+}
+
+/* ── Misc text colour fixes ──────────────────────────────────────────────── */
+
+.memtemplate {
+    color: var(--color-fg-muted) !important;
+}
+
+.permalink a {
+    color: var(--color-fg-subtle) !important;
+}
+
+.permalink a:hover {
+    color: var(--color-accent-fg) !important;
+}

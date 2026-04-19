@@ -45,13 +45,17 @@ void btnHandler(gpio_t *gpio);
 
 // Logger Configuration -------------------------------------------------------
 #if LOG_FORMAT > 0 && LOG_LEVEL > 0
+// Add a uart device (write only) for the logger
 ADD_UART_WRITE(logUart,LOG_USART,LOG_BAUDRATE, LOG_PARITY, LOG_DATA_BITS, LOG_STOP_BITS, LOG_QUEUE_SIZE);
+// Add the logger instance using the logger UART device for output
 ADD_LOG(logger,UART_FILE_PTR(logUart));
 #endif  // LOG_FORMAT LOG_LEVEL
 
 // Command Line Interface Configuration ----------------------------------------
 #ifdef CLI
+// Add a uart device (read/write) for the CLI
 ADD_UART_RW(cliUart, CLI_USART, CLI_BAUDRATE, CLI_PARITY, CLI_DATA_BITS, CLI_STOP_BITS, CLI_TX_QUEUE_SIZE, CLI_RX_QUEUE_SIZE);
+// Add the CLI instance using the CLI UART device for input and output
 ADD_CLI(command_line,UART_FILE_PTR(cliUart));
 #endif // CLI
 

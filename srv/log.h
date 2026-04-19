@@ -1,5 +1,6 @@
-/*
- * log.h
+/**
+ * @file log.h
+ * @brief Logging service — severity-level macros and log instance registration.
  *
  * Created: 4/25/2021 6:12:14 PM
  * Author: john anderson
@@ -20,6 +21,10 @@
 
 #ifndef LOG_H_
 #define LOG_H_
+
+/** @addtogroup log_service
+ * @{
+ */
 
 typedef struct
 {
@@ -186,5 +191,7 @@ void logRom();
  * @brief Write a newline to the active log output stream.
  */
 void logNewLine();
+
+/** @} */ // end of log_service
 
 #endif /* LOG_H_ */

@@ -25,6 +25,10 @@
 #ifndef SYS_H_
 #define SYS_H_
 
+/** @addtogroup sys_kernel
+ * @{
+ */
+
 // Constants ------------------------------------------------------------------
 
 /** 
@@ -46,7 +50,7 @@
 
 
 /** @brief Event type for system tick. */
-#define EVENT_TYPE_TICK  EVENT_TYPE_1 ///< Event triggered on each system tick.
+#define EVENT_TYPE_TICK  1 ///< Event triggered on each system tick.
 
 
 // External Functions ---------------------------------------------------------
@@ -101,5 +105,7 @@ uint32_t sysGetTickCount();
  */
 void sysSleep();
 
+
+/** @} */ // end of sys_kernel
 
 #endif /* SYS_H_ */

@@ -1,21 +1,34 @@
 # avrOS Application Makefile
 #
-# based on the makefile written by michael cousins (http://github.com/mcous)
+# This makefile is designed to compile and manage an application built on top
+# of the avrOS real-time operating system for AVR microcontrollers. It provides
+# targets for building the application, testing the programmer connection,
+# flashing the compiled code to the microcontroller, and generating
+# documentation, among other tasks.
+#
+# Targets:
+#   all         Compile all source files and generate ELF, static analysis,
+#               and complexity reports (default target)
+#   build       Create the build output directory structure
+#   hex         Generate the Intel HEX binary image from the ELF
+#   flash       Write the compiled ELF to the MCU's flash memory
+#   fuses       Write the fuse bytes to the MCU
+#   lock_bits   Write the lock bits register on the MCU
+#   test        Test the ISP/UPDI programmer connection to the MCU
+#   terminal    Open an avrdude terminal session connected to the MCU
+#   docs        Generate Doxygen API documentation and HTML versions of
+#               the markdown files; output goes to build/docs/
+#   complexity  Calculate and display cyclomatic complexity of the source
+#               code (requires GNU Complexity)
+#   analyze     Run cppcheck static analysis and display results
+#   sloc        Run sloccount SLOC estimation with cost/schedule projection
+#   disasm      Disassemble the ELF file for debugging
+#   project     Create a new skeleton project directory (set NAME=<dir>)
+#   clean       Remove the entire build/ output directory
+#   help        Display this help message
 
-# targets:
-#   all:        compiles the source code
-#   test:       tests the isp connection to the mcu
-#   terminal:   opens an avrdude terminal connected to the MCU
-#   flash:      writes compiled elf file to the mcu's flash memory
-#   fuses:      writes the fuse bytes to the MCU
-#   lock_bits:  writes the lock_bits register
-#   complexity: calculate and display the complexity of the complete source 
-#               code. See GNU Complexity
-#   disasm:     disassembles the code for debugging
-#   docs:       generates doxygen API documentation and PDF versions of
-#               markdown files in build/docs directory
-#   clean:      removes all .hex, .elf, and .o files in the source code and
-#               library directories
+# project version (read from root VERSION file)
+VERSION := $(shell cat ../../VERSION)
 
 # parameters (change this stuff accordingly)
 # project name
@@ -82,26 +95,31 @@ DEP    = $(OBJ:%.o=%.d)
 
 # user targets
 # compile all files
-all: build docs $(BUILD_DIR)$(PRJ).elf $(BUILD_DIR)cppcheck_report.txt $(BUILD_DIR)complexity_report.txt
+all: build $(BUILD_DIR)$(PRJ).elf $(BUILD_DIR)cppcheck_report.txt $(BUILD_DIR)complexity_report.txt
 
 # Create the build directory
 build:
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(BUILD_DIR)cppcheck
+	mkdir -p $(BUILD_DIR)docs
 
 # Generate the intel hex binary image
 hex: $(BUILD_DIR)$(PRJ).hex
 
 # generate html documentation
 docs: build
-	mkdir -p $(BUILD_DIR)docs
-	cd ../../doc && doxygen Doxyfile
+#	pandoc -s --resource-path=../../doc --css github-dark.css ../../doc/Main_Page.md -o $(BUILD_DIR)docs/Main_Page.html
+	pandoc --resource-path=../../doc ../../doc/Main_Page.md -o ../../doc/Main_Page.html
+	pandoc -s --resource-path=../../doc --css github-dark.css ../../doc/MANUAL.md -o $(BUILD_DIR)docs/MANUAL.html
+	pandoc -s --resource-path=../../doc --css github-dark.css ../../doc/SDD.md -o $(BUILD_DIR)docs/SDD.html
+	cd ../../doc && VERSION=$(VERSION) doxygen Doxyfile
+	rm -f ../../doc/Main_Page.html
+	rm -rf $(BUILD_DIR)docs/api
 	mv ../../doc/api $(BUILD_DIR)docs/
-	cp ../../doc/readme.html $(BUILD_DIR)docs/
+	cp ../../doc/index.html $(BUILD_DIR)docs/
 	cp -r ../../doc/images $(BUILD_DIR)docs/
-	pandoc -s --resource-path=../../doc ../../doc/MANUAL.md -o $(BUILD_DIR)docs/MANUAL.html
-	pandoc -s --resource-path=../../doc ../../doc/SDD.md -o $(BUILD_DIR)docs/SDD.html
-	pandoc -s --resource-path=../../doc ../../doc/PI4_Dev_Station.md -o $(BUILD_DIR)docs/PI4_Dev_Station.html
+	cp ../../doc/github-dark.css $(BUILD_DIR)docs/
+	@echo "Docs: file://$(shell hostname)$(abspath $(BUILD_DIR)docs/index.html)"
 
 # test programmer connectivity
 test:
@@ -154,6 +172,10 @@ clean:
 #	rm -f BUILD_DIR/*.hex BUILD_DIR/*.elf BUILD_DIR/*.d BUILD_DIR/*.o
 #	$(foreach dir, $(EXT), rm -f $(dir)/*.o;)
 #	$(foreach dir, $(EXT), rm -f $(dir)/*.d;)
+
+# display help (strip leading '# ' from the file header comment block)
+help:
+	@awk '!/^#/{exit} {sub(/^# ?/,""); print}' $(MAKEFILE_LIST)
 
 # Inlcude the dependency files
 -include $(DEP)

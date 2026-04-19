@@ -1,5 +1,6 @@
-/*
- * cli.h
+/**
+ * @file cli.h
+ * @brief Command line interface — registration macros, types, and API.
  *
  * Header for CLI manager and API. Includes macros to create new command tokens
  * with associated function handlers
@@ -22,6 +23,10 @@
  */
 #ifndef __CLI_H
 #define __CLI_H
+
+/** @addtogroup cli_service
+ * @{
+ */
 
 // Includes -------------------------------------------------------------------
 #include "../avrOS.h"
@@ -143,6 +148,8 @@ struct cliCommand_struct
  * @return Result code returned by the matched command handler.
  */
 extern int cliCallFunction(char *commandLine);
+
+/** @} */ // end of cli_service
 
 #endif /* __CLI_H */
 

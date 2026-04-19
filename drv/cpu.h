@@ -1,5 +1,6 @@
-/*
- * cpu.h
+/**
+ * @file cpu.h
+ * @brief CPU driver — clock configuration, interrupt control, and software reset.
  *
  * Functions to set up the CPU main clock, sleep/run states, and memory regions.
  *
@@ -22,6 +23,10 @@
  
 #ifndef CPU_H_
 #define CPU_H_
+
+/** @addtogroup cpu_driver
+ * @{
+ */
 
 // Macros ---------------------------------------------------------------------
 /**
@@ -67,5 +72,7 @@ uint16_t cpuGetFrequency();
  * @brief Reset the CPU.
  */
 void cpuReset();
+
+/** @} */ // end of cpu_driver
 
 #endif /* CPU_H_ */

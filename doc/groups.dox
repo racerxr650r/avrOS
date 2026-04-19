@@ -1,0 +1,156 @@
+/**
+ * @file groups.dox
+ * @brief Doxygen module group definitions for avrOS.
+ *
+ * This file defines the module hierarchy used in the API documentation.
+ * Groups match the modules described in the Software Design Document (SDD.md).
+ */
+
+/**
+ * @defgroup sys_modules System Modules
+ * @brief Core OS services located in sys/.
+ *
+ * The system layer provides the cooperative scheduler, event management,
+ * inter-task queues, and file I/O abstraction that form the foundation of avrOS.
+ */
+
+/**
+ * @defgroup sys_kernel System Kernel
+ * @ingroup sys_modules
+ * @brief System initialization, tick timer, and idle sleep (sys/sys.c, sys/sys.h).
+ *
+ * Initializes the system tick timer (TCB peripheral), provides the tick counter,
+ * fires @c EVENT_TYPE_TICK on each tick, and implements @c sysSleep() for
+ * cooperative idle.
+ */
+
+/**
+ * @defgroup fsm_manager Finite State Machine Manager
+ * @ingroup sys_modules
+ * @brief Cooperative FSM scheduler and state machine registration (sys/fsm.c, sys/fsm.h).
+ *
+ * Maintains a link-section table of all registered FSMs and initializers.
+ * Dispatches state handlers in priority order each scan cycle and manages
+ * state transitions via fsmSetNextState().
+ */
+
+/**
+ * @defgroup event_manager Event Manager
+ * @ingroup sys_modules
+ * @brief Event signaling and FSM wait/wake mechanism (sys/event.c, sys/event.h).
+ *
+ * Allows ISRs and FSMs to signal conditions that wake waiting state machines.
+ * evntWait() suspends an FSM; evntTrigger() resumes all FSMs waiting on a
+ * given event.
+ */
+
+/**
+ * @defgroup queue_manager Queue Manager
+ * @ingroup sys_modules
+ * @brief Fixed-size circular byte queues with event integration (sys/queue.c, sys/queue.h).
+ *
+ * Provides statically-allocated, interrupt-safe circular queues. Enqueue and
+ * dequeue operations signal associated events to enable event-driven I/O.
+ */
+
+/**
+ * @defgroup fio_abstraction File I/O Abstraction
+ * @ingroup sys_modules
+ * @brief Bridge between AVR-libc FILE streams and avrOS queues (sys/fio.h).
+ *
+ * Allows standard C I/O functions (fprintf, fgetc, etc.) to work with UART
+ * and other queue-buffered peripherals. Provides both event-driven and
+ * busy-wait helpers.
+ */
+
+/**
+ * @defgroup services Services
+ * @brief Reusable application services located in srv/.
+ *
+ * Services are built on top of the system layer and provide features such as
+ * an interactive command interpreter, structured logging, and PCM audio output.
+ */
+
+/**
+ * @defgroup cli_service Command Line Interface
+ * @ingroup services
+ * @brief Interactive command interpreter over a UART stream (srv/cli.c, srv/cli.h).
+ *
+ * Supports compile-time command registration, argument parsing, single-level
+ * command history, subcommands, and repeatable commands. Runs as an
+ * FSM_SRV-priority state machine.
+ */
+
+/**
+ * @defgroup log_service Logging Service
+ * @ingroup services
+ * @brief Compile-time configurable log output at four severity levels (srv/log.c, srv/log.h).
+ *
+ * Routes log output to a designated FILE stream. The LOG_LEVEL macro gates
+ * messages at compile time; LOG_FORMAT selects the message format.
+ */
+
+/**
+ * @defgroup pcm_service PCM Audio Service
+ * @ingroup services
+ * @brief PCM audio sample streaming via the DAC driver (srv/pcm.c).
+ *
+ * Streams run-length-encoded PCM audio samples to the DAC. Playback timing
+ * is synchronized to the system tick. Audio data is prepared with the
+ * wav2c and snd2c utilities in util/.
+ */
+
+/**
+ * @defgroup drivers Drivers
+ * @brief Hardware abstraction drivers located in drv/.
+ *
+ * Drivers provide a portable interface to AVR-Dx peripherals. Each driver
+ * registers initialization via ADD_INITIALIZER so no manual startup code
+ * is required in main().
+ */
+
+/**
+ * @defgroup cpu_driver CPU Driver
+ * @ingroup drivers
+ * @brief CPU clock configuration and interrupt control (drv/cpu.c, drv/cpu.h).
+ *
+ * Configures the AVR-Dx internal high-frequency oscillator and clock prescaler,
+ * optionally routes the clock to an external pin, and provides a software reset.
+ */
+
+/**
+ * @defgroup mem_driver Memory Driver
+ * @ingroup drivers
+ * @brief RAM and ROM usage reporting and stack watermarking (drv/mem.c, drv/mem.h).
+ *
+ * Provides compile-time and runtime memory layout information for both RAM
+ * and ROM, and tracks maximum stack usage via stack-fill watermarking.
+ */
+
+/**
+ * @defgroup uart_driver UART Driver
+ * @ingroup drivers
+ * @brief Interrupt-driven UART with queue buffering and FILE stream integration (drv/uart.c, drv/uart.h).
+ *
+ * Provides interrupt-driven, queue-buffered transmit and receive for AVR-Dx
+ * USART peripherals. Exposes an AVR-libc FILE stream per instance for use
+ * with standard C I/O functions.
+ */
+
+/**
+ * @defgroup dac_driver DAC Driver
+ * @ingroup drivers
+ * @brief AVR-Dx 10-bit DAC peripheral initialization and output (drv/dac.c, drv/dac.h).
+ *
+ * Initializes the DAC with a configurable voltage reference and provides a
+ * simple output function used by the PCM audio service.
+ */
+
+/**
+ * @defgroup gpio_driver GPIO Driver
+ * @ingroup drivers
+ * @brief Named GPIO instances with interrupt-driven callbacks (drv/gpio.c, drv/gpio.h).
+ *
+ * Manages AVR-Dx port pins as named GPIO instances supporting output set,
+ * clear, toggle, and write, input read, and optional pin-change callbacks.
+ */

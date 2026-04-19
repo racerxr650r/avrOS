@@ -126,7 +126,7 @@
 #undef QUE_STATS		// Calculate and track queue statistics, requires additional RAM and CPU cycles
 #undef EVNT_STATS      // Calculate and track event statistics
 #undef GPIO_STATS		// Calculate and track GPIO statistics
-#endif
+#endif // CLI
 
 // CLI constants
 #define MAX_CMD_LINE    128

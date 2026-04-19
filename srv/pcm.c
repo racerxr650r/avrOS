@@ -1,5 +1,6 @@
-/*
- * pcm.c
+/**
+ * @file pcm.c
+ * @brief PCM audio service — streams run-length-encoded samples to the DAC.
  *
  * Implements PCM output (audio) using DAC
  *
@@ -21,6 +22,10 @@
  */ 
 // Includes -------------------------------------------------------------------
 #include "../avrOS.h"
+
+/** @addtogroup pcm_service
+ * @{
+ */
 
 // Internal Variables ---------------------------------------------------------
 static uint8_t *pcmData, pcmRLEValue;
@@ -122,3 +127,5 @@ bool pcmBusy()
 void pcmPlay(const uint8_t *sound, uint16_t length)
 {
 }
+
+/** @} */ // end of pcm_service

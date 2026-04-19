@@ -26,6 +26,10 @@
 #ifndef QUEUE_H_
 #define QUEUE_H_
 
+/** @addtogroup queue_manager
+ * @{
+ */
+
 // Constants ------------------------------------------------------------------
 /**
  * @brief Maximum supported queue size.
@@ -95,16 +99,16 @@ typedef struct QUE_DESCRIPTOR_TYPE
  */
 #ifdef QUE_STATS
 #define ADD_QUEUE(queName, queSzElement, queSz) \
-                  static uint8_t             CONCAT(queName,_buffer)[queSz*queSzElement]; \
+                  static uint8_t               CONCAT(queName,_buffer)[queSz*queSzElement]; \
                   const static queDescriptor_t CONCAT(queName,_descr); \
-                  static volatile queue_t    queName = {.head = queSz, .tail = 0, .max = 0, .stats.in = 0, .stats.out = 0, .stats.overflow = 0, .descr = &CONCAT(queName,_descr)}; \
+                  static volatile queue_t      queName = {.head = queSz, .tail = 0, .max = 0, .stats.in = 0, .stats.out = 0, .stats.overflow = 0, .descr = &CONCAT(queName,_descr)}; \
                   ADD_EVENT(queName ## _evnt); \
                   const static queDescriptor_t SECTION(QUE_TABLE) CONCAT(queName,_descr) = {.name = #queName, .queue = &queName, .buffer = CONCAT(queName,_buffer), .event = &CONCAT(queName,_evnt), .capacity = queSz, .sizeOfElement = queSzElement};
 #else
 #define ADD_QUEUE(queName, queSzElement, queSz)	\
-                  static uint8_t             CONCAT(queName,_buffer)[queSz*queSzElement]; \
+                  static uint8_t               CONCAT(queName,_buffer)[queSz*queSzElement]; \
                   const static queDescriptor_t CONCAT(queName,_descr); \
-                  static volatile queue_t    queName = {.head = queSz, .tail = 0, .max = 0, .descr = &CONCAT(queName,_descr)}; \
+                  static volatile queue_t      queName = {.head = queSz, .tail = 0, .max = 0, .descr = &CONCAT(queName,_descr)}; \
                   ADD_EVENT(queName ## _evnt); \
                   const static queDescriptor_t SECTION(QUE_TABLE) CONCAT(queName,_descr) = {.queue = &queName, .buffer = CONCAT(queName,_buffer), .event = &CONCAT(queName,_evnt), .capacity = queSz, .sizeOfElement = queSzElement};
 #endif
@@ -311,5 +315,7 @@ static inline bool quePutPtr(volatile queue_t *que, void *ptr)
 {
 	return(quePutWord(que,(uint16_t)ptr));
 }
+
+/** @} */ // end of queue_manager
 
 #endif /* QUEUE_H_ */

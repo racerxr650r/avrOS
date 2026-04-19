@@ -24,6 +24,10 @@
 #ifndef __FSM_H
 #define __FSM_H
 
+/** @addtogroup fsm_manager
+ * @{
+ */
+
 // Includes -------------------------------------------------------------------
 #include "../avrOS.h"
 #include "stdlib.h"
@@ -352,5 +356,7 @@ void fsmWaitMilliseconds(volatile fsmStateMachine_t*stateMachine, uint16_t ms);
  * again. It will return once there are no state machines in the ready queue.
  */
 void	fsmDispatch(void);
+
+/** @} */ // end of fsm_manager
 
 #endif /* __FSM_H */

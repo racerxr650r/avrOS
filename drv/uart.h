@@ -1,5 +1,6 @@
-/*
- * uart.h
+/**
+ * @file uart.h
+ * @brief UART driver — interrupt-driven USART with queue buffering and FILE stream integration.
  *
  * Types, constants, macros, and function prototypes for a standard
  * asynchronous receiver/transmitter using the AVR-Dx USART
@@ -24,6 +25,11 @@
 
 #ifndef UART_H_
 #define UART_H_
+
+/** @addtogroup uart_driver
+ * @{
+ */
+
 #include "avrOS.h"
 
 // Data Types -----------------------------------------------------------------
@@ -333,5 +339,7 @@ extern uint8_t uartTxMax(const UART_t *uart);
  * @return Pointer to UART instance name string.
  */
 extern char* uartName(const UART_t *uart);
+
+/** @} */ // end of uart_driver
 
 #endif /* UART_H_ */

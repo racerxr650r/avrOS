@@ -26,6 +26,10 @@
 #ifndef __FIO_H
 #define __FIO_H
 
+/** @addtogroup fio_abstraction
+ * @{
+ */
+
 #include "../avrOS.h"
 
 /**
@@ -138,5 +142,7 @@ static inline void fioBusyWaitOutput(FILE *file)
 	fioBuffers_t *buffer = (fioBuffers_t *)(file->buf);
 	while (!queIsEmpty(buffer->output)); // Wait until empty
 }
+
+/** @} */ // end of fio_abstraction
 
 #endif  // __FIO_H

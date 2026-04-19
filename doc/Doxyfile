@@ -47,7 +47,7 @@ PROJECT_NAME           = "avrOS"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         =
+PROJECT_NUMBER         = $(VERSION)
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -793,7 +793,7 @@ FILE_VERSION_FILTER    =
 # DoxygenLayout.xml, doxygen will parse it automatically even if the LAYOUT_FILE
 # tag is left empty.
 
-LAYOUT_FILE            =
+LAYOUT_FILE            = DoxygenLayout.xml
 
 # The CITE_BIB_FILES tag can be used to specify one or more bib files containing
 # the reference definitions. This must be a list of .bib files. The .bib
@@ -906,7 +906,7 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ../drv ../srv ../sys
+INPUT                  = ../drv ../srv ../sys ../doc/groups.dox mainpage.dox
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -984,7 +984,7 @@ EXCLUDE_SYMBOLS        =
 # that contain example code fragments that are included (see the \include
 # command).
 
-EXAMPLE_PATH           =
+EXAMPLE_PATH           = .
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp and
@@ -1060,7 +1060,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the doxygen output.
 
-USE_MDFILE_AS_MAINPAGE = MANUAL.md
+USE_MDFILE_AS_MAINPAGE =
 
 #---------------------------------------------------------------------------
 # Configuration options related to source browsing
@@ -1284,7 +1284,7 @@ HTML_STYLESHEET        =
 # list). For an example see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  =
+HTML_EXTRA_STYLESHEET  = github-dark.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
@@ -1294,7 +1294,7 @@ HTML_EXTRA_STYLESHEET  =
 # files will be copied as-is; there are no commands or markers available.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_FILES       =
+HTML_EXTRA_FILES       = Main_Page.html
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output. Doxygen
 # will adjust the colors in the style sheet and background images according to
@@ -2658,7 +2658,7 @@ MAX_DOT_GRAPH_DEPTH    = 0
 # The default value is: NO.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-DOT_TRANSPARENT        = NO
+DOT_TRANSPARENT        = YES
 
 # Set the DOT_MULTI_TARGETS tag to YES to allow dot to generate multiple output
 # files in one run (i.e. multiple -o and -T options on the command line). This

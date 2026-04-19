@@ -1,5 +1,6 @@
-/*
- * gpio.h
+/**
+ * @file gpio.h
+ * @brief GPIO driver — named GPIO instances with interrupt-driven callbacks.
  *
  * Types, constants, macros, and function prototypes for a standard 
  * general purpose input/output driver for the AVR-Dx
@@ -24,6 +25,11 @@
 
 #ifndef GPIO_H_
 #define GPIO_H_
+
+/** @addtogroup gpio_driver
+ * @{
+ */
+
 #include "avrOS.h"
 
 // Data Types -----------------------------------------------------------------
@@ -69,7 +75,6 @@ typedef struct GPIO_TYPE
 	gpioDirection_t		direction;
 	gpioHandler_t		handler;
 	volatile event_t	*event;
-	evntType_t			eventType;
 #ifdef GPIO_STATS
 	gpioStats_t		*stats;
 #endif
@@ -183,4 +188,6 @@ uint8_t gpioReadInput(const gpio_t *gpio);
  */
 uint8_t gpioReadOutput(const gpio_t *gpio);
 
-#endif /* UART_H_ */
+/** @} */ // end of gpio_driver
+
+#endif /* GPIO_H_ */

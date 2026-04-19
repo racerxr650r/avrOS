@@ -1,0 +1,50 @@
+name: Build and Deploy Docs
+
+on:
+  push:
+    branches:
+      - develop
+
+# Allow only one concurrent deployment
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            make \
+            pandoc \
+            doxygen \
+            graphviz
+
+      - name: Build docs
+        working-directory: app/avrOS_example
+        run: make docs
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/avrOS_example/build/docs
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
