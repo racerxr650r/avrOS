@@ -23,6 +23,9 @@
 #ifndef AVROSCONFIG_H_
 #define AVROSCONFIG_H_
 
+// Project version (updated by 'make version' from the root VERSION file)
+#define AVROS_VERSION	"v0.1.0"
+
 // CPU Configuration ----------------------------------------------------------
 // Set the CPU speed using the internal high speed oscillator
 #define CPU_SPEED	CLKCTRL_FRQSEL_24M_gc	// CLKCTRL_FRQSEL_1M_gc = 1 MHz system clock
@@ -132,6 +135,6 @@
 #define MAX_CMD_LINE    128
 #define MAX_ARGS        16
 #define REPEAT_SWITCH	'r'
-#define CLI_BANNER		CLEAR_SCREEN CURSOR_HOME RESET FG_GREEN BOLD "\r+++| avrOS Command Line Interface |+++" RESET
+#define CLI_BANNER		CLEAR_SCREEN CURSOR_HOME RESET FG_GREEN BOLD "\r+++| avrOS " AVROS_VERSION " CLI |+++" RESET
 
 #endif /* AVROSCONFIG_H_ */

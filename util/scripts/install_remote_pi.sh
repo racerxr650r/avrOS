@@ -29,7 +29,6 @@ else
 
     # Update /boot/config.txt to support serial console and uarts 2, 3, and 4
     echo "Modifying /boot/config.txt to support serial console and uarts 2, 3, and 4"
-
 #    echo "[all]" | sudo tee -a /boot/config.txt
     grep -qxF 'alias complex' /boot/config.txt || printf "alias complex=\'tree -f -i -n -P *.c | grep .c | complexity -h -c --threshold=1\'\n\r" | sudo tee -a /boot/config.txt
     grep -qxF 'enable_uart=1' /boot/config.txt || echo 'enable_uart=1' | sudo tee -a /boot/config.txt

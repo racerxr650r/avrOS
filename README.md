@@ -4,7 +4,7 @@ avrOS is still in it's sub 1.0 development stage. So there are lots of features 
 
 For more information regarding avrOS, refer to the [avrOS webpage](https://racerxr650r.github.io/avrOS).
 
-For an example of developing applications with this project, refer to the [avrOS application development on Pi4](./doc/PI4_Dev_Station.md)
+For an example of developing applications with this project using a Raspberry PI as a target, refer to the [avrOS application development on Pi4](./doc/PI4_Dev_Station.md)
 ---
 # Getting Started
 ## Install Development Environment and Build an avrOS Application

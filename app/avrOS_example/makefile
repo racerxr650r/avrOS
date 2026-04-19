@@ -23,8 +23,14 @@
 #   analyze     Run cppcheck static analysis and display results
 #   sloc        Run sloccount SLOC estimation with cost/schedule projection
 #   disasm      Disassemble the ELF file for debugging
-#   project     Create a new skeleton project directory (set NAME=<dir>)
+#   version     Update AVROS_VERSION in avrOSConfig.h with the version string\n#               from the root VERSION file
+#   project     Create a new skeleton project directory (add "NAME=<dir>" at the
+#               command line to specify the name; default is "project")
 #   clean       Remove the entire build/ output directory
+#   prereqs     For debian-based systems (MX Linux, Raspberry Pi OS, Ubuntu,
+#               etc.), install the required packages
+#   setup_pi    Set up a Raspberry Pi for AVR development. Enable serial
+#				console and UARTs.
 #   help        Display this help message
 
 # project version (read from root VERSION file)
@@ -95,7 +101,7 @@ DEP    = $(OBJ:%.o=%.d)
 
 # user targets
 # compile all files
-all: build $(BUILD_DIR)$(PRJ).elf $(BUILD_DIR)cppcheck_report.txt $(BUILD_DIR)complexity_report.txt
+all: version build $(BUILD_DIR)$(PRJ).elf $(BUILD_DIR)cppcheck_report.txt $(BUILD_DIR)complexity_report.txt
 
 # Create the build directory
 build:
@@ -120,6 +126,11 @@ docs: build
 	cp -r ../../doc/images $(BUILD_DIR)docs/
 	cp ../../doc/github-dark.css $(BUILD_DIR)docs/
 	@echo "Docs: file://$(shell hostname)$(abspath $(BUILD_DIR)docs/index.html)"
+
+# update AVROS_VERSION in avrOSConfig.h with the version string from the root VERSION file
+version:
+	sed -i 's/\(#define AVROS_VERSION\s*\)"[^"]*"/\1"$(VERSION)"/' avrOSConfig.h
+	@echo "AVROS_VERSION updated to $(VERSION)"
 
 # test programmer connectivity
 test:
@@ -166,12 +177,37 @@ project:
 	cp main.c ../$(NAME)
 	cp makefile ../$(NAME)
 
+# For debian-based systems (MX Linux, Raspberry Pi OS, Ubuntu, etc.), install
+# the required packages
+prereqs:
+	echo "Installing prerequisite tools for avrOS development"
+	sudo apt-get update
+	sudo apt-get install -y --no-install-recommends \
+		make binutils gcc-avr gdb-avr avr-libc flex byacc bison cmake unzip avrdude \
+		sloccount complexity cppcheck doxygen graphviz pandoc
+	# Get the AVR Dx DFP file for the AVR DA libs and header files
+	echo "Installing the Microchip/Atmel Device Feature Pack for the AVR-Dx"
+	wget http://packs.download.atmel.com/Atmel.AVR-Dx_DFP.2.4.286.atpack
+	# Unzip the DFP package, copy it to the compiler directory, and clean up
+	mkdir ./Atmel.AVR-Dx_DFP.2.4.286
+	unzip -d Atmel.AVR-Dx_DFP.2.4.286/ Atmel.AVR-Dx_DFP.2.4.286.atpack
+	sudo cp -R Atmel.AVR-Dx_DFP.2.4.286/ /usr/lib/gcc/avr/5.4.0
+	rm -rf Atmel.AVR-Dx_DFP.2.4.286
+	rm Atmel.AVR-Dx_DFP.2.4.286.atpack
+	
+
+# Set up Raspberry Pi for AVR development
+setup_pi:
+	echo "Modifying /boot/config.txt to support serial console and uarts 2, 3, and 4"
+	grep -qxF 'alias complex' /boot/config.txt || printf "alias complex=\'tree -f -i -n -P *.c | grep .c | complexity -h -c --threshold=1\'\n\r" | sudo tee -a /boot/config.txt
+	grep -qxF 'enable_uart=1' /boot/config.txt || echo 'enable_uart=1' | sudo tee -a /boot/config.txt
+	grep -qxF 'dtoverlay=uart2' /boot/config.txt || echo 'dtoverlay=uart2' | sudo tee -a /boot/config.txt
+	grep -qxF 'dtoverlay=uart3' /boot/config.txt || echo 'dtoverlay=uart3' | sudo tee -a /boot/config.txt
+	grep -qxF 'dtoverlay=uart4' /boot/config.txt || echo 'dtoverlay=uart4' | sudo tee -a /boot/config.txt
+
 # remove compiled files
 clean:
 	rm -rf $(BUILD_DIR)
-#	rm -f BUILD_DIR/*.hex BUILD_DIR/*.elf BUILD_DIR/*.d BUILD_DIR/*.o
-#	$(foreach dir, $(EXT), rm -f $(dir)/*.o;)
-#	$(foreach dir, $(EXT), rm -f $(dir)/*.d;)
 
 # display help (strip leading '# ' from the file header comment block)
 help:
