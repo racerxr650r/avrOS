@@ -33,8 +33,14 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             make \
             pandoc \
-            doxygen \
             graphviz
+
+      - name: Install Doxygen 1.9.4
+        run: |
+          wget -q https://github.com/doxygen/doxygen/releases/download/Release_1_9_4/doxygen-1.9.4.linux.bin.tar.gz
+          tar xzf doxygen-1.9.4.linux.bin.tar.gz
+          sudo cp doxygen-1.9.4/bin/doxygen /usr/local/bin/doxygen
+          doxygen --version
 
       - name: Build docs
         working-directory: app/avrOS_example
