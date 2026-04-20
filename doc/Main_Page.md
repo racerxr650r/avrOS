@@ -11,9 +11,9 @@ By delegating task switching and power management to the AVR's own hardware, **a
 
 ### 1. Hardware-Centric Task "Switching"
 **avrOS** eliminates the biggest RAM and CPU cost in an RTOS: **software context switching**.
-* **One Stack:** The entire system—including all state machines and ISRs—runs on a single shared stack. This makes the most efficient use of the limited SRAM found on AVR microcontrollers.
-* **No Pre-emptive Software Scheduler:** **avrOS** does not have a "tick" or a complex task manager. Instead, it relies on the AVR's robust **hardware interrupt controller** to handle all preemption and priority management. An interrupt triggers a vector, which is the ultimate, minimal latency "context switch."
-* **Cooperative multitasking:** A **Finite State Machine Manager (FSM)** implements prioritized scheduling of application specific states and state machines.
+* __One Stack:__ The entire system—including all state machines and ISRs—runs on a single shared stack. This makes the most efficient use of the limited SRAM found on AVR microcontrollers.
+* __No Pre-emptive Software Scheduler:__ **avrOS** does not have a "tick" or a complex task manager. Instead, it relies on the AVR's robust **hardware interrupt controller** to handle all preemption and priority management. An interrupt triggers a vector, which is the ultimate, minimal latency "context switch."
+* __Cooperative multitasking:__ A **Finite State Machine Manager (FSM)** implements prioritized scheduling of application specific states and state machines.
 
 ### 2. Decentralized, Prioritized Initialization (Linker Sets)
 System modularity is achieved through a **static allocation model** using custom linker sections.
