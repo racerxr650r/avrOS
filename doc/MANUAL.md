@@ -539,6 +539,323 @@ evntQue              Capacity:        4 Max:       4
 
 ### Memory Usage Diagnostics
 
+## Make Targets Reference
+
+Run from `app/<your_app>/` (e.g. `app/avrOS_example/`):
+
+| Target | What it does |
+|--------|--------------|
+| `all` (default) | `version`, build dirs, ELF, cppcheck + complexity reports |
+| `build` | Create `build/`, `build/cppcheck/`, `build/docs/` |
+| `hex` | Produce `build/main.hex` |
+| `flash` | `avrdude -U flash:w:…elf:e` (depends on `all`) |
+| `fuses` | Write fuse bytes (`avrdude -U fuses:w:…elf:e`) |
+| `lock_bits` | Write the lock register |
+| `test` | Verify programmer connection (`avrdude -v`) |
+| `terminal` | Interactive `avrdude` terminal session |
+| `docs` | Run Doxygen + pandoc → `build/docs/` |
+| `complexity` | Print cyclomatic complexity to stdout |
+| `analyze` | Run cppcheck interactively |
+| `sloc` | sloccount with cost/schedule estimate |
+| `disasm` | Dump ELF disassembly |
+| `version` | Sync `AVROS_VERSION` in `avrOSConfig.h` from root `VERSION` |
+| `project NAME=foo` | Copy skeleton to `app/foo/` |
+| `prereqs` | apt-install all tools + DFP (Debian / Pi OS / Ubuntu) |
+| `setup_pi` | Enable Pi UARTs 2/3/4 in `/boot/config.txt` |
+| `clean` | `rm -rf build/` |
+| `help` | Print the makefile header comment |
+
+### Toolchain
+
+| Tool | Used for |
+|------|----------|
+| `avr-gcc` | Compile / link (`avr128da28`, `-std=gnu99`) |
+| `avr-objcopy` | ELF → Intel HEX |
+| `avr-objdump` | Disassembly (`make disasm`) |
+| `avr-size` | Size report |
+| `avrdude` | Flash / fuses / lock (`serialupdi` by default) |
+| `cppcheck` | Static analysis |
+| `complexity` | Cyclomatic complexity (GNU Complexity) |
+| `sloccount` | Cost / schedule estimate |
+| `doxygen` + `pandoc` + `graphviz` | API & manual docs (`make docs`) |
+
+The makefile depends on the Microchip Atmel.AVR-Dx DFP at
+`/usr/lib/gcc/avr/5.4.0/Atmel.AVR-Dx_DFP.2.4.286`. `make prereqs`
+downloads and installs it from `packs.download.atmel.com`.
+
+### Programmer configuration
+
+Change in the makefile:
+
+```make
+# Atmel-ICE UPDI:
+PRG = atmelice_updi
+# Serial UPDI over a known port:
+PRG = serialupdi -P /dev/ttyUSB0
+# Default (Raspberry Pi onboard UART):
+PRG = serialupdi -P /dev/ttyAMA2
+```
+
+### Adding a source file or module
+
+1. Drop the new `.c` under `drv/`, `srv/`, or `sys/`.
+2. Nothing else to do — `EXT = ../.. ../../sys ../../drv ../../srv`
+   makes the makefile pick up every `*.c` in those directories.
+3. If the module needs a new descriptor table, add a matching
+   `SECTION(<MOD>_TABLE)` block to `avrOS.x` (see
+   [SDD.md §3.5](SDD.md#35-linker-sections-and-descriptor-tables)).
+
+### Common build / flash failures
+
+| Symptom | Likely cause |
+|---------|--------------|
+| `Atmel.AVR-Dx_DFP.2.4.286` not at the expected path | Run `make prereqs` or update `DFP =` in the makefile. |
+| `avrdude` "device signature mismatch" | Wrong `MCU=` or wrong `PRG=`. |
+| Pi UPDI port silent | Run `make setup_pi`, reboot. |
+| Section overflow at link time | A new `*_TABLE` block was added in C but not in `avrOS.x`. |
+
+## avrOSConfig.h Reference
+
+Per-application configuration header. Lives next to `main.c` in every
+`app/<name>/`. Defines clock, peripherals, logger, CLI, and the
+per-module feature gates. Reference copy:
+[app/avrOS_example/avrOSConfig.h](../app/avrOS_example/avrOSConfig.h).
+
+### CPU and system tick
+
+| Macro | Type | Default | Notes |
+|-------|------|---------|-------|
+| `CPU_SPEED` | `CLKCTRL_FRQSEL_*_gc` | `24M_gc` | Internal HF oscillator. Valid: 1, 2, 3, 4, 8, 12, 16, 20, 24 MHz. |
+| `SYS_TICK_TIMER` | `SYS_TIMER_TCB{0,1,2}` | `TCB0` | Which TCB drives the `sys.c` tick ISR. |
+| `SYS_TICK_FREQ` | Hz | `1000` | Tick frequency; affects `fsmWaitTicks`, `fsmWaitMilliseconds`. |
+
+### Logger (`srv/log.c`)
+
+| Macro | Default | Effect |
+|-------|---------|--------|
+| `LOG_USART` | `USART1` | USART peripheral for log output (write-only). |
+| `LOG_BAUDRATE` | `115200` | Serial baud rate. |
+| `LOG_PARITY` | `USART_PMODE_DISABLED_gc` | DISABLED / EVEN / ODD. |
+| `LOG_DATA_BITS` | `USART_CHSIZE_8BIT_gc` | 5–8 bit (9 bit not supported). |
+| `LOG_STOP_BITS` | `USART_SBMODE_1BIT_gc` | 1 or 2 stop bits. |
+| `LOG_QUEUE_SIZE` | `255` | TX queue depth (bytes). |
+| `LOG_LEVEL` | `4` | 0=off, 1=CRITICAL, 2=+ERROR, 3=+WARN, 4=+INFO. |
+| `LOG_FORMAT` | `3` | 1: `Level: Msg` / 2: `Tick: …` / 3: `Tick: Lvl: SM: State: Msg` / 4: `Tick: Lvl: Fn: Line: Msg`. |
+| `LOG_BANNER` | `…` | Startup banner string. |
+| `DISPLAY_PROMPT` | `"avrOS> "` | CLI prompt. |
+
+Setting `LOG_LEVEL=0` *or* `LOG_FORMAT=0` compiles the logger out
+entirely.
+
+### CLI (`srv/cli.c`)
+
+| Macro | Default | Effect |
+|-------|---------|--------|
+| `CLI` | defined | Master CLI enable. Undefining disables every `<MOD>_CLI` below. |
+| `CLI_USART` | `USART2` | USART peripheral for the CLI (read/write). |
+| `CLI_BAUDRATE` | `115200` | Serial baud rate. |
+| `CLI_PARITY` / `_DATA_BITS` / `_STOP_BITS` | DISABLED / 8 / 1 | Same enum types as logger. |
+| `CLI_RX_QUEUE_SIZE` | `8` | RX queue depth. |
+| `CLI_TX_QUEUE_SIZE` | `1024` | TX queue depth. |
+| `MAX_CMD_LINE` | `128` | Max chars per command line. |
+| `MAX_ARGS` | `16` | Max argv tokens per command. |
+| `REPEAT_SWITCH` | `'r'` | Key suffix to repeat a "repeatable" command. |
+| `CLI_BANNER` | `…` | Banner printed on CLI startup. |
+
+### Per-module feature gates
+
+All flags below are conditionally defined under `#ifdef CLI` in the
+example config, so flipping `CLI` toggles them as a group. Each can
+also be independently enabled / disabled.
+
+| `<MOD>_CLI` | Module | Adds CLI command(s) |
+|-------------|--------|----------------------|
+| `UART_CLI` | `drv/uart.c` | `uart` |
+| `QUE_CLI`  | `sys/queue.c` | `que` |
+| `FSM_CLI`  | `sys/fsm.c` | `fsm`, `fsmStop`, `fsmStart`, `fsmReset` |
+| `CLI_CLI`  | `srv/cli.c` | CLI self-introspection |
+| `SYS_CLI`  | `sys/sys.c` | `tick`, `tickFreq` |
+| `CPU_CLI`  | `drv/cpu.c` | `cpu` |
+| `MEM_CLI`  | `drv/mem.c` | `ram`, `rom` |
+| `EVNT_CLI` | `sys/event.c` | `evnt` |
+| `GPIO_CLI` | `drv/gpio.c` | `gpio` |
+
+| `<MOD>_STATS` | Adds |
+|---------------|------|
+| `FSM_STATS`  | State-machine and state name strings |
+| `UART_STATS` | TX/RX byte counts, overflow, parity, frame errors |
+| `QUE_STATS`  | in/out/overflow counters and `max` tracking |
+| `EVNT_STATS` | armed / disarmed / triggered / error counts + descriptor name |
+| `GPIO_STATS` | Per-GPIO toggle counter + name |
+
+Enabling `*_STATS` is required for the corresponding CLI command to
+report useful information.
+
+### Sizing presets
+
+Smallest useful build (no CLI, no stats, INFO only):
+
+```c
+#define LOG_LEVEL   4
+#define LOG_FORMAT  1
+// no #define CLI
+```
+
+Full development build (everything on):
+
+```c
+#define LOG_LEVEL   4
+#define LOG_FORMAT  3
+#define CLI
+```
+
+Production build (logging on, CLI off, stats off):
+
+```c
+#define LOG_LEVEL   2          // ERROR + CRITICAL only
+#define LOG_FORMAT  1
+// CLI undefined → all *_CLI / *_STATS undefined
+```
+
+The `ram` / `rom` CLI commands report exact RAM and flash consumption,
+which is the canonical way to measure the impact of these knobs.
+
+## Runtime Debugging
+
+The avrOS CLI exposes every kernel and driver subsystem for live
+introspection. This section is the field guide for using it to
+diagnose problems on a running target.
+
+### Connect
+
+Plug a serial adapter into the CLI USART (default `USART2` @ 115200
+8N1) and:
+
+```bash
+picocom -b 115200 /dev/ttyUSB0      # or screen, minicom, tio, etc.
+```
+
+Press Enter — you should see `avrOS> `. Common causes of no prompt:
+CLI USART mis-wired, `#define CLI` undefined in `avrOSConfig.h`, or
+the rx queue is full because the target never serviced it (state
+machine starved — check priority).
+
+### Command quick reference
+
+| Command | Provided by | Use for |
+|---------|-------------|---------|
+| `fsm` | `sys/fsm.c` | List Ready / Wait / Stopped queues |
+| `fsm <name>` | " | Inspect one state machine (current/prev/next state, run state) |
+| `fsmStop <name>` | " | Pull an FSM out of the scheduler |
+| `fsmStart <name>` | " | Put it back on Ready |
+| `fsmReset <name>` | " | Reset to initial state |
+| `evnt` | `sys/event.c` | List all events with arm / disarm / trigger counts |
+| `que` | `sys/queue.c` | Per-queue capacity, max, in / out / overflow |
+| `gpio` | `drv/gpio.c` | Per-GPIO port / pin / direction / event status |
+| `uart` | `drv/uart.c` | Per-UART byte counters, queue overflows, frame / parity errors |
+| `cpu` | `drv/cpu.c` | Clock source / frequency |
+| `tick` | `sys/sys.c` | System tick frequency and absolute count |
+| `tickFreq <hz>` | " | Change tick frequency at runtime |
+| `ram` | `drv/mem.c` | RAM map: data / bss / heap / stack-max / free |
+| `rom` | `drv/mem.c` | Flash map: text / const / OS-table / free |
+
+Append `r` to a repeatable command to re-run it on every keypress
+(useful for live counters, e.g. `quer`, `evntr`, `ramr`).
+
+### Common failure signatures
+
+#### A state machine never wakes up
+
+```
+avrOS> fsm
+Ready Queue:
+  cli_SM   FSM_SRV|63 ...
+Wait Queue:
+  Leds_sm  FSM_APP|10  curr: ledsFlash  ticks: 24921
+  myThing  FSM_APP|20  curr: myState    ticks: 0
+```
+
+If `ticks: 0` and the state machine is in Wait, it is waiting on an
+event or queue, not a timer.
+
+```
+avrOS> evnt
+myEvent  armed
+    Armed:        1 Triggered:        0  Disarmed:        0 Error:        0
+```
+
+`Triggered = 0` → producer never raised the event. Check the
+ISR / path that should fire it. `Triggered ≥ Armed` but the FSM is
+still waiting → the sub-type comparison is wrong (see
+[SDD.md §4.3.4](SDD.md#434-event-sub-type-contract)).
+
+#### Queue overflows
+
+```
+avrOS> que
+cliUart_TxQue  Capacity: 1024 Max:  1024
+    In:    18234   Out:    17210   Overflow:      201
+```
+
+Overflow > 0 ⇒ producer outruns consumer. Fixes: enlarge the queue in
+the `ADD_QUEUE` call, raise consumer priority, or back-pressure the
+producer.
+
+#### Stack growing unexpectedly
+
+```
+avrOS> ram
+       stack max:  3 102 (19.05%)
+```
+
+If `stack max` keeps growing on every `ramr` refresh, you have a real
+runaway (recursion, large stack arrays). State handlers should be
+shallow.
+
+#### ISR firing but FSM not advancing
+
+1. `evnt <name>` — is `Triggered` incrementing on each ISR? If not,
+   the ISR isn't reaching `evntTrigger`.
+2. `fsm <name>` — does the state machine appear in Ready, even
+   briefly? Use `fsmr` to refresh.
+3. If both look right but the state never changes, the handler is
+   probably falling through without calling `fsmSetNextState` or a
+   `fsmWait*` / `evntWait` / `queWait`.
+
+#### A state handler runs but never blocks
+
+Symptom: the CLI becomes unresponsive even though `fsm` shows it
+Ready. A handler that returns without calling `fsmWait*` / `evntWait`
+/ `queWait` will be re-dispatched immediately, starving lower-priority
+state machines. Add a `fsmWaitTicks(sm, n)` at the bottom of the
+handler.
+
+#### CRITICAL halt
+
+If the device prints
+
+```
+CRIT: <msg>
++++ System Stopped +++
+```
+
+… the firmware hit a `CRITICAL(...)` macro and entered `while(1);`.
+Identify the call site, then either fix the condition or downgrade to
+`ERROR`.
+
+### Logger ↔ CLI
+
+The logger writes to its own USART; the CLI lives on a separate
+USART. They are independent — turning off the CLI does not silence
+the logger. Common bring-up wiring:
+
+- USART1 → logger (write-only, framing only).
+- USART2 → CLI (read / write, interactive).
+
+If you only have one serial port, drop the logger
+(`#define LOG_LEVEL 0`) and rely on the CLI's `printf` for
+diagnostics.
+
 ## avrOS Theory of Operation
 ### The Problem
 RAM is a precious commodity on microcontrollers. Especially for 8 bit 
