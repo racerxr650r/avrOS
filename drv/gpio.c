@@ -55,6 +55,8 @@ ISR(PORTF_PORT_vect)
 // Port Interrupt Handler
 static void isrInput(PORT_t *port)
 {
+	uint8_t flags = port->INTFLAGS;
+
 	// Walk the gpio table
 	gpio_t *gpio = (gpio_t *)&__start_GPIO_TABLE;
 	for(; gpio < (gpio_t *)&__stop_GPIO_TABLE; ++gpio)
@@ -62,25 +64,17 @@ static void isrInput(PORT_t *port)
 		// If this is the same port...
 		if(gpio->port == port)
 		{
-			// If this is the same pin..
-			if(gpio->pin && gpio->port->INTFLAGS)
+			// If this gpio's pin(s) are in the interrupt flags...
+			if(gpio->pin & flags)
 			{
-				// If there is a handler registered...
-				if(gpio->handler)
+				// If there is an event associated with this GPIO...
+				if(gpio->event)
 				{
-					// Call the registered handler
-					gpio->handler(gpio);
-				}
-				// Else if there is an event registered...
-				else if(gpio->event)
-				{
-					// Trigger the event
-					evntTrigger(gpio->event);
+					// Trigger the event with its configured sub-type
+					evntTrigger(gpio->event, gpio->eventType);
 				}
 				// Clear the interrupt flag
 				gpio->port->INTFLAGS = gpio->pin;
-				// Return from the interrupt
-				break;
 			}
 		}
 	}
@@ -99,12 +93,12 @@ static int gpioCmd(int argc, char *argv[])
 	{
 		char port = gpio->port==&PORTA?'A':gpio->port==&PORTC?'C':gpio->port==&PORTD?'D':gpio->port==&PORTF?'f':'?';
 		char *direction = gpio->direction==GPIO_OUTPUT?"Out":gpio->direction==GPIO_INPUT?"In":"Unknown";
-		char *interrupt = gpio->handler==NULL?"No":"Yes";
+		char *event = gpio->event==NULL?"No":"Yes";
 		
 		if(argc<2 || (argc==2 && !strcmp(gpio->name,argv[1])))
 		{
 			printf(BOLD FG_BLUE UNDERLINE "%-16s",gpio->name);
-			printf(" port: %c pins: 0x%02x direction: %3s interrupt: %3s\n\r" RESET,port,gpio->pin,direction,interrupt);
+			printf(" port: %c pins: 0x%02x direction: %3s event: %3s\n\r" RESET,port,gpio->pin,direction,event);
 
 			if(gpio->direction == GPIO_OUTPUT)
 				printf("\tvalue: 0x%02x\n\r",gpioReadOutput(gpio));
@@ -278,10 +272,19 @@ int gpioInit(const fsmStateMachineDescr_t *stateMachineDescr)
 		gpioInstance->port->PINCTRLUPD = gpioInstance->pin;
 	}
 
-	// If this gpio has an interrupt handler...
-	if(gpioInstance->handler != NULL)
+	// If this gpio has an interrupt event...
+	if(gpioInstance->event != NULL)
 	{
-		gpioInstance->port->PINCONFIG = PORT_PULLUPEN_bm | PORT_ISC_BOTHEDGES_gc;
+		uint8_t isc;
+		switch(gpioInstance->eventType)
+		{
+			case GPIO_EVENT_RISING:    isc = PORT_ISC_RISING_gc;    break;
+			case GPIO_EVENT_FALLING:   isc = PORT_ISC_FALLING_gc;   break;
+			case GPIO_EVENT_LEVEL_LOW: isc = PORT_ISC_LEVEL_gc;     break;
+			case GPIO_EVENT_BOTHEDGES:
+			default:                   isc = PORT_ISC_BOTHEDGES_gc; break;
+		}
+		gpioInstance->port->PINCONFIG = PORT_PULLUPEN_bm | isc;
 		gpioInstance->port->PINCTRLUPD = gpioInstance->pin;
 	}
 	

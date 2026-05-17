@@ -249,7 +249,8 @@ Rules:
 
 #### 4.1.4 Design Notes
 
-- The tick ISR fires the `EVENT_TYPE_TICK` event, waking any FSM waiting on the system tick.
+- The tick ISR calls `evntTrigger(&tick, EVENT_TYPE_TICK)` to mark the `tick` event triggered.
+- The `tick` event is registered with `ADD_EVENT(tick, sysUpdateWaitTicks)`, binding a custom handler. `evntDispatch()` invokes `sysUpdateWaitTicks()` in main-loop context, which decrements wait-tick counters across all FSMs (via `fsmUpdateWaitTicks()`) and re-arms the event via `evntArmSystem()`. This is the canonical example of the self-arming pattern (see §4.3.3).
 - `sysSleep()` uses the AVR `sleep_mode()` facility; the CPU wakes automatically on the next tick ISR.
 
 ---
@@ -350,23 +351,32 @@ Anti-patterns:
 
 #### 4.3.1 Responsibilities
 
-- Provide a mechanism for FSMs to wait on more than one hardware or software conditions.
+- Provide a mechanism for FSMs to wait on one or more hardware or software conditions.
 - Allow ISRs and other FSMs to signal events that wake waiting state machines.
+- Decouple ISR signaling from handler execution: ISRs only mark an event triggered; handlers run from `evntDispatch()` in main-loop context.
 
 #### 4.3.2 Key Interfaces
 
 | Function / Macro | Description |
-|-----------------|-------------|
-| `evntWait(event, condition)` | Suspend the current FSM until `condition` is met on `event`. |
-| `evntTrigger(event, condition)` | Signal an event condition, resuming all waiting FSMs. |
+|------------------|-------------|
+| `ADD_EVENT(name [, handler])` | Define an event object + flash descriptor; binds an optional custom handler (defaults to `evntHandler`). |
+| `evntArm(sm, event)` | Move an event from the disarmed list to the armed list and place `sm` in the FSM wait queue. |
+| `evntArmSystem(event)` | Arm a system-wide event with no associated state machine. Used by self-arming events (e.g. system tick) whose handler runs directly from `evntDispatch`. |
+| `evntDisarm(event)` | Move an event from the armed list back to the disarmed list. |
+| `evntWait(sm, event, eventType)` | Set `event->evntType = eventType`, call `evntArm(sm, event)`. The default handler will wake `sm` only when a producer triggers a matching sub-type. |
+| `evntTrigger(event, subType)` | ISR-safe. Move the event from armed to triggered, record `subType` in `event->trigger`. |
+| `evntDispatch()` | Called by `fsmDispatch()`. Pops each triggered event, calls its handler, then (for FSM-bound events) moves it and any sister events sharing the same `stateMachine` to the disarmed list. |
+| `evntGetStatus / evntGetType / evntGetTrigger / evntGetStateMachine` | Inline accessors for handler use. |
+| `evntInit()` | Walks the `EVNT_TABLE` and populates the disarmed list. Called by `sysInit()`. |
 
 #### 4.3.3 Design Notes
 
-- `EVENT_TYPE_TICK` is predefined for system tick synchronization (see `sys.h`).
-- Queue events (`QUE_EVENT_NOT_EMPTY`, `QUE_EVENT_EMPTY`) are used by the FIO layer.
-- A linked list of events is maintained for each state machine's `fsmStateMachine_t` data structure
-- `evntWait()` adds a new event to the state machine's data structure and puts the state machine in the wait queue if it's not already there.
-- `evntTrigger()` scans the wait queue for all state machines waiting on this event. For each state machine it finds, it clears the entire linked list of events and puts the state machine back on the ready queue in priority order.
+- **Three global lists.** The event manager owns three intrusive linked lists threaded through `event_t.next`: `evntListDisarmed`, `evntListArmed`, `evntListTriggered`. Every event is on exactly one list at any moment. Lifecycle: `disarmed → armed → triggered → disarmed`.
+- **Descriptor / status split.** `evntDescriptor_t` lives in flash (`EVNT_TABLE`) and carries the event name and handler pointer. `event_t` is the RAM status object that carries list linkage, current state, and the `evntType`/`trigger` sub-type pair. `ADD_EVENT(name)` emits both and links them.
+- **Handler binding.** The handler pointer is in the descriptor (read-only) and selected at compile time by `ADD_EVENT`. The 1-arg form (`ADD_EVENT(name)`) binds the default `evntHandler`, which wakes `event->stateMachine` whenever `evntType == trigger`. The 2-arg form (`ADD_EVENT(name, fn)`) binds a custom handler with signature `int (*)(volatile event_t *)`.
+- **ISR contract.** ISRs call only `evntTrigger(event, subType)`. The handler runs from `evntDispatch()` in main-loop (cooperative) context, never in ISR context.
+- **Self-arming pattern.** A system event whose handler runs directly from `evntDispatch` (no FSM is waiting) uses `evntArmSystem` to re-arm itself at the end of the handler. `evntDispatch` recognizes `event->stateMachine == NULL` as a system event and skips its auto-disarm-and-sister-scan path so the re-arm is preserved. Reference implementation: `sysUpdateWaitTicks()` in [sys/sys.c](../sys/sys.c).
+- **Wakeup semantics for FSM-bound events.** When an FSM-bound event's handler returns, `evntDispatch` also disarms any other events armed for the same `stateMachine`. This implements "wait on any one of N events" — only the first to trigger fires; the others are silently disarmed.
 
 #### 4.3.4 Event Sub-Type Contract
 
@@ -390,9 +400,11 @@ Sub-type registries:
   `QUE_EVENT_EMPTY = 1`, `QUE_EVENT_NOT_EMPTY = 2`,
   `QUE_EVENT_FULL = 3`, `QUE_EVENT_NOT_FULL = 4`. Raised by `quePut` /
   `queGet` as the buffer crosses boundaries.
-- **GPIO** — pin-change events; the exact sub-type passed by the GPIO
-  ISR is a convention chosen per-application (`0` for "any change"
-  or the new pin state for edge selectivity).
+- **GPIO** ([drv/gpio.h](../drv/gpio.h)) — `gpioEventType_t`:
+  `GPIO_EVENT_BOTHEDGES = 1`, `GPIO_EVENT_RISING = 2`,
+  `GPIO_EVENT_FALLING = 3`, `GPIO_EVENT_LEVEL_LOW = 4`. The sub-type is
+  declared per-GPIO in `ADD_GPIO(...)` and also configures the port
+  pin's ISC (interrupt-sense control) at init time.
 
 When introducing a new module that owns an event:
 
@@ -712,28 +724,41 @@ handler — keep it short.
 - Manage AVR-Dx port pins as named GPIO instances.
 - Support output set, clear, toggle, and write operations using port bit-mask registers.
 - Support input read operations.
-- Fire an optional callback handler on pin change (interrupt-driven).
+- Bind an optional event to a pin, triggered by the port ISR on a configurable edge/level condition.
 - Collect optional toggle statistics per instance.
 
 #### 6.5.2 Data Structures
 
 | Structure | Description |
 |-----------|-------------|
-| `gpio_t` | Compile-time GPIO descriptor: PORT pointer, pin bit mask, direction, callback handler, optional stats pointer. |
+| `gpio_t` | Compile-time GPIO descriptor: PORT pointer, pin bit mask, direction, optional event pointer, event sub-type, optional stats pointer. |
 | `gpioStats_t` | Toggle counter (conditionally compiled with `GPIO_STATS`). |
 
-#### 6.5.3 Pin and Direction Types
+#### 6.5.3 Pin, Direction, and Event Types
 
 | Type | Values |
 |------|--------|
 | `gpioPin_t` | `GPIO_PIN_0` … `GPIO_PIN_7` (individual pin bit masks) |
 | `gpioDirection_t` | `GPIO_OUTPUT`, `GPIO_INPUT` |
+| `gpioEventType_t` | `GPIO_EVENT_NONE = 0`, `GPIO_EVENT_BOTHEDGES = 1`, `GPIO_EVENT_RISING = 2`, `GPIO_EVENT_FALLING = 3`, `GPIO_EVENT_LEVEL_LOW = 4` |
 
 #### 6.5.4 Registration Macro
 
-| Macro | Description |
-|-------|-------------|
-| `ADD_GPIO(name, port, pin, dir, ...)` | Declare and register a GPIO instance; optional callback handler as last argument. |
+`ADD_GPIO(...)` is a variadic dispatcher that selects one of three forms based on argument count:
+
+| Form | Use |
+|------|-----|
+| `ADD_GPIO(name, port, pin, dir)` | Plain GPIO, no event. |
+| `ADD_GPIO(name, port, pin, dir, eventType)` | Event-driven GPIO. Creates `name##_event`, binds the default `evntHandler`. ISR triggers `name##_event` with `eventType` as the sub-type. Configures the pin's ISC from `eventType` at init time. |
+| `ADD_GPIO(name, port, pin, dir, eventType, handler)` | Same as above but installs `handler` (`int (*)(volatile event_t *)`) on `name##_event`. |
+
+Consumer pattern for an event-driven GPIO:
+
+```c
+ADD_GPIO(Button, PORTA, GPIO_PIN_2, GPIO_INPUT, GPIO_EVENT_FALLING);
+// in an FSM state:
+evntWait(stateMachine, evntGetEvent("Button_event"), GPIO_EVENT_FALLING);
+```
 
 #### 6.5.5 Key Interfaces
 

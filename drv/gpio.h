@@ -35,8 +35,6 @@
 // Data Types -----------------------------------------------------------------
 struct GPIO_TYPE;
 
-typedef void (*gpioHandler_t)(struct GPIO_TYPE *gpio);
-
 typedef enum
 {
 	GPIO_PIN_0 = 0b00000001,
@@ -55,15 +53,29 @@ typedef enum
 	GPIO_INPUT
 } gpioDirection_t;
 
+/**
+ * @brief GPIO event trigger condition (sub-type).
+ *
+ * Stored per-GPIO in `gpio_t.eventType` and passed as the sub-type to
+ * `evntTrigger()` from the port ISR. Consumers wait on the same value via
+ * `evntWait(sm, gpio->event, GPIO_EVENT_*)`.
+ *
+ * Sub-type 0 is reserved as the "armed but not yet triggered" sentinel
+ * (see doc/SDD.md sec. 4.3.4); valid GPIO sub-types start at 1.
+ */
+typedef enum
+{
+	GPIO_EVENT_NONE      = 0,	///< No event / reserved sentinel
+	GPIO_EVENT_BOTHEDGES = 1,	///< Interrupt on both rising and falling edges
+	GPIO_EVENT_RISING    = 2,	///< Interrupt on rising edge only
+	GPIO_EVENT_FALLING   = 3,	///< Interrupt on falling edge only
+	GPIO_EVENT_LEVEL_LOW = 4	///< Interrupt while pin is low
+} gpioEventType_t;
+
 typedef struct
 {
 	uint32_t	toggle;
 }gpioStats_t;
-
-/*typedef struct
-{
-	
-}gpio_t;*/
 
 typedef struct GPIO_TYPE
 {
@@ -73,8 +85,8 @@ typedef struct GPIO_TYPE
 	PORT_t				*port;
 	uint8_t				pin;
 	gpioDirection_t		direction;
-	gpioHandler_t		handler;
 	volatile event_t	*event;
+	gpioEventType_t		eventType;
 #ifdef GPIO_STATS
 	gpioStats_t		*stats;
 #endif
@@ -84,42 +96,53 @@ typedef struct GPIO_TYPE
 /**
  * @brief Add a GPIO instance and register its initializer.
  *
- * Creates a static GPIO descriptor in the GPIO table and registers
- * `gpioInit` to initialize the instance at startup.
+ * Dispatched on argument count:
+ *  - 4 args: `ADD_GPIO(name, port, pin, direction)` — plain GPIO, no event.
+ *  - 5 args: `ADD_GPIO(name, port, pin, direction, eventType)` — event-driven
+ *    GPIO using the default `evntHandler`. The ISR triggers `name##_event`
+ *    with `eventType` as the sub-type.
+ *  - 6 args: `ADD_GPIO(name, port, pin, direction, eventType, handler)` —
+ *    event-driven GPIO with a user-supplied handler.
  *
- * @param gpioName Name of the GPIO instance symbol.
- * @param gpioPort Hardware port used by the GPIO.
- * @param gpioPin Pin mask assigned to the GPIO.
- * @param gpioDirection Initial direction (`GPIO_OUTPUT` or `GPIO_INPUT`).
- * @param ... Optional GPIO handler callback.
+ * @param name          Name of the GPIO instance symbol.
+ * @param port          Hardware port (e.g. `PORTA`).
+ * @param pin           Pin mask (`GPIO_PIN_n`).
+ * @param direction     `GPIO_OUTPUT` or `GPIO_INPUT`.
+ * @param eventType     `GPIO_EVENT_*` (sub-type and ISC configuration).
+ * @param handler       Optional `int (*)(volatile event_t *)` event handler.
  */
 #ifdef GPIO_STATS
-#define ADD_GPIO(gpioName, gpioPort, gpioPin, gpioDirection, ...) \
-		const static gpio_t SECTION(GPIO_TABLE) gpioName = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)}; \
+#define _ADD_GPIO_PLAIN(gpioName, gpioPort, gpioPin, gpioDirection) \
+		const static gpio_t SECTION(GPIO_TABLE) gpioName = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .event = NULL, .eventType = GPIO_EVENT_NONE}; \
 		ADD_INITIALIZER(gpioName ## _GPIO,gpioInit,(void *)&gpioName);
 
-/**
- * @brief Add a GPIO instance with an associated event source.
- *
- * Creates an event object, stores it in the GPIO descriptor, and registers
- * `gpioInit` to initialize the event-driven GPIO instance at startup.
- *
- * @param gpioName Name of the GPIO instance symbol.
- * @param gpioPort Hardware port used by the GPIO.
- * @param gpioPin Pin mask assigned to the GPIO.
- * @param gpioDirection Initial direction (`GPIO_OUTPUT` or `GPIO_INPUT`).
- * @param gpioEventType Event trigger type associated with this GPIO.
- * @param ... Optional GPIO handler callback.
- */
-#define ADD_GPIO_EVENT(gpioName, gpioPort, gpioPin, gpioDirection, gpioEventType, ...) \
+#define _ADD_GPIO_EVENT_DEFAULT(gpioName, gpioPort, gpioPin, gpioDirection, gpioEventType) \
 		ADD_EVENT(gpioName ## _event); \
-		const static gpio_t SECTION(GPIO_TABLE) gpioName = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .event = &CONCAT(gpioName,_event), eventType = gpioEventType, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)}; \
+		const static gpio_t SECTION(GPIO_TABLE) gpioName = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .event = &CONCAT(gpioName,_event), .eventType = gpioEventType}; \
+		ADD_INITIALIZER(gpioName ## _GPIO,gpioInit,(void *)&gpioName);
+
+#define _ADD_GPIO_EVENT_HANDLER(gpioName, gpioPort, gpioPin, gpioDirection, gpioEventType, gpioEventHandler) \
+		ADD_EVENT(gpioName ## _event, gpioEventHandler); \
+		const static gpio_t SECTION(GPIO_TABLE) gpioName = {.name = #gpioName, .port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .event = &CONCAT(gpioName,_event), .eventType = gpioEventType}; \
 		ADD_INITIALIZER(gpioName ## _GPIO,gpioInit,(void *)&gpioName);
 #else
-#define ADD_GPIO(gpioName, gpioPort, gpioPin, gpioDirection, ...) \
-		const static gpio_t SECTION(GPIO_TABLE) gpioName = {.port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,NULL)}; \
+#define _ADD_GPIO_PLAIN(gpioName, gpioPort, gpioPin, gpioDirection) \
+		const static gpio_t SECTION(GPIO_TABLE) gpioName = {.port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .event = NULL, .eventType = GPIO_EVENT_NONE}; \
+		ADD_INITIALIZER(gpioName ## _GPIO,gpioInit,(void *)&gpioName);
+
+#define _ADD_GPIO_EVENT_DEFAULT(gpioName, gpioPort, gpioPin, gpioDirection, gpioEventType) \
+		ADD_EVENT(gpioName ## _event); \
+		const static gpio_t SECTION(GPIO_TABLE) gpioName = {.port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .event = &CONCAT(gpioName,_event), .eventType = gpioEventType}; \
+		ADD_INITIALIZER(gpioName ## _GPIO,gpioInit,(void *)&gpioName);
+
+#define _ADD_GPIO_EVENT_HANDLER(gpioName, gpioPort, gpioPin, gpioDirection, gpioEventType, gpioEventHandler) \
+		ADD_EVENT(gpioName ## _event, gpioEventHandler); \
+		const static gpio_t SECTION(GPIO_TABLE) gpioName = {.port = &gpioPort, .pin = gpioPin, .direction = gpioDirection, .event = &CONCAT(gpioName,_event), .eventType = gpioEventType}; \
 		ADD_INITIALIZER(gpioName ## _GPIO,gpioInit,(void *)&gpioName);
 #endif
+
+#define _GET_ADD_GPIO_MACRO(_1,_2,_3,_4,_5,_6,NAME,...) NAME
+#define ADD_GPIO(...) _GET_ADD_GPIO_MACRO(__VA_ARGS__, _ADD_GPIO_EVENT_HANDLER, _ADD_GPIO_EVENT_DEFAULT, _ADD_GPIO_PLAIN)(__VA_ARGS__)
 
 // External Functions -----------------------------------------------------------
 /**

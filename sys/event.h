@@ -40,8 +40,6 @@ typedef enum
 	EVENT_TRIGGERED
 } evntState_t;
 
-typedef int (*evntHandler_t)(volatile fsmStateMachine_t *stateMachine);
-
 struct EVENT_DESCR_TYPE;
 struct EVENT_TYPE;
 
@@ -50,52 +48,96 @@ typedef struct EVENT_STATS
 	uint32_t	armed, triggered, disarmed, error;
 }evntStats_t;
 
+/**
+ * @brief Event runtime status (RAM).
+ *
+ * Carries two integer fields that together implement the sub-type contract:
+ *
+ *   - evntType  - set by evntWait(sm, ev, type); the condition the consumer
+ *                 is waiting for.
+ *   - trigger   - set by evntTrigger(ev, subType); the condition the producer
+ *                 is signaling.
+ *
+ * The default handler evntHandler() releases the waiting state machine only
+ * when event->evntType == event->trigger, allowing one event object to
+ * multiplex several sub-conditions without spurious wakeups.
+ *
+ * Sub-type 0 is reserved as the "armed but not yet triggered" sentinel; new
+ * modules should number sub-types starting at 1. See doc/SDD.md sec. 4.3.4
+ * for full conventions.
+ */
 typedef struct EVENT_TYPE
 {
-	evntState_t						state;
+	evntState_t					state;
 	volatile fsmStateMachine_t 		*stateMachine;
-	evntHandler_t     				handler;
-int									subType;	
-	struct EVENT_TYPE 				*next;
-#ifdef EVNT_STATS
+	int								evntType;		///< Condition consumer is waiting for (set by evntWait)
+	int								trigger;		///< Condition producer signaled (set by evntTrigger)
+	volatile struct EVENT_TYPE 		*next;
 	const struct EVENT_DESCR_TYPE 	*descr;
+#ifdef EVNT_STATS
 	evntStats_t       				stats;
 #endif
 }event_t;
 
+typedef int (*evntHandler_t)(volatile event_t *event);
+
 typedef struct EVENT_DESCR_TYPE
 {
-	char    *name;
-	event_t	*status;
+	char    		*name;
+	volatile event_t	*status;
+	evntHandler_t	handler;
 }evntDescriptor_t;
 
 typedef struct EVENT_LIST
 {
-    event_t *head;
-    event_t *tail;
+    volatile event_t *head;
+    volatile event_t *tail;
     uint32_t size;
 } evntList_t;
 
-// Macros ----------------------------------------------------------------------
-#ifdef EVNT_STATS
-#define ADD_EVENT(evntName)	\
-		volatile static event_t	evntName; \
-		const static evntDescriptor_t SECTION(EVNT_TABLE) CONCAT(evntName,_descr) = {.name = #evntName, .status = &evntName}; \
-		volatile static event_t	evntName = {.state = EVENT_DISARMED, .stateMachine = NULL, .handler = NULL, .descr = &CONCAT(evntName,_descr), .stats.armed = 0, .stats.disarmed = 0, .stats.triggered = 0, .stats.error = 0};
-#else
-#define ADD_EVENT(evntName)	\
-		volatile static event_t	evntName; \
-		volatile static event_t	evntName = {.state = EVENT_DISARMED, .stateMachine = NULL, .handler = NULL};
-#endif
-
 // External Functions ----------------------------------------------------------
+static inline evntState_t evntGetStatus(volatile event_t *event)
+{
+	return(event->state);
+}
+
+static inline volatile fsmStateMachine_t* evntGetStateMachine()
+{
+	return(fsmGetCurrentStateMachine());
+}
+
+static inline int evntGetType(volatile event_t *event)
+{
+	return(event->evntType);
+}
+
+static inline int evntGetTrigger(volatile event_t *event)
+{
+	return(event->trigger);
+}
+
 volatile event_t* evntGetEvent(char *name);
-evntState_t evntArm(volatile event_t *event, evntHandler_t handler, volatile fsmStateMachine_t *stateMachine);
+evntState_t evntArm(volatile fsmStateMachine_t *stateMachine, volatile event_t *event);
+evntState_t evntArmSystem(volatile event_t *event);
 evntState_t evntDisarm(volatile event_t *event);
 evntState_t evntTrigger(volatile event_t *event, int subType);
-evntState_t evntWait(volatile event_t *event, evntHandler_t handler, volatile fsmStateMachine_t *stateMachine);
+evntState_t evntWait(volatile fsmStateMachine_t *stateMachine, volatile event_t *event, int eventType);
+int evntHandler(volatile event_t *event);
 int evntInit(void);
 int evntDispatch(void);
+
+// Macros ----------------------------------------------------------------------
+#ifdef EVNT_STATS
+#define ADD_EVENT(evntName, ...)	\
+		static volatile event_t	evntName; \
+		const static evntDescriptor_t SECTION(EVNT_TABLE) CONCAT(evntName,_descr) = {.name = #evntName, .status = &evntName, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,evntHandler)}; \
+		static volatile event_t	evntName = {.state = EVENT_DISARMED, .stateMachine = NULL, .descr = &CONCAT(evntName,_descr), .stats.armed = 0, .stats.disarmed = 0, .stats.triggered = 0, .stats.error = 0};
+#else
+#define ADD_EVENT(evntName, ...)	\
+		static volatile event_t	evntName; \
+		const static evntDescriptor_t SECTION(EVNT_TABLE) CONCAT(evntName,_descr) = {.name = #evntName, .status = &evntName, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,evntHandler)}; \
+		static volatile event_t	evntName = {.state = EVENT_DISARMED, .stateMachine = NULL, .descr = &CONCAT(evntName,_descr)};
+#endif
 
 /** @} */ // end of event_manager
 

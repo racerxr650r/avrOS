@@ -41,7 +41,7 @@ FUSES =
 LOCKBITS = LOCKBITS_DEFAULT;
 
 // Internal function prototypes -----------------------------------------------
-void btnHandler(gpio_t *gpio);
+int btnHandler(volatile event_t *event);
 
 // Logger Configuration -------------------------------------------------------
 #if LOG_FORMAT > 0 && LOG_LEVEL > 0
@@ -68,7 +68,7 @@ ADD_GPIO(Leds_gpio,PORTD,GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3,GPIO_OUTPUT);
 
 ADD_GPIO(Clock,PORTA,GPIO_PIN_0,GPIO_INPUT);
 ADD_GPIO(Data,PORTA,GPIO_PIN_1,GPIO_INPUT);
-ADD_GPIO(Button,PORTA,GPIO_PIN_2,GPIO_INPUT,btnHandler);
+ADD_GPIO(Button,PORTA,GPIO_PIN_2,GPIO_INPUT,GPIO_EVENT_BOTHEDGES,btnHandler);
 
 // State Machine Configuration ------------------------------------------------
 ADD_STATE_MACHINE(Leds_sm,ledsInit, FSM_APP | 10);
@@ -144,8 +144,10 @@ int main(void)
     }
 }
 
-void btnHandler(gpio_t *gpio)
+int btnHandler(volatile event_t *event)
 {
-	INFO("Button status %d",gpioReadInput(gpio)>>2);
+	UNUSED(event);
+	INFO("Button status %d",gpioReadInput(&Button)>>2);
+	return(0);
 }
 

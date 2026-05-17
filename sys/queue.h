@@ -67,7 +67,7 @@ typedef struct QUEUE_TYPE
 	uint16_t							tail; /**< Index of the tail (next element to be added). */
 	uint16_t							max;  /**< Maximum number of elements ever in the queue. */
 #ifdef QUE_STATS	
-	volatile queStats_t					stats; /**< Queue statistics. */
+	queStats_t							stats; /**< Queue statistics. */
 #endif
 	const struct QUE_DESCRIPTOR_TYPE 	*descr; /**< Pointer to the queue descriptor. */
 } queue_t;
@@ -315,6 +315,27 @@ static inline bool quePutPtr(volatile queue_t *que, void *ptr)
 {
 	return(quePutWord(que,(uint16_t)ptr));
 }
+
+
+/**
+ * @brief Wait for a queue event.
+ *
+ * Suspends the calling FSM state machine until the specified queue event
+ * occurs.  Internally this arms the queue's event object via evntWait(),
+ * associating the event with the current state machine so that the
+ * scheduler can resume it when the condition is met.
+ *
+ * Valid event types are:
+ *   - @c QUE_EVENT_EMPTY     — queue has become empty
+ *   - @c QUE_EVENT_NOT_EMPTY — at least one element is available
+ *   - @c QUE_EVENT_FULL      — queue has become full
+ *   - @c QUE_EVENT_NOT_FULL  — at least one slot is available
+ *
+ * @param que       Pointer to the queue to monitor.
+ * @param eventType The queue condition to wait for (@ref queueEvents_t).
+ * @return 0 on success.
+ */
+int queWait(volatile queue_t *que, queueEvents_t eventType);
 
 /** @} */ // end of queue_manager
 

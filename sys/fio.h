@@ -44,8 +44,6 @@ typedef struct
 	volatile queue_t *output; /**< Pointer to the output queue. */
 } fioBuffers_t;
 
-
-
 // Macros ----------------------------------------------------------------------
 
 /**
@@ -96,7 +94,7 @@ typedef struct
 static inline void fioWaitInput(FILE *file)
 {
 	fioBuffers_t *buffer = (fioBuffers_t *)(file->buf);
-	evntWait(buffer->input->descr->event, QUE_EVENT_NOT_EMPTY);
+	queWait(buffer->input, QUE_EVENT_NOT_EMPTY);
 }
 
 /**
@@ -111,7 +109,7 @@ static inline void fioWaitInput(FILE *file)
 static inline void fioWaitOutput(FILE *file)
 {
 	fioBuffers_t *buffer = (fioBuffers_t *)(file->buf);
-	evntWait(buffer->output->descr->event, QUE_EVENT_EMPTY);
+	queWait(buffer->output, QUE_EVENT_EMPTY);
 }
 
 /**

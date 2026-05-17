@@ -163,3 +163,10 @@ bool quePut(volatile queue_t *que, void *element)
 	} // End of critical section
 	return(ret);
 }
+
+int queWait(volatile queue_t *que, queueEvents_t eventType)
+{
+	evntWait(fsmGetCurrentStateMachine(), que->descr->event, (int)eventType);
+	return(0);
+}
+

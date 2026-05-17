@@ -30,11 +30,11 @@ extern void *__start_FSM_TABLE,*__stop_FSM_TABLE;
 
 // Internal Globals -----------------------------------------------------------
 static uint32_t scanCycle = 0;
-volatile static fsmStateMachine_t   *currStateMachine = NULL, *Ready = NULL, *Wait = NULL, *Stopped = NULL; 
+static volatile fsmStateMachine_t   *currStateMachine = NULL, *Ready = NULL, *Wait = NULL, *Stopped = NULL; 
 static char initString[] = {"Init"};
 
 // Internal functions ---------------------------------------------------------
-volatile static fsmStateMachine_t* fsmGetStateMachine(const char *name);
+static volatile fsmStateMachine_t* fsmGetStateMachine(const char *name);
 static int fsmLstAdd(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm);
 static int fsmLstRemove(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm);
 static bool fsmListFind(volatile fsmStateMachine_t *list, volatile fsmStateMachine_t *sm);

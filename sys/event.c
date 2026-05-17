@@ -48,7 +48,7 @@ static int evntCmd(int argc, char *argv[])
 #ifdef EVNT_STATS
 			printf(UNDERLINE BOLD FG_BLUE "%-24s",descr->name);
 #endif
-			printf(UNDERLINE BOLD FG_BLUE "%s\n\r" RESET,descr->status->handler==NULL?"unarmed":"armed");
+			printf(UNDERLINE BOLD FG_BLUE "%s\n\r" RESET,descr->status->state==EVENT_ARMED?"armed":"unarmed");
 #ifdef EVNT_STATS
 			printf("\tArmed: %8lu Triggered: %8lu  Disarmed: %8lu Error: %8lu\n\r",descr->status->stats.armed,descr->status->stats.triggered,descr->status->stats.disarmed,descr->status->stats.error);
 #endif
@@ -59,12 +59,12 @@ static int evntCmd(int argc, char *argv[])
 }
 
 // Internal functions ----------------------------------------------------------
-static event_t* evntListRemoveHead(evntList_t *list)
+static volatile event_t* evntListRemoveHead(evntList_t *list)
 {
 	if(list == NULL || list->head == NULL)
 		return NULL;
 
-	event_t *event = list->head;
+	volatile event_t *event = list->head;
 	list->head = event->next;
 	if(list->tail == event)
 		list->tail = NULL;
@@ -72,7 +72,7 @@ static event_t* evntListRemoveHead(evntList_t *list)
 	return event;
 }
 
-static int evntListAdd(evntList_t *list, event_t *event)
+static int evntListAdd(evntList_t *list, volatile event_t *event)
 {
 	if(list == NULL || event == NULL)
 		return -1;
@@ -94,7 +94,7 @@ static int evntListAdd(evntList_t *list, event_t *event)
 	return 0;
 }
 
-static int evntListRemove(evntList_t *list, event_t *event)
+static int evntListRemove(evntList_t *list, volatile event_t *event)
 {
 	// Check for null pointers
 	if(list == NULL || event == NULL)
@@ -115,7 +115,7 @@ static int evntListRemove(evntList_t *list, event_t *event)
 	}
 
 	// Search for the event in the list
-	event_t *prev = list->head;
+	volatile event_t *prev = list->head;
 	while(prev->next != NULL && prev->next != event)
 	{
 		prev = prev->next;
@@ -134,6 +134,7 @@ static int evntListRemove(evntList_t *list, event_t *event)
 }
 
 // External functions ----------------------------------------------------------
+// Get an event by name
 volatile event_t* evntGetEvent(char *name)
 {
 	// Walk the table of events
@@ -147,19 +148,14 @@ volatile event_t* evntGetEvent(char *name)
 	return(NULL);
 }
 
-evntState_t evntGetStatus(volatile event_t *event)
-{
-	return(event->state);
-}
-
-evntState_t evntArm(volatile event_t *event, evntHandler_t handler, volatile fsmStateMachine_t *stateMachine)
+// Arm an event for a state machine
+evntState_t evntArm(volatile fsmStateMachine_t *stateMachine, volatile event_t *event)
 {
 	evntState_t ret = EVENT_ARMED;
 	// Start critical section of code
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		event->state = EVENT_ARMED;
-		event->handler = handler;
 		event->stateMachine = stateMachine;
 
 		// Remove the event from the disarmed list
@@ -187,11 +183,45 @@ evntState_t evntArm(volatile event_t *event, evntHandler_t handler, volatile fsm
 	return(ret);
 }
 
+// Arm a system-wide event (no waiting state machine).
+// Used for self-arming events such as the system tick, whose handler runs
+// directly out of evntDispatch and re-arms the event itself.
+evntState_t evntArmSystem(volatile event_t *event)
+{
+	evntState_t ret = EVENT_ARMED;
+
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		event->stateMachine = NULL;
+
+		// Remove the event from the disarmed list and add to armed list
+		if(!evntListRemove(&evntListDisarmed, event))
+		{
+			event->state = EVENT_ARMED;
+			evntListAdd(&evntListArmed, event);
+		}
+		else
+		{
+#ifdef EVNT_STATS
+			event->stats.error++;
+#endif
+			ret = event->state = EVENT_ERROR;
+		}
+	}
+
+#ifdef EVNT_STATS
+	if(ret == EVENT_ARMED)
+		++event->stats.armed;
+#endif
+
+	return(ret);
+}
+
+// Disarm an event
 evntState_t evntDisarm(volatile event_t *event)
 {
 	evntState_t ret = EVENT_DISARMED;
 	
-	event->handler = NULL;
 	event->stateMachine = NULL;
 	event->state = EVENT_DISARMED;
 
@@ -219,9 +249,10 @@ evntState_t evntDisarm(volatile event_t *event)
 	return(ret);
 }
 
+// Trigger an event
 evntState_t evntTrigger(volatile event_t *event, int subType)
 {
-	evntState_t   ret=EVENT_TRIGGERED;
+	evntState_t   ret;
 
 	// Start critical section of code
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
@@ -229,13 +260,13 @@ evntState_t evntTrigger(volatile event_t *event, int subType)
 		// Remove the event from the armed list
 		if(!evntListRemove(&evntListArmed, event))
 		{
-			event->state = EVENT_TRIGGERED;
+			ret = event->state = EVENT_TRIGGERED;
+			event->trigger = subType;
 			// Add the event to the triggered list
 			evntListAdd(&evntListTriggered, event);
 #ifdef EVNT_STATS
 			++event->stats.triggered;
 #endif
-			ret = 0;
 		}
 		// Else the event was not in the armed list
 		else
@@ -243,24 +274,26 @@ evntState_t evntTrigger(volatile event_t *event, int subType)
 #ifdef EVNT_STATS
 			event->stats.error++;
 #endif
-			ret = subType = EVENT_ERROR;
+			ret = event->state = EVENT_ERROR;
 		}
 	} // End critical section of code
 
 	return(ret);
 }
 
-evntState_t evntWait(volatile event_t *event, evntHandler_t handler, volatile fsmStateMachine_t *stateMachine)
+// Wait for an event to be triggered
+evntState_t evntWait(volatile fsmStateMachine_t *stateMachine, volatile event_t *event, int eventType)
 {
 	evntState_t ret = EVENT_IDLE;
 
 	// Start critical section of code
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-		if(evntArm(event, handler, stateMachine) == EVENT_ARMED)
+		event->evntType = eventType;
+		if(evntArm(stateMachine, event) == EVENT_ARMED)
 		{
 			// Put the state machine in the wait queue
-			fsmWait(fsmGetCurrentStateMachine());
+			fsmWait(stateMachine);
 			ret = event->state;
 		}
 		else
@@ -275,6 +308,23 @@ evntState_t evntWait(volatile event_t *event, evntHandler_t handler, volatile fs
 	return(ret);
 }
 
+// Default event handler for events without a user defined handler
+int evntHandler(volatile event_t *event)
+{
+	int	ret = -1;
+
+	// If the event trigger type matches the current event type...
+	if(event->evntType == event->trigger)
+	{
+		// Move the state machine associated with the event to the ready queue
+		fsmReady(event->stateMachine);
+		ret = 0;
+	}
+
+	return(ret);
+}
+
+// Initialize the system events
 int evntInit(void)
 {
 	evntDescriptor_t    *descr = (evntDescriptor_t *)&__start_EVNT_TABLE;
@@ -291,10 +341,11 @@ int evntInit(void)
 	return(count);
 }
 
+// Scan the trigger event list and call the appropriate event handlers
 int evntDispatch(void)
 {
 	int     ret = 0;
-	event_t *event;
+	volatile event_t *event;
 
 	// While there are events in the triggered list...
 	while(evntListTriggered.size > 0)
@@ -302,29 +353,34 @@ int evntDispatch(void)
 		event = evntListRemoveHead(&evntListTriggered);
 
 		// Call the event handler for the event
-		if(event->handler)
-			event->handler(event->stateMachine);
+		if(event->descr->handler)
+			event->descr->handler(event);
 
 		// Start critical section of code
 		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 		{
-			// Remove the event from the triggered list
-			evntListRemove(&evntListTriggered, event);
-			// Add the event to the disarmed list
-			evntListAdd(&evntListDisarmed, event);
-
-			// Scan the armed list for events for the same state machine
-			event_t *armedEvent = evntListArmed.head;
-			while(armedEvent != NULL)
+			// System events (no associated state machine) manage their own
+			// list membership inside the handler (e.g. self-arming tick).
+			// Only auto-disarm FSM-bound events here.
+			if(event->stateMachine != NULL)
 			{
-				if(armedEvent->stateMachine == event->stateMachine)
+				// Add the event to the disarmed list
+				evntListAdd(&evntListDisarmed, event);
+
+				// Scan the armed list for events for the same state machine
+				volatile event_t *armedEvent = evntListArmed.head;
+				while(armedEvent != NULL)
 				{
-					// Remove the event from the armed list
-					evntListRemove(&evntListArmed, armedEvent);
-					// Add the event to the disarmed list
-					evntListAdd(&evntListDisarmed, armedEvent);
+					volatile event_t *nextArmed = armedEvent->next;
+					if(armedEvent->stateMachine == event->stateMachine)
+					{
+						// Remove the event from the armed list
+						evntListRemove(&evntListArmed, armedEvent);
+						// Add the event to the disarmed list
+						evntListAdd(&evntListDisarmed, armedEvent);
+					}
+					armedEvent = nextArmed;
 				}
-				armedEvent = armedEvent->next;
 			}
 			// Increment the event count
 			++ret;

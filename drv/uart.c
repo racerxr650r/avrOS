@@ -25,7 +25,7 @@
 extern void *__start_UART_TABLE,*__stop_UART_TABLE;
 
 // Internal Variable ----------------------------------------------------------
-static UART_t *gsUart0 = NULL, *gsUart1 = NULL, *gsUart2 = NULL;
+static UART_t * volatile gsUart0 = NULL, * volatile gsUart1 = NULL, * volatile gsUart2 = NULL;
 
 // Internal Function Prototypes -----------------------------------------------
 static void isrUsartDRE(UART_t *uart);

@@ -431,6 +431,107 @@ checks if this is the initial call to this state since the last state transition
 
 ### Events
 
+An *event* is a small, statically-allocated synchronization object that an ISR
+or a state machine uses to wake up another state machine. The event manager
+decouples the producer (the side that detects a condition) from the consumer
+(the state machine that wants to react to it):
+
+- An **ISR-safe producer** marks the event triggered with
+  `evntTrigger(event, subType)` — no handler is called from the ISR.
+- The consumer state machine sleeps on the event with
+  `evntWait(stateMachine, event, eventType)`.
+- The event manager runs the event's **handler** from `evntDispatch()` in
+  main-loop context. The default handler `evntHandler()` releases the waiting
+  state machine when `eventType == subType` (see SDD §4.3.4 for the sub-type
+  contract).
+
+#### Declaring an event
+
+Use `ADD_EVENT(name)` for an event that uses the default handler, or
+`ADD_EVENT(name, handler)` to install a custom handler with signature
+`int (*)(volatile event_t *)`.
+
+```C
+// Default handler: wakes the waiting FSM when sub-types match.
+ADD_EVENT(MyEvent);
+
+// Custom handler: invoked from evntDispatch() in main-loop context.
+int myEventHandler(volatile event_t *event);
+ADD_EVENT(MyCustomEvent, myEventHandler);
+```
+
+#### Waking an FSM from a peripheral
+
+In the common case the event lives on a peripheral descriptor and the consumer
+state machine waits on a specific sub-type. The example below uses the GPIO
+driver's built-in event support; the same pattern works for any module that
+publishes an event with `ADD_EVENT`.
+
+```C
+// Producer side: a falling-edge interrupt on PA2 triggers Button_event
+// with sub-type GPIO_EVENT_FALLING. The GPIO driver's ISR does the trigger.
+ADD_GPIO(Button, PORTA, GPIO_PIN_2, GPIO_INPUT, GPIO_EVENT_FALLING);
+
+// Consumer side: an application FSM that waits on the button press.
+ADD_STATE_MACHINE(Btn_sm, btnInit, FSM_APP | 20);
+
+int btnInit(volatile fsmStateMachine_t *sm);
+int btnIdle(volatile fsmStateMachine_t *sm);
+int btnPressed(volatile fsmStateMachine_t *sm);
+
+int btnInit(volatile fsmStateMachine_t *sm)
+{
+    fsmSetNextState(sm, btnIdle);
+    return(0);
+}
+
+int btnIdle(volatile fsmStateMachine_t *sm)
+{
+    // Suspend this FSM until the GPIO ISR triggers Button_event
+    // with sub-type GPIO_EVENT_FALLING.
+    evntWait(sm, evntGetEvent("Button_event"), GPIO_EVENT_FALLING);
+    fsmSetNextState(sm, btnPressed);
+    return(0);
+}
+
+int btnPressed(volatile fsmStateMachine_t *sm)
+{
+    INFO("Button pressed");
+    fsmSetNextState(sm, btnIdle);
+    return(0);
+}
+```
+
+When the button drops, the port ISR calls
+`evntTrigger(&Button_event, GPIO_EVENT_FALLING)`. On the next pass through
+the main loop, `fsmDispatch()` calls `evntDispatch()`, which runs the default
+handler. The handler matches `evntType == trigger == GPIO_EVENT_FALLING` and
+returns `Btn_sm` to the ready queue, where it runs `btnPressed` on the next
+scan.
+
+#### Custom handlers and the self-arming pattern
+
+A custom handler runs from `evntDispatch()` in main-loop context (never ISR
+context) and receives the triggered event. It can do work directly and, if the
+event has no associated state machine, re-arm itself with `evntArmSystem()`.
+The system tick uses this pattern verbatim in [sys/sys.c](../sys/sys.c):
+
+```C
+// Tick event: handler updates all FSM wait counters then re-arms itself.
+ADD_EVENT(tick, sysUpdateWaitTicks);
+
+static int sysUpdateWaitTicks(volatile event_t *event)
+{
+    fsmUpdateWaitTicks();         // decrement every FSM's wait-tick counter
+    evntArmSystem(event);         // put tick back on the armed list
+    return(0);
+}
+```
+
+Use the CLI `evnt` command at runtime to inspect every registered event's
+state and (when built with `EVNT_STATS`) its armed/triggered/disarmed/error
+counters — see [Runtime Debugging](#runtime-debugging).
+
 ### Queues
 
 ### Lists

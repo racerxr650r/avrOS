@@ -24,8 +24,12 @@
 // Globals --------------------------------------------------------------------
 static volatile uint32_t	sysTicks = 0;
 
-// Event for system timer ticks to update the waiting state machines
-ADD_EVENT(tick);
+// Internal Function Prototypes ----------------------------------------------
+static int sysUpdateWaitTicks(volatile event_t *event);
+
+// Event for system timer ticks to update the waiting state machines.
+// Self-arming: the handler re-arms the event at the end of each tick.
+ADD_EVENT(tick, sysUpdateWaitTicks);
 
 // Interrupt Handler ----------------------------------------------------------
 #if SYS_TICK_TIMER==SYS_TIMER_TCB0
@@ -90,10 +94,12 @@ int tickFreqCmd(int argc, char *argv[])
 }
 
 // Internal Functions ---------------------------------------------------------
-int sysUpdateWaitTicks(volatile fsmStateMachine_t *sm)
+// Tick event handler: wake any FSMs whose wait-tick counters have expired
+// and re-arm the tick event for the next ISR trigger.
+static int sysUpdateWaitTicks(volatile event_t *event)
 {
 	fsmUpdateWaitTicks();
-	evntEnable(&tick,EVENT_TYPE_TICK,sysUpdateWaitTicks,NULL);
+	evntArmSystem(event);
 	return(0);
 }
 
@@ -131,7 +137,7 @@ void sysInitTick(TCB_t *tcb, uint16_t sysTickFreq)
 		tcb->CTRLA |= TCB_ENABLE_bm;
 	}
 
-	evntEnable(&tick,EVENT_TYPE_TICK,sysUpdateWaitTicks,NULL);
+	evntArmSystem(&tick);
 }
 
 // External Functions ---------------------------------------------------------
@@ -144,6 +150,9 @@ bool sysInit()
 
 	// Fill the stack area with pattern to detect max stack size
 	memStackFill();
+
+	// Initialize the event manager (populates disarmed list from EVNT_TABLE)
+	evntInit();
 
 	// Initialize the system tick counter
 	sysInitTick((TCB_t *)SYS_TICK_TIMER, SYS_TICK_FREQ);
