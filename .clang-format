@@ -1,0 +1,35 @@
+---
+# avrOS clang-format — see doc/CODING_STANDARDS.md
+# NOTE: Running this over the existing tree will produce churn,
+# particularly around the ADD_* descriptor macros. Land the reformat
+# as a single dedicated commit so it is trivially reversible.
+BasedOnStyle: LLVM
+Language:     Cpp
+
+# Tabs, Allman braces, project line width
+UseTab:                       AlignWithSpaces
+TabWidth:                     4
+IndentWidth:                  4
+ColumnLimit:                  100
+ContinuationIndentWidth:      4
+
+BreakBeforeBraces:                   Allman
+AllowShortFunctionsOnASingleLine:    Empty
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine:        false
+
+# Project idiom: no space between control keyword and '('
+SpaceBeforeParens:    Never
+SpaceAfterCStyleCast: false
+
+# Pointer alignment — match headers ("UART_t *uart")
+PointerAlignment: Right
+
+# Keep designated initializers readable
+AlignAfterOpenBracket:        Align
+AlignConsecutiveAssignments:  false
+AlignConsecutiveDeclarations: false
+
+# Don't reflow the descriptor-init lines in ADD_* macros
+ReflowComments: false
+SortIncludes:   Never

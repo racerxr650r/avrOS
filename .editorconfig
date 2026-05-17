@@ -1,0 +1,40 @@
+# avrOS coding style — see doc/CODING_STANDARDS.md
+root = true
+
+[*]
+charset                  = utf-8
+end_of_line              = lf
+insert_final_newline     = true
+trim_trailing_whitespace = true
+
+# C / H — project default
+[*.{c,h}]
+indent_style    = tab
+tab_width       = 4
+indent_size     = 4
+max_line_length = 100
+
+# Linker script
+[*.x]
+indent_style = tab
+tab_width    = 4
+
+# Markdown — preserve trailing whitespace (line breaks)
+[*.md]
+trim_trailing_whitespace = false
+indent_style             = space
+indent_size              = 2
+
+# Makefiles must use tabs
+[{Makefile,makefile,*.mk}]
+indent_style = tab
+
+# YAML — spaces
+[*.{yml,yaml}]
+indent_style = space
+indent_size  = 2
+
+# Shell scripts
+[*.sh]
+indent_style = space
+indent_size  = 4
