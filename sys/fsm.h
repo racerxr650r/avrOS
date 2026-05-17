@@ -34,14 +34,29 @@
 
 // Types ----------------------------------------------------------------------
 /**----------------------------------------------------------------------------
- * Type modifier for state machine priority
+ * @brief State machine priority class (top 2 bits of fsmPriority_t).
+ *
+ * The byte passed as the `priority` arg to ADD_STATE_MACHINE encodes both a
+ * class (top 2 bits, this enum) and a 6-bit sub-priority. Lower numeric
+ * values run first in the ready list. Within a class, sub-priority 0 runs
+ * before sub-priority 63.
+ *
+ * Pick the class that matches the directory the module lives in:
+ *   drv/ -> FSM_DRV, srv/ -> FSM_SRV, app/ -> FSM_APP. FSM_SYS is reserved.
+ *
+ * Conventions for sub-priority:
+ *   0..15  - critical / latency-sensitive (drain UART, button debounce)
+ *   16..47 - normal background work
+ *   48..63 - catch-all / lowest within class (the CLI uses FSM_SRV | 0x3f)
+ *
+ * See doc/SDD.md sec. 4.2.3 for full guidance.
  */
 typedef enum FSM_TYPE
 {
-	FSM_DRV = 0b00000000,	///< Driver Priority
-	FSM_SYS = 0b01000000,	///< System Priority
-	FSM_SRV = 0b10000000,	///< Service Priority
-	FSM_APP = 0b11000000	///< Application Priority
+	FSM_DRV = 0b00000000,	///< Driver priority (highest)
+	FSM_SYS = 0b01000000,	///< System priority (reserved)
+	FSM_SRV = 0b10000000,	///< Service priority
+	FSM_APP = 0b11000000	///< Application priority (lowest)
 }fsmType_t;
 
 /**----------------------------------------------------------------------------

@@ -31,7 +31,8 @@
    - 6.5 [GPIO Driver (gpio)](#65-gpio-driver-gpio)
 7. [Configuration](#7-configuration)
 8. [Application Interface](#8-application-interface)
-9. [Revision History](#9-revision-history)
+9. [Verification and Testing](#9-verification-and-testing)
+10. [Revision History](#10-revision-history)
 
 ---
 
@@ -139,6 +140,85 @@ In normal operation, timing is anchored by the system tick ISR, while work execu
 
 ---
 
+### 3.4 Memory Layout
+
+The reference target is the AVR128DA28 (96 KiB flash, 16 KiB SRAM). The
+linker script at [app/avrOS_example/avrOS.x](../app/avrOS_example/avrOS.x)
+splits flash into an unmapped region (code) and a 32 KiB *flash window*
+that the AVR-Dx maps into the low data-address space. Read-only data
+and OS descriptor tables live in the window so they can be iterated
+through ordinary C pointers without `pgm_read_*()` calls.
+
+| Region | Address | Length | Contents |
+|--------|---------|--------|----------|
+| Program flash (unmapped) | `0x000000`–`0x017FFF` | 96 KiB | `.text`, vectors, C runtime |
+| Flash window (mapped to data) | `0x018000`–`0x01FFFF` | 32 KiB | `.rodata`, `CLI_CMDS`, `FSM_TABLE`, `QUE_TABLE`, `TMR_TABLE`, `EVNT_TABLE`, `GPIO_TABLE`, `UART_TABLE` |
+| SRAM | `0x004000`–`0x0143FF` | 16 KiB | `.data`, `.bss`, `.noinit`, stack |
+| EEPROM | `0x010000`–`0x01FFFF` | 64 KiB | `.eeprom` (unused today) |
+| Fuses / lock / signatures | `0x020000`+ | — | Programmed by `make fuses` / `make lock_bits` |
+
+The `drv/mem` driver exposes helpers that surface each region at
+runtime; the `ram` and `rom` CLI commands print the values:
+
+| Symbol (linker) | Helper | Returns |
+|-----------------|--------|---------|
+| `_etext` | `memTextSize()` | Bytes used by `.text` |
+| `__start_text_window` / `__stop_text_window` | `memConstSize()` | Total mapped const region |
+| `__start_text_window` / `__stop_rodata` | `memRodataSize()` | `.rodata` portion |
+| `__stop_rodata` / `__stop_text_window` | `memOsTableSize()` | OS table portion |
+| `PROGMEM_SIZE - MAPPED_PROGMEM_SIZE` | `memProgramRomSize()` | Unmapped flash budget |
+| `MAPPED_PROGMEM_SIZE` | `memConstRomSize()` | Mapped flash budget |
+| `__data_start` / `__data_end` | `memDataSize()` | `.data` (initialized RAM) |
+| `__heap_start` / `__brkval` | `memHeapSize()` | Heap (never grown) |
+| `RAMEND - SP` | `memStackSize()` / `memStackSizeMax()` | Current / high-water stack |
+| `RAMSIZE` | `memRamSize()` | Total SRAM |
+
+`memStackFill()` writes a `0xDEADBEEF` byte pattern from `__heap_start`
+up to the current SP at boot. `memStackSizeMax()` walks down from
+`RAMEND` looking for that pattern to compute the high-water mark.
+
+### 3.5 Linker Sections and Descriptor Tables
+
+Each `ADD_<THING>` macro places a `const` descriptor into a named
+section in the flash window. The linker script publishes
+`__start_<NAME>` / `__stop_<NAME>` symbols around each section so the
+OS can iterate them at runtime:
+
+| Section | Producer macro | Iterated by |
+|---------|----------------|-------------|
+| `CLI_CMDS`    | `ADD_COMMAND`        | `srv/cli.c` |
+| `FSM_TABLE`   | `ADD_STATE_MACHINE`, `ADD_INITIALIZER` | `sys/fsm.c`, `sys/sys.c` |
+| `QUE_TABLE`   | `ADD_QUEUE`          | `sys/queue.c` |
+| `TMR_TABLE`   | (reserved for future timers) | — |
+| `EVNT_TABLE`  | `ADD_EVENT`          | `sys/event.c` |
+| `GPIO_TABLE`  | `ADD_GPIO`           | `drv/gpio.c` |
+| `UART_TABLE`  | `ADD_UART_RW`, `ADD_UART_WO`, `ADD_UART_RO` | `drv/uart.c` |
+
+`SECTION(x)` is `__attribute__((__used__, __section__(#x)))`. The
+`__used__` is required — otherwise the linker may discard a descriptor
+that has no direct C reference.
+
+To **add a new descriptor table**:
+
+1. Pick a name `<MOD>_TABLE` (uppercase, ends `_TABLE`).
+2. Add a block to `avrOS.x` inside the `text_window` group,
+   immediately after an existing table. Update the next block's
+   `ADDR(...)` to refer to the new table. If your table is the new
+   last one, move `__stop_text_window = . ;` into your block.
+3. In C, mark the descriptor with `SECTION(<MOD>_TABLE)` and declare
+   `extern void *__start_<MOD>_TABLE, *__stop_<MOD>_TABLE;` in the
+   module that iterates it.
+
+Rules:
+
+- Runtime mutable data is **never** placed in a `<MOD>_TABLE`. The
+  flash window is read-only.
+- Section names match exactly across the C source and the linker
+  script — every module's CLI / init code depends on the precise
+  `__start_*` / `__stop_*` symbol name.
+
+---
+
 ## 4. System Modules
 
 ### 4.1 System Kernel (sys)
@@ -195,12 +275,55 @@ In normal operation, timing is anchored by the system tick ISR, while work execu
 
 #### 4.2.3 Priority Levels
 
-| Constant | Value | Description |
-|----------|-------|-------------|
-| `FSM_DRV` | `0x00` | Driver priority (highest) |
-| `FSM_SYS` | `0x40` | System priority |
-| `FSM_SRV` | `0x80` | Service priority |
-| `FSM_APP` | `0xC0` | Application priority (lowest) |
+The `priority` argument to `ADD_STATE_MACHINE` is a single byte that
+encodes both a *class* (top 2 bits) and a *sub-priority* (low 6 bits).
+Lower numeric values run first in the ready list.
+
+```
+ 7 6 5 4 3 2 1 0
++---+-------------+
+|cls| sub-priority|
++---+-------------+
+  |        |
+  |        +--- 0..63, larger = lower priority within the class
+  +------------ 00=DRV, 01=SYS, 10=SRV, 11=APP
+```
+
+| Constant | Value | Description | Use for |
+|----------|-------|-------------|---------|
+| `FSM_DRV` | `0x00` | Driver priority (highest) | Hardware drivers — periodic polling, ISR back-half. |
+| `FSM_SYS` | `0x40` | System priority | Kernel-level support (reserved — the dispatchers themselves are not state machines today). |
+| `FSM_SRV` | `0x80` | Service priority | Higher-level OS services (`cli`, `log`, `btn`, `pcm`). |
+| `FSM_APP` | `0xC0` | Application priority (lowest) | Application state machines. |
+
+Pick the class that matches the directory the module lives in
+(`drv/` → `FSM_DRV`, `srv/` → `FSM_SRV`, `app/` → `FSM_APP`).
+Sub-priority conventions in the existing tree:
+
+| Sub-priority | Use |
+|--------------|-----|
+| `0` – `15` | Critical / latency-sensitive (drain UART, button debounce). |
+| `16` – `47` | Normal background work. |
+| `48` – `63` | Catch-all / lowest within class. The CLI uses `FSM_SRV \| 0x3f` so operator commands never starve real work. |
+
+Examples:
+
+```c
+// Application LED driver — happy to be preempted by anything.
+ADD_STATE_MACHINE(Leds_sm, ledsInit, FSM_APP | 10);
+
+// CLI — service class, lowest sub-priority so commands never starve drivers.
+ADD_STATE_MACHINE(cli_SM, cliInit, FSM_SRV | 0x3f, &cliInstance);
+```
+
+Anti-patterns:
+
+- Sub-priority `0` in an application FSM — claims higher priority than
+  every driver in its class. Use `FSM_APP | 10` or higher.
+- Multiple state machines tied at the same numeric priority — link
+  order decides which runs first, which is fragile.
+- Treating the byte as a bitmask — only the top 2 bits encode the
+  class; the rest is plain numeric priority.
 
 #### 4.2.4 Key Interfaces
 
@@ -244,6 +367,55 @@ In normal operation, timing is anchored by the system tick ISR, while work execu
 - A linked list of events is maintained for each state machine's `fsmStateMachine_t` data structure
 - `evntWait()` adds a new event to the state machine's data structure and puts the state machine in the wait queue if it's not already there.
 - `evntTrigger()` scans the wait queue for all state machines waiting on this event. For each state machine it finds, it clears the entire linked list of events and puts the state machine back on the ready queue in priority order.
+
+#### 4.3.4 Event Sub-Type Contract
+
+`event_t` carries two integer fields that together implement the
+sub-type contract:
+
+| Field | Set by | When |
+|-------|--------|------|
+| `evntType` | `evntWait(sm, ev, type)` | When a consumer arms the event for the condition it wants to wait for. |
+| `trigger` | `evntTrigger(ev, subType)` | When a producer raises the event (ISR or other state machine). |
+
+The default handler `evntHandler()` releases the waiting state machine
+only when `event->evntType == event->trigger`. That lets one event
+object multiplex several sub-conditions without spurious wakeups.
+
+Sub-type registries:
+
+- **System tick** ([sys/sys.h](../sys/sys.h)) — `EVENT_TYPE_TICK = 1`.
+  Exactly one sub-type.
+- **Queues** ([sys/queue.h](../sys/queue.h)) —
+  `QUE_EVENT_EMPTY = 1`, `QUE_EVENT_NOT_EMPTY = 2`,
+  `QUE_EVENT_FULL = 3`, `QUE_EVENT_NOT_FULL = 4`. Raised by `quePut` /
+  `queGet` as the buffer crosses boundaries.
+- **GPIO** — pin-change events; the exact sub-type passed by the GPIO
+  ISR is a convention chosen per-application (`0` for "any change"
+  or the new pin state for edge selectivity).
+
+When introducing a new module that owns an event:
+
+1. Define a `typedef enum { ... } <mod>Events_t;` in the module's
+   header, starting at `1`. `0` is reserved as the "armed but not
+   yet triggered" sentinel.
+2. Document each value with a trailing `///<` comment.
+3. Reserve a contiguous range; do not reuse numbers across modules
+   that share an event object.
+
+Rules:
+
+- Never use `0` as a sub-type — it is the idle sentinel.
+- Sub-types are per-event-object scope; two different events may both
+  use sub-type `1` for different meanings.
+- The consumer's `evntWait` sub-type must match exactly one of the
+  producer's `evntTrigger` sub-types or the state machine will sit
+  forever in the wait queue (use the `evnt` CLI command to diagnose).
+
+Custom handlers — `ADD_EVENT(name, myHandler)` installs an alternate
+handler. It runs from `evntDispatch()` between state-machine passes
+(not in ISR context), but it executes before the next state-machine
+handler — keep it short.
 
 ---
 
@@ -627,8 +799,86 @@ int main(void)
 
 ---
 
-## 9. Revision History
+---
+
+## 9. Verification and Testing
+
+avrOS currently has no automated test suite. Validation is
+hardware-in-the-loop. This section captures the practices in use today
+and the path forward.
+
+### 9.1 Hardware-in-the-loop bring-up
+
+Standard validation workflow for a code change:
+
+1. `make all` — must build clean, no new cppcheck findings.
+2. `make flash` to the reference target (AVR128DA28 on the Pi 4 Dev
+   Station; see [PI4_Dev_Station.md](PI4_Dev_Station.md)).
+3. Connect to the CLI USART (default 115200 8N1).
+4. Confirm the CLI banner appears.
+5. `ram` / `rom` — confirm the change did not blow the budget.
+6. `fsm` — confirm all expected state machines reach Ready.
+7. Run the change-specific CLI command(s) (`gpio`, `que`, `evnt`, …).
+8. Soak for several minutes with the `r` repeat modifier on the
+   relevant inspection command (e.g. `quer`, `evntr`).
+
+### 9.2 Test hardware
+
+| Item | Notes |
+|------|-------|
+| AVR128DA28 reference board | The example app is wired for this part. |
+| Raspberry Pi 4 Dev Station | Hosts the toolchain and serial UPDI programmer. |
+| Two USB-serial adapters | One for logger, one for CLI (when both are enabled). |
+| Microchip Atmel-ICE (optional) | Alternative programmer / debugger. |
+
+### 9.3 Manual regression checklist
+
+Before merging a change to `sys/` or `drv/`:
+
+- [ ] `ram` reports stack-max stable across a soak run.
+- [ ] `rom` text size has not jumped unexpectedly.
+- [ ] `evnt` shows non-zero `Triggered` for any event the change touches.
+- [ ] `que` shows zero `Overflow` for any queue the change touches
+      under worst-case load.
+- [ ] `fsm` shows no state machine permanently stuck in Wait that
+      shouldn't be.
+- [ ] CLI is responsive after 10 minutes of idle.
+- [ ] No new cppcheck findings (`make analyze`).
+- [ ] No complexity score newly above 20 (`make complexity`).
+
+### 9.4 Future work — host-side unit tests
+
+Several modules are pure C and would compile against the host
+toolchain with thin shims:
+
+1. Create `test/host/` with a `Makefile` using the system `gcc`.
+2. Provide stubs for `<avr/io.h>`, `<avr/interrupt.h>`,
+   `<util/atomic.h>`, the AVR register layouts, and the linker
+   `__start_*` / `__stop_*` symbols (back them with a static array).
+3. Adopt **Unity** as the test framework.
+4. Cover `sys/queue.c` (put/get/empty/full/wrap/overflow), `sys/event.c`
+   (arm → trigger → dispatch → re-arm cycle, list invariants), and
+   `sys/fsm.c` (ready-list priority ordering, `fsmReady` /
+   `fsmStop` / `fsmReset`).
+
+These modules have no real hardware dependency once `ATOMIC_BLOCK` is
+stubbed to a no-op.
+
+### 9.5 Future work — board-in-the-loop CI
+
+Reachable with a Raspberry Pi as build host and programmer:
+
+1. Wire the Pi to the AVR via serial UPDI
+   (`PRG = serialupdi -P /dev/ttyAMA2`).
+2. `make all flash` from CI on every push to `develop`.
+3. A smoke-test Python script issues a fixed CLI command sequence over
+   the CLI USART and asserts on the output.
+
+---
+
+## 10. Revision History
 
 | Version | Date | Author | Description |
 |---------|------|--------|-------------|
 | 1.0 | 2026-02-24 | John Anderson | Initial outline |
+| 1.1 | 2026-05-17 | (consolidation) | Add §3.4 Memory Layout, §3.5 Linker Sections, expanded §4.2 priority detail, §4.3.4 event sub-type contract, §9 Verification & Testing. |
