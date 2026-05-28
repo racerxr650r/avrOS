@@ -1,0 +1,36 @@
+// .vscode/launch.json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Cortex-debug used as a *generic* GDB frontend
+      "name": "Debug avrOS (external GDB)",
+      "type": "cortex-debug",
+      "request": "attach",
+      "servertype": "external",
+      "gdbTarget": "localhost:1234",
+      "gdbPath": "/usr/bin/avr-gdb",
+      "executable": "${workspaceFolder}/app/avrOS_example/build/main.elf",
+      "cwd": "${workspaceFolder}/app/avrOS_example",
+      "overrideAttachCommands": [
+        "mem 0x0 0x20000 rw",
+        "monitor reset",
+        "tbreak main",
+        "continue"
+      ],
+      "overrideResetCommands": [
+        "mem 0x0 0x20000 rw",
+        "monitor reset",
+        "tbreak main",
+        "continue"
+      ],
+      "showDevDebugOutput": "raw",
+      "preAttachCommands": [
+        "set pagination off",
+        "set print pretty on",
+        "set remotetimeout 30",
+        "set mem inaccessible-by-default off"
+      ]
+    }
+  ]
+}

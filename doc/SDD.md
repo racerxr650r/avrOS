@@ -61,6 +61,7 @@ avrOS provides a finite-state-machine-based cooperative scheduler, an event syst
 | RAM  | Random Access Memory |
 | ROM  | Read-Only Memory (Flash) |
 | FIO  | File I/O |
+| TMR  | Timer |
 
 ### 1.4 References
 
@@ -79,7 +80,7 @@ The OS makes no use of dynamic memory allocation after initialization. All data 
 
 At runtime, the kernel follows a deterministic scan-loop model:
 
-1. Wake from idle on a timer tick interrupt.
+1. Wake from idle on an asynchronous event represented by an interrupt.
 2. Dispatch each registered FSM once according to priority.
 3. Drain pending events and apply state-transition requests.
 4. Return to idle sleep until the next interrupt source occurs.
@@ -351,9 +352,11 @@ Anti-patterns:
 
 #### 4.3.1 Responsibilities
 
-- Provide a mechanism for FSMs to wait on one or more hardware or software conditions.
+- Provide a mechanism for FSMs to wait on one or more asychornous hardware or software conditions.
 - Allow ISRs and other FSMs to signal events that wake waiting state machines.
 - Decouple ISR signaling from handler execution: ISRs only mark an event triggered; handlers run from `evntDispatch()` in main-loop context.
+- When a FSM is waiting on more than one event and a single event triggers, all other events that FSM is waiting on are moved to the DISARM queue. The FSM will need to explicitly re-ARM any events it wished to wait on
+- When a FSM ARMs an event, it is moved from the READY queue to the WAIT queue
 
 #### 4.3.2 Key Interfaces
 
@@ -455,6 +458,26 @@ handler — keep it short.
 
 - All queue storage is allocated at compile time via the `ADD_QUEUE` macro.
 - Enqueue/dequeue operations signal associated events, enabling event-driven I/O without polling.
+
+---
+
+### 4.5 High Resolution Timer
+
+#### 4.5.1 Responsibilities
+
+- Provides a mechanism for FSM delays with high precision
+- Can delay an FSM from 1 microsecond to 1 hour and 11.5 minutes. With a resolution of 1 microsecond
+- Uses events to put the FSM on the WAIT queue
+- Provides event or interrupt call back handlers to note the event and possibly reschedule the FSM
+- The call back function can use evntTrigger to reschedule the FSM
+- The call back function can be in either the interrupt context for less jitter. Or, It can be in the event call back context which is in the system/FSM context therefore not requiring thread safety with the rest of the FSMs and events
+
+#### 4.5.2 Data Structures
+
+| Structure | Description |
+|-----------|-------------|
+| Timer_t   | RAM based collection of data describing the timer's state. This includes the original duration and remaining microseconds |
+| TimerDescr_t | Flash based descritpion of the timer including it's name, a pointer to the Timer_t state in RAM, and a pointer to the associated Event |
 
 ---
 

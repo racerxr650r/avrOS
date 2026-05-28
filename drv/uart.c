@@ -173,8 +173,8 @@ int uartInit(const fsmStateMachineDescr_t *stateMachineDescr)
 #endif	
 
     // Start critical section of code
- //   ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
- //   {
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+    {
         // If the CPU frequency is calculable...
         if(freq)
             usartRegs->BAUD = ((freq/uartInstance->baud*10)<<2);
@@ -224,7 +224,7 @@ int uartInit(const fsmStateMachineDescr_t *stateMachineDescr)
             // Enable the Tx, Rx, and standard Rx mode (16 over samples)
             usartRegs->CTRLB |= USART_RXEN_bm | USART_TXEN_bm | USART_RXMODE_NORMAL_gc;
         }
-//    }
+    }
     
     return(ret);
 }

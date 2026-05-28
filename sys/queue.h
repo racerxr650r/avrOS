@@ -122,7 +122,12 @@ typedef struct QUE_DESCRIPTOR_TYPE
  */
 static inline bool queIsEmpty(volatile queue_t *que)
 {
-	return(que->head == que->descr->capacity?true:false);
+        bool ret;
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+        {
+            ret = (que->head == que->descr->capacity?true:false);
+        }
+        return ret;
 }
 
 /**
@@ -133,7 +138,12 @@ static inline bool queIsEmpty(volatile queue_t *que)
  */
 static inline bool queIsFull(volatile queue_t *que)
 {
-	return(que->tail == que->descr->capacity?true:false);
+        bool ret;
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+        {
+            ret = (que->tail == que->descr->capacity?true:false);
+        }
+        return ret;
 }
 
 /**

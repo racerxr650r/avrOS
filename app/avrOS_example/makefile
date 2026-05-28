@@ -64,7 +64,7 @@ BUILD_DIR = ./build/
 INCLUDE := $(foreach dir, $(EXT), -I$(dir))
 
 # c flags
-CFLAGS    = -Wall -Wno-unused-function -Og -g2 -DDEBUG -mmcu=$(MCU) -B $(DFP)/gcc/dev/$(MCU) -funsigned-char -funsigned-bitfields -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -std=gnu99 -MMD -I$(DFP)/include -I. $(INCLUDE)
+CFLAGS    = -Wall -Wno-unused-function -O0 -g3 -fno-lto -fno-inline -fno-ipa-icf -fno-ipa-cp-clone -fvar-tracking-assignments -DDEBUG -mmcu=$(MCU) -B $(DFP)/gcc/dev/$(MCU) -funsigned-char -funsigned-bitfields -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -std=gnu99 -MMD -I$(DFP)/include -I. $(INCLUDE)
 # any aditional flags for c++
 CPPFLAGS =
 # linker flags

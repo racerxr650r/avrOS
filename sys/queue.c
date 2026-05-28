@@ -52,6 +52,8 @@ uint16_t queGetSize(volatile queue_t *que)
 	const queDescriptor_t *descr = que->descr;
 	uint16_t			ret;
 	
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+        {
 	if(queIsEmpty(que))
 		ret = 0;
 	else if(queIsFull(que))
@@ -63,6 +65,7 @@ uint16_t queGetSize(volatile queue_t *que)
 	else
 		ret = descr->capacity-(que->head-que->tail);
 		
+        }
 	return(ret);	
 }
 

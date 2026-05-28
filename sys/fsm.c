@@ -30,7 +30,7 @@ extern void *__start_FSM_TABLE,*__stop_FSM_TABLE;
 
 // Internal Globals -----------------------------------------------------------
 static uint32_t scanCycle = 0;
-static volatile fsmStateMachine_t   *currStateMachine = NULL, *Ready = NULL, *Wait = NULL, *Stopped = NULL; 
+volatile fsmStateMachine_t   *currStateMachine = NULL, *Ready = NULL, *Wait = NULL, *Stopped = NULL; 
 static char initString[] = {"Init"};
 
 // Internal functions ---------------------------------------------------------

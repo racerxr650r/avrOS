@@ -213,7 +213,12 @@ uint16_t sysGetTickFreq()
 // Return the current system tick count
 uint32_t sysGetTickCount()
 {
-	return(sysTicks);
+	uint32_t ticks;
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		ticks = sysTicks;
+	}
+	return(ticks);
 }
 
 // Put the system to sleep until the next interrupt

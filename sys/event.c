@@ -164,7 +164,7 @@ evntState_t evntArm(volatile fsmStateMachine_t *stateMachine, volatile event_t *
 			// Add the event to the armed list
 			evntListAdd(&evntListArmed, event);
 			// Put the state machine in the wait queue
-			fsmWait(fsmGetCurrentStateMachine());
+			fsmWait(stateMachine);
 		}
 		// Else the event was not in the disarmed list, return an error
 		else
@@ -194,8 +194,9 @@ evntState_t evntArmSystem(volatile event_t *event)
 	{
 		event->stateMachine = NULL;
 
-		// Remove the event from the disarmed list and add to armed list
-		if(!evntListRemove(&evntListDisarmed, event))
+		// Remove the event from the disarmed list and add to armed list.
+		// System events can self-arm directly from evaluating triggered, so allow it.
+		if(!evntListRemove(&evntListDisarmed, event) || event->state == EVENT_TRIGGERED)
 		{
 			event->state = EVENT_ARMED;
 			evntListAdd(&evntListArmed, event);
