@@ -250,8 +250,9 @@ Rules:
 
 #### 4.1.4 Design Notes
 
-- The tick ISR calls `evntTrigger(&tick, EVENT_TYPE_TICK)` to mark the `tick` event triggered.
-- The `tick` event is registered with `ADD_EVENT(tick, sysUpdateWaitTicks)`, binding a custom handler. `evntDispatch()` invokes `sysUpdateWaitTicks()` in main-loop context, which decrements wait-tick counters across all FSMs (via `fsmUpdateWaitTicks()`) and re-arms the event via `evntArmSystem()`. This is the canonical example of the self-arming pattern (see §4.3.3).
+- The tick ISR calls `evntTrigger(&tick, EVENT_TYPE_TICK)` to mark the `tick` event triggered. It also increments `sysTicksPending`, a counter of ticks not yet applied to the FSM wait counters.
+- The `tick` event is registered with `ADD_EVENT(tick, sysUpdateWaitTicks)`, binding a custom handler. `evntDispatch()` invokes `sysUpdateWaitTicks()` in main-loop context, which drains `sysTicksPending` and decrements wait-tick counters across all FSMs (one `fsmUpdateWaitTicks()` call per pending tick) and re-arms the event via `evntArmSystem()`. This is the canonical example of the self-arming pattern (see §4.3.3).
+- **Missed-tick recovery.** If the main loop is busy (e.g. blocked on UART I/O) when the tick ISR fires, the tick may not yet be dispatched and `evntTrigger` is a no-op for that cycle. The `sysTicksPending` counter ensures no tick is lost: the next `sysUpdateWaitTicks()` applies every accumulated tick before re-arming, keeping FSM timing accurate under load.
 - `sysSleep()` uses the AVR `sleep_mode()` facility; the CPU wakes automatically on the next tick ISR.
 
 ---
@@ -363,11 +364,11 @@ Anti-patterns:
 | Function / Macro | Description |
 |------------------|-------------|
 | `ADD_EVENT(name [, handler])` | Define an event object + flash descriptor; binds an optional custom handler (defaults to `evntHandler`). |
-| `evntArm(sm, event)` | Move an event from the disarmed list to the armed list and place `sm` in the FSM wait queue. |
+| `evntArm(event)` | Move an event from the disarmed list to the armed list. The event's `stateMachine`/`fsmState` are set by the caller (typically `evntWait`). |
 | `evntArmSystem(event)` | Arm a system-wide event with no associated state machine. Used by self-arming events (e.g. system tick) whose handler runs directly from `evntDispatch`. |
 | `evntDisarm(event)` | Move an event from the armed list back to the disarmed list. |
-| `evntWait(sm, event, eventType)` | Set `event->evntType = eventType`, call `evntArm(sm, event)`. The default handler will wake `sm` only when a producer triggers a matching sub-type. |
-| `evntTrigger(event, subType)` | ISR-safe. Move the event from armed to triggered, record `subType` in `event->trigger`. |
+| `evntWait(event, eventType, fsmState)` | Resolve the calling FSM (via `fsmGetCurrentStateMachine()`), record `eventType` in `event->type` and the resume handler in `event->fsmState`, arm the event, and place the FSM in the wait queue. The default handler wakes the FSM only when a producer triggers a matching sub-type. |
+| `evntTrigger(event, triggerType)` | ISR-safe. If the event is armed, move it from armed to triggered and record `triggerType` in `event->triggerType`. Triggering an unarmed event is a no-op (normal for fire-and-forget queue events) and is not counted as an error. |
 | `evntDispatch()` | Called by `fsmDispatch()`. Pops each triggered event, calls its handler, then (for FSM-bound events) moves it and any sister events sharing the same `stateMachine` to the disarmed list. |
 | `evntGetStatus / evntGetType / evntGetTrigger / evntGetStateMachine` | Inline accessors for handler use. |
 | `evntInit()` | Walks the `EVNT_TABLE` and populates the disarmed list. Called by `sysInit()`. |
@@ -375,24 +376,24 @@ Anti-patterns:
 #### 4.3.3 Design Notes
 
 - **Three global lists.** The event manager owns three intrusive linked lists threaded through `event_t.next`: `evntListDisarmed`, `evntListArmed`, `evntListTriggered`. Every event is on exactly one list at any moment. Lifecycle: `disarmed → armed → triggered → disarmed`.
-- **Descriptor / status split.** `evntDescriptor_t` lives in flash (`EVNT_TABLE`) and carries the event name and handler pointer. `event_t` is the RAM status object that carries list linkage, current state, and the `evntType`/`trigger` sub-type pair. `ADD_EVENT(name)` emits both and links them.
-- **Handler binding.** The handler pointer is in the descriptor (read-only) and selected at compile time by `ADD_EVENT`. The 1-arg form (`ADD_EVENT(name)`) binds the default `evntHandler`, which wakes `event->stateMachine` whenever `evntType == trigger`. The 2-arg form (`ADD_EVENT(name, fn)`) binds a custom handler with signature `int (*)(volatile event_t *)`.
-- **ISR contract.** ISRs call only `evntTrigger(event, subType)`. The handler runs from `evntDispatch()` in main-loop (cooperative) context, never in ISR context.
+- **Descriptor / status split.** `evntDescriptor_t` lives in flash (`EVNT_TABLE`) and carries the event name and handler pointer. `event_t` is the RAM status object that carries list linkage, current state, the resume handler `fsmState`, and the `type`/`triggerType` sub-type pair. `ADD_EVENT(name)` emits both and links them.
+- **Handler binding.** The handler pointer is in the descriptor (read-only) and selected at compile time by `ADD_EVENT`. The 1-arg form (`ADD_EVENT(name)`) binds the default `evntHandler`, which — when `type == triggerType` — sets the waiting FSM's next state to `event->fsmState` (via `fsmSetNextState`) and moves it to the ready queue (via `fsmReady`). The 2-arg form (`ADD_EVENT(name, fn)`) binds a custom handler with signature `int (*)(volatile event_t *)`.
+- **ISR contract.** ISRs call only `evntTrigger(event, triggerType)`. The handler runs from `evntDispatch()` in main-loop (cooperative) context, never in ISR context.
 - **Self-arming pattern.** A system event whose handler runs directly from `evntDispatch` (no FSM is waiting) uses `evntArmSystem` to re-arm itself at the end of the handler. `evntDispatch` recognizes `event->stateMachine == NULL` as a system event and skips its auto-disarm-and-sister-scan path so the re-arm is preserved. Reference implementation: `sysUpdateWaitTicks()` in [sys/sys.c](../sys/sys.c).
 - **Wakeup semantics for FSM-bound events.** When an FSM-bound event's handler returns, `evntDispatch` also disarms any other events armed for the same `stateMachine`. This implements "wait on any one of N events" — only the first to trigger fires; the others are silently disarmed.
 
 #### 4.3.4 Event Sub-Type Contract
 
-`event_t` carries two integer fields that together implement the
+`event_t` carries two sub-type fields (`uint8_t`) that together implement the
 sub-type contract:
 
 | Field | Set by | When |
 |-------|--------|------|
-| `evntType` | `evntWait(sm, ev, type)` | When a consumer arms the event for the condition it wants to wait for. |
-| `trigger` | `evntTrigger(ev, subType)` | When a producer raises the event (ISR or other state machine). |
+| `type` | `evntWait(ev, type, fsmState)` | When a consumer arms the event for the condition it wants to wait for. |
+| `triggerType` | `evntTrigger(ev, triggerType)` | When a producer raises the event (ISR or other state machine). |
 
 The default handler `evntHandler()` releases the waiting state machine
-only when `event->evntType == event->trigger`. That lets one event
+only when `event->type == event->triggerType`. That lets one event
 object multiplex several sub-conditions without spurious wakeups.
 
 Sub-type registries:
@@ -779,8 +780,8 @@ Consumer pattern for an event-driven GPIO:
 
 ```c
 ADD_GPIO(Button, PORTA, GPIO_PIN_2, GPIO_INPUT, GPIO_EVENT_FALLING);
-// in an FSM state:
-evntWait(stateMachine, evntGetEvent("Button_event"), GPIO_EVENT_FALLING);
+// in an FSM state (resume in buttonPressed when the event fires):
+evntWait(evntGetEvent("Button_event"), GPIO_EVENT_FALLING, buttonPressed);
 ```
 
 #### 6.5.5 Key Interfaces

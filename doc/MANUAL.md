@@ -437,12 +437,13 @@ decouples the producer (the side that detects a condition) from the consumer
 (the state machine that wants to react to it):
 
 - An **ISR-safe producer** marks the event triggered with
-  `evntTrigger(event, subType)` — no handler is called from the ISR.
+  `evntTrigger(event, triggerType)` — no handler is called from the ISR.
 - The consumer state machine sleeps on the event with
-  `evntWait(stateMachine, event, eventType)`.
+  `evntWait(event, eventType, fsmState)`, where `fsmState` is the state
+  handler the FSM should resume in once the event fires.
 - The event manager runs the event's **handler** from `evntDispatch()` in
   main-loop context. The default handler `evntHandler()` releases the waiting
-  state machine when `eventType == subType` (see SDD §4.3.4 for the sub-type
+  state machine when `eventType == triggerType` (see SDD §4.3.4 for the sub-type
   contract).
 
 #### Declaring an event
@@ -488,9 +489,9 @@ int btnInit(volatile fsmStateMachine_t *sm)
 int btnIdle(volatile fsmStateMachine_t *sm)
 {
     // Suspend this FSM until the GPIO ISR triggers Button_event
-    // with sub-type GPIO_EVENT_FALLING.
-    evntWait(sm, evntGetEvent("Button_event"), GPIO_EVENT_FALLING);
-    fsmSetNextState(sm, btnPressed);
+    // with sub-type GPIO_EVENT_FALLING. When it fires, the FSM resumes
+    // in btnPressed — evntWait records the resume state for us.
+    evntWait(evntGetEvent("Button_event"), GPIO_EVENT_FALLING, btnPressed);
     return(0);
 }
 
@@ -505,8 +506,9 @@ int btnPressed(volatile fsmStateMachine_t *sm)
 When the button drops, the port ISR calls
 `evntTrigger(&Button_event, GPIO_EVENT_FALLING)`. On the next pass through
 the main loop, `fsmDispatch()` calls `evntDispatch()`, which runs the default
-handler. The handler matches `evntType == trigger == GPIO_EVENT_FALLING` and
-returns `Btn_sm` to the ready queue, where it runs `btnPressed` on the next
+handler. The handler matches `type == triggerType == GPIO_EVENT_FALLING`, sets
+`Btn_sm`'s next state to the `fsmState` recorded by `evntWait` (`btnPressed`),
+and returns it to the ready queue, where it runs `btnPressed` on the next
 scan.
 
 #### Custom handlers and the self-arming pattern
@@ -522,7 +524,19 @@ ADD_EVENT(tick, sysUpdateWaitTicks);
 
 static int sysUpdateWaitTicks(volatile event_t *event)
 {
-    fsmUpdateWaitTicks();         // decrement every FSM's wait-tick counter
+    uint32_t pending;
+
+    // Drain the count of ticks that fired since the last dispatch so none
+    // are lost if the main loop was busy (e.g. during UART I/O).
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+    {
+        pending = sysTicksPending;
+        sysTicksPending = 0;
+    }
+
+    while(pending--)
+        fsmUpdateWaitTicks();     // decrement every FSM's wait-tick counter
+
     evntArmSystem(event);         // put tick back on the armed list
     return(0);
 }
