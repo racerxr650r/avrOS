@@ -90,11 +90,12 @@ typedef struct
  * specified FILE stream.
  *
  * @param file Pointer to the FILE stream.
+ * @param stateHandler Pointer to the FSM handler.
  */
-static inline void fioWaitInput(FILE *file)
+static inline void fioWaitInput(FILE *file, fsmHandler_t stateHandler)
 {
 	fioBuffers_t *buffer = (fioBuffers_t *)(file->buf);
-	queWait(buffer->input, QUE_EVENT_NOT_EMPTY);
+	queWait(buffer->input, QUE_EVENT_NOT_EMPTY, stateHandler);
 }
 
 /**
@@ -105,11 +106,12 @@ static inline void fioWaitInput(FILE *file)
  * FILE stream is empty.
  *
  * @param file Pointer to the FILE stream.
+ * @param stateHandler Pointer to the FSM handler.
  */
-static inline void fioWaitOutput(FILE *file)
+static inline void fioWaitOutput(FILE *file, fsmHandler_t stateHandler)
 {
 	fioBuffers_t *buffer = (fioBuffers_t *)(file->buf);
-	queWait(buffer->output, QUE_EVENT_EMPTY);
+	queWait(buffer->output, QUE_EVENT_EMPTY, stateHandler);
 }
 
 /**

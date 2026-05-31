@@ -167,9 +167,9 @@ bool quePut(volatile queue_t *que, void *element)
 	return(ret);
 }
 
-int queWait(volatile queue_t *que, queueEvents_t eventType)
+int queWait(volatile queue_t *que, queueEvents_t eventType, fsmHandler_t stateHandler)
 {
-	evntWait(fsmGetCurrentStateMachine(), que->descr->event, (int)eventType);
+	evntWait(que->descr->event, (int)eventType, stateHandler);
 	return(0);
 }
 

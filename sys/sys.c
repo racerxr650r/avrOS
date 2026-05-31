@@ -23,6 +23,7 @@
 
 // Globals --------------------------------------------------------------------
 static volatile uint32_t	sysTicks = 0;
+static volatile uint32_t	sysTicksPending = 0;
 
 // Internal Function Prototypes ----------------------------------------------
 static int sysUpdateWaitTicks(volatile event_t *event);
@@ -45,10 +46,11 @@ ISR(SYS_TICK_INT_VECT)
 	// Clear the interrupt
 	(*(TCB_t*)SYS_TICK_TIMER).INTFLAGS = TCB_CAPT_bm;
 	
-	// Increment the tick counter
+	// Increment the tick counter and the pending counter
 	++sysTicks;
+	++sysTicksPending;
 
-	// Trigger the timer update event
+	// Trigger the timer update event (may fail if previous tick not yet dispatched)
 	evntTrigger(&tick,EVENT_TYPE_TICK);	
 }
 
@@ -96,9 +98,21 @@ int tickFreqCmd(int argc, char *argv[])
 // Internal Functions ---------------------------------------------------------
 // Tick event handler: wake any FSMs whose wait-tick counters have expired
 // and re-arm the tick event for the next ISR trigger.
+// Drains sysTicksPending so that ticks missed while the main loop was busy
+// (e.g. during UART I/O) are applied before re-arming.
 static int sysUpdateWaitTicks(volatile event_t *event)
 {
-	fsmUpdateWaitTicks();
+	uint32_t pending;
+
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		pending = sysTicksPending;
+		sysTicksPending = 0;
+	}
+
+	while(pending--)
+		fsmUpdateWaitTicks();
+
 	evntArmSystem(event);
 	return(0);
 }

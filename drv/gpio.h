@@ -58,7 +58,7 @@ typedef enum
  *
  * Stored per-GPIO in `gpio_t.eventType` and passed as the sub-type to
  * `evntTrigger()` from the port ISR. Consumers wait on the same value via
- * `evntWait(sm, gpio->event, GPIO_EVENT_*)`.
+ * `evntWait(gpio->event, GPIO_EVENT_*, sm, stateHandler)`.
  *
  * Sub-type 0 is reserved as the "armed but not yet triggered" sentinel
  * (see doc/SDD.md sec. 4.3.4); valid GPIO sub-types start at 1.

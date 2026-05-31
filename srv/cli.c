@@ -118,8 +118,7 @@ int cliInit(volatile fsmStateMachine_t *stateMachine)
 
 static int cliNewCmd(volatile fsmStateMachine_t *stateMachine)
 {
-	fioWaitInput(stdin);
-	fsmSetNextState(stateMachine,cliGetKey);
+	fioWaitInput(stdin,cliGetKey);
 	
 	// Display the prompt
 	printf("\n" DISPLAY_PROMPT);
@@ -133,10 +132,7 @@ static int cliGetKey(volatile fsmStateMachine_t *stateMachine)
 //	if(key!=EOF)
 //	{
 		if(key == ESC)
-		{
-			fioWaitInput(stdin);
-			fsmSetNextState(stateMachine, cliEscKey);
-		}
+			fioWaitInput(stdin, cliEscKey);
 		else
 			fsmSetNextState(stateMachine, cliConsumeKey);
 //	}
@@ -149,11 +145,10 @@ static int cliEscKey(volatile fsmStateMachine_t *stateMachine)
 	key = fgetc(stdin);
 
 	if(key == '[' || key == 'O')
-		fsmSetNextState(stateMachine, cliEscSequence);
+		fioWaitInput(stdin, cliEscSequence);
 	else
-		fsmSetNextState(stateMachine, cliGetKey);
+		fioWaitInput(stdin, cliGetKey);
 
-	fioWaitInput(stdin);
 	return(0);
 }
 
@@ -172,10 +167,7 @@ static int cliEscSequence(volatile fsmStateMachine_t *stateMachine)
 		fsmSetNextState(stateMachine, cliConsumeKey);
 	}
 	else
-	{
-		fioWaitInput(stdin);
-		fsmSetNextState(stateMachine, cliGetKey);
-	}
+		fioWaitInput(stdin, cliGetKey);
 
 	return(0);
 }
@@ -206,15 +198,13 @@ static int cliConsumeKey(volatile fsmStateMachine_t *stateMachine)
 				commandLine[lineCounter] = 0;
 				printf(DISPLAY_PROMPT "%s \b",commandLine);
 			}
-			fioWaitInput(stdin);
-			fsmSetNextState(stateMachine, cliGetKey);
+			fioWaitInput(stdin, cliGetKey);
 			break;
 		case KEYCODE_UP:
 			strcpy(commandLine,previousCommand);
 			lineCounter = strlen(commandLine);
 			printf(DISPLAY_PROMPT "%s",commandLine);
-			fioWaitInput(stdin);
-			fsmSetNextState(stateMachine, cliGetKey);
+			fioWaitInput(stdin, cliGetKey);
 			break;
 		default:
 			// Transmit the key back to the connected computer (ECHO OFF)
@@ -222,8 +212,7 @@ static int cliConsumeKey(volatile fsmStateMachine_t *stateMachine)
 			commandLine[lineCounter] = key;
 			if(lineCounter<MAX_CMD_LINE-1)
 				++lineCounter;
-			fioWaitInput(stdin);
-			fsmSetNextState(stateMachine, cliGetKey);
+			fioWaitInput(stdin, cliGetKey);
 			break;
 	}
 	return(0);

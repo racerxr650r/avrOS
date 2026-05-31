@@ -345,7 +345,7 @@ static inline bool quePutPtr(volatile queue_t *que, void *ptr)
  * @param eventType The queue condition to wait for (@ref queueEvents_t).
  * @return 0 on success.
  */
-int queWait(volatile queue_t *que, queueEvents_t eventType);
+int queWait(volatile queue_t *que, queueEvents_t eventType, fsmHandler_t stateHandler);
 
 /** @} */ // end of queue_manager
 

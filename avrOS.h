@@ -87,6 +87,9 @@
 #define ROM_STR(var_name,str)			static char const var_name[] PROGMEM = {str}
 #define ROM_STR_G(var_name,str)			char const var_name[] PROGMEM = {str}
 
+// Because static is confusing ************************************************
+#define local      static
+#define persistant static
 
 // Inline functions *********************************************************
 // Return the whole portion of the percentage representing the ratio provided
