@@ -50,6 +50,7 @@ CLK = 24000000
 # The current programmer if the Atmel ICE w/UPDI interface
 PRG = serialupdi -P /dev/ttyAMA2
 #PRG = serialupdi -P /dev/ttyUSB2
+PORT = /dev/ttyAMA2
 
 # program source files (not including external libraries)
 SRC = $(PRJ).c
@@ -75,6 +76,7 @@ NAME = project
 # executables
 #AVRDUDE = /usr/local/bin/avrdude -c $(PRG) -p $(MCU)
 AVRDUDE = /usr/bin/avrdude -c $(PRG) -p $(MCU)
+PROGAMMER = avrOSdb --prog
 OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
 SIZE    = avr-size --format=avr -B $(DFP)/gcc/dev/$(MCU) --mcu=$(MCU)
@@ -101,7 +103,7 @@ DEP    = $(OBJ:%.o=%.d)
 
 # user targets
 # compile all files
-all: version build $(BUILD_DIR)$(PRJ).elf $(BUILD_DIR)cppcheck_report.txt $(BUILD_DIR)complexity_report.txt
+all: version build $(BUILD_DIR)$(PRJ).elf
 
 # Create the build directory
 build:
@@ -142,7 +144,7 @@ terminal:
 
 # flash program to mcu
 flash: all
-	$(AVRDUDE) -U flash:w:$(BUILD_DIR)$(PRJ).elf:e
+	$(PROGAMMER) $(PORT) $(BUILD_DIR)$(PRJ).elf
 
 # write fuses to mcu
 fuses: all
