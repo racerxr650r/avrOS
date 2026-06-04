@@ -69,7 +69,7 @@ CFLAGS    = -Wall -Wno-unused-function -O0 -g3 -fno-lto -fno-inline -fno-ipa-icf
 # any aditional flags for c++
 CPPFLAGS =
 # linker flags
-LINKFLAGS = -Wl,-Map="$(OutputFileName).map" -Wl,--cref -Wl,--start-group -Wl,-lm -Wl,--end-group -Wl,--gc-sections -mmcu=avr128da28 -B $(DFP)/gcc/dev/$(MCU) -Wl,-T avrOS.x 
+LINKFLAGS = -Wl,-Map="$(OutputFileName).map" -Wl,--cref -Wl,--start-group -Wl,-lm -Wl,--end-group -Wl,--gc-sections -mmcu=avr128da28 -B $(DFP)/gcc/dev/$(MCU) -Wl,-T avrOS-sections.x 
 # name of new project directory
 NAME = project
 
@@ -175,6 +175,7 @@ disasm: $(PRJ).elf
 project:
 	mkdir ../$(NAME)
 	cp avrOS.x ../$(NAME)
+	cp avrOS-sections.x ../$(NAME)
 	cp avrOSConfig.h ../$(NAME)
 	cp main.c ../$(NAME)
 	cp makefile ../$(NAME)

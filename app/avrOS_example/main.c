@@ -38,7 +38,7 @@ FUSES =
 };
 
 // AVR Lock bits configuration ------------------------------------------------
-LOCKBITS = LOCKBITS_DEFAULT;
+LOCKBITS = (uint8_t)LOCKBITS_DEFAULT;
 
 // Internal function prototypes -----------------------------------------------
 int btnHandler(volatile event_t *event);

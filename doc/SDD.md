@@ -144,11 +144,14 @@ In normal operation, timing is anchored by the system tick ISR, while work execu
 ### 3.4 Memory Layout
 
 The reference target is the AVR128DA28 (96 KiB flash, 16 KiB SRAM). The
-linker script at [app/avrOS_example/avrOS.x](../app/avrOS_example/avrOS.x)
-splits flash into an unmapped region (code) and a 32 KiB *flash window*
-that the AVR-Dx maps into the low data-address space. Read-only data
-and OS descriptor tables live in the window so they can be iterated
-through ordinary C pointers without `pgm_read_*()` calls.
+toolchain's default AVR-Dx linker script owns the base memory map and
+startup symbols (including FLMAP setup used by newer avr-gcc/avr-libc).
+avrOS extends that layout with
+[app/avrOS_example/avrOS-sections.x](../app/avrOS_example/avrOS-sections.x),
+an additive linker fragment that runs via `INSERT AFTER .rodata;`.
+Read-only data and OS descriptor tables live in the mapped flash window
+so they can be iterated through ordinary C pointers without
+`pgm_read_*()` calls.
 
 | Region | Address | Length | Contents |
 |--------|---------|--------|----------|
@@ -181,9 +184,10 @@ up to the current SP at boot. `memStackSizeMax()` walks down from
 ### 3.5 Linker Sections and Descriptor Tables
 
 Each `ADD_<THING>` macro places a `const` descriptor into a named
-section in the flash window. The linker script publishes
-`__start_<NAME>` / `__stop_<NAME>` symbols around each section so the
-OS can iterate them at runtime:
+section in the flash window. The additive linker fragment
+([app/avrOS_example/avrOS-sections.x](../app/avrOS_example/avrOS-sections.x))
+publishes `__start_<NAME>` / `__stop_<NAME>` symbols around each
+section so the OS can iterate them at runtime:
 
 | Section | Producer macro | Iterated by |
 |---------|----------------|-------------|
@@ -202,13 +206,20 @@ that has no direct C reference.
 To **add a new descriptor table**:
 
 1. Pick a name `<MOD>_TABLE` (uppercase, ends `_TABLE`).
-2. Add a block to `avrOS.x` inside the `text_window` group,
-   immediately after an existing table. Update the next block's
-   `ADDR(...)` to refer to the new table. If your table is the new
-   last one, move `__stop_text_window = . ;` into your block.
+2. Add a block to
+   [app/avrOS_example/avrOS-sections.x](../app/avrOS_example/avrOS-sections.x)
+   before the `__stop_text_window` assignment. Use `KEEP(*(YOUR_TABLE))`
+   in the block so descriptors are not removed by `--gc-sections`.
 3. In C, mark the descriptor with `SECTION(<MOD>_TABLE)` and declare
    `extern void *__start_<MOD>_TABLE, *__stop_<MOD>_TABLE;` in the
    module that iterates it.
+
+Notes:
+
+- Keep using the toolchain's default AVR-Dx linker script for base
+  sections, startup, and FLMAP runtime symbols.
+- Use the avrOS fragment only for descriptor-table placement and linker
+  boundary symbols consumed by `drv/mem` and table iterators.
 
 Rules:
 
