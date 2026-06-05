@@ -58,21 +58,25 @@ void memStackFill()
 	uint16_t heapTop = (uint16_t)__brkval == 0 ? (uint16_t) &__heap_start : (uint16_t)__brkval;
 	// Mod 4 the address to locate the offset in the fill pattern
 	uint16_t  offset= heapTop&0x0003;
-	
-	// Do this to guaranty the stackTop points to the top of the stack
-	do
+
+	// Bound the fill at the current stack pointer (SP), NOT at the address of a
+	// local variable. This function's own locals (heapTop/offset) live just
+	// ABOVE SP; the previous code filled up to &stackTop, which sat above those
+	// locals, so the fill overwrote heapTop mid-loop and corrupted the loop
+	// counter -> runaway loop that trampled all of RAM and hung the system.
+	// Locals are always at addresses >= SP, so stopping at SP can never clobber
+	// them. (avr-gcc 14.x spills these locals to the stack at -O0; older
+	// toolchains kept them in registers, which is why this only broke after the
+	// toolchain update.)
+	uint16_t stackBottom = SP;
+
+	while(heapTop < stackBottom)
 	{
-		// Locate the "top" of the stack (it actually grows down from the top of RAM)
-		uint16_t stackTop = (uint16_t)&stackTop;
-	
-		while(heapTop!=stackTop)
-		{
-			((uint8_t *)heapTop)[0] = fillPattern[offset];
-			++heapTop;
-			if(++offset>3)
-				offset = 0;
-		}
-	}while(0);
+		((uint8_t *)heapTop)[0] = fillPattern[offset];
+		++heapTop;
+		if(++offset>3)
+			offset = 0;
+	}
 }
 
 // From the current stack pointer, scan memory until you find the fill pattern

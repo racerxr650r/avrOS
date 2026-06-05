@@ -54,8 +54,6 @@ PORT = /dev/ttyAMA2
 
 # program source files (not including external libraries)
 SRC = $(PRJ).c
-# Device Family Pack directory (update this if you update the DFP)
-DFP = /usr/lib/gcc/avr/5.4.0/Atmel.AVR-Dx_DFP.2.4.286
 # where to look for external libraries (consisting of .c/.cpp files and .h files)
 # e.g. EXT = ../../EyeToSee ../../YouSART
 EXT = ../.. ../../sys ../../drv ../../srv
@@ -65,11 +63,11 @@ BUILD_DIR = ./build/
 INCLUDE := $(foreach dir, $(EXT), -I$(dir))
 
 # c flags
-CFLAGS    = -Wall -Wno-unused-function -O0 -g3 -fno-lto -fno-inline -fno-ipa-icf -fno-ipa-cp-clone -fvar-tracking-assignments -DDEBUG -mmcu=$(MCU) -B $(DFP)/gcc/dev/$(MCU) -funsigned-char -funsigned-bitfields -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -std=gnu99 -MMD -I$(DFP)/include -I. $(INCLUDE)
+CFLAGS    = -Wall -Wno-unused-function -O0 -g3 -fno-lto -fno-inline -fno-ipa-icf -fno-ipa-cp-clone -fvar-tracking-assignments -DDEBUG -mmcu=$(MCU) -funsigned-char -funsigned-bitfields -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -std=gnu99 -MMD -I. $(INCLUDE)
 # any aditional flags for c++
 CPPFLAGS =
 # linker flags
-LINKFLAGS = -Wl,-Map="$(OutputFileName).map" -Wl,--cref -Wl,--start-group -Wl,-lm -Wl,--end-group -Wl,--gc-sections -mmcu=avr128da28 -B $(DFP)/gcc/dev/$(MCU) -Wl,-T avrOS-sections.x 
+LINKFLAGS = -Wl,-Map=$(BUILD_DIR)$(PRJ).map -Wl,--cref -Wl,--start-group -Wl,-lm -Wl,--end-group -Wl,--gc-sections -mmcu=$(MCU) -Wl,-T avrOS.x
 # name of new project directory
 NAME = project
 
@@ -79,7 +77,7 @@ AVRDUDE = /usr/bin/avrdude -c $(PRG) -p $(MCU)
 PROGAMMER = avrOSdb --prog
 OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
-SIZE    = avr-size --format=avr -B $(DFP)/gcc/dev/$(MCU) --mcu=$(MCU)
+SIZE    = avr-size --format=avr --mcu=$(MCU)
 CC      = avr-gcc
 
 # annual salary used to calculate cost for the SLOC estimation (Source indeed.com)
@@ -161,7 +159,7 @@ complexity:
 # static code analysis
 # --output-file=$(BUILD_DIR)cppcheck_report.txt 
 analyze: build
-	cppcheck -v --std=c99 --platform=avr8 --library=avr.cfg --max-ctu-depth=10 --cppcheck-build-dir=$(BUILD_DIR)cppcheck --language=c --inconclusive -I$(DFP)/include -I. $(INCLUDE) $(SRCS)
+	cppcheck -v --std=c99 --platform=avr8 --library=avr.cfg --max-ctu-depth=10 --cppcheck-build-dir=$(BUILD_DIR)cppcheck --language=c --inconclusive -I/usr/lib/avr/include -I. $(INCLUDE) $(SRCS)
 
 # SLOC Count
 sloc: build
@@ -175,7 +173,6 @@ disasm: $(PRJ).elf
 project:
 	mkdir ../$(NAME)
 	cp avrOS.x ../$(NAME)
-	cp avrOS-sections.x ../$(NAME)
 	cp avrOSConfig.h ../$(NAME)
 	cp main.c ../$(NAME)
 	cp makefile ../$(NAME)
@@ -188,25 +185,20 @@ prereqs:
 	sudo apt-get install -y --no-install-recommends \
 		make binutils gcc-avr gdb-avr avr-libc flex byacc bison cmake unzip avrdude \
 		sloccount complexity cppcheck doxygen graphviz pandoc
-	# Get the AVR Dx DFP file for the AVR DA libs and header files
-	echo "Installing the Microchip/Atmel Device Feature Pack for the AVR-Dx"
-	wget http://packs.download.atmel.com/Atmel.AVR-Dx_DFP.2.4.286.atpack
-	# Unzip the DFP package, copy it to the compiler directory, and clean up
-	mkdir ./Atmel.AVR-Dx_DFP.2.4.286
-	unzip -d Atmel.AVR-Dx_DFP.2.4.286/ Atmel.AVR-Dx_DFP.2.4.286.atpack
-	sudo cp -R Atmel.AVR-Dx_DFP.2.4.286/ /usr/lib/gcc/avr/5.4.0
-	rm -rf Atmel.AVR-Dx_DFP.2.4.286
-	rm Atmel.AVR-Dx_DFP.2.4.286.atpack
+	# Note: the AVR-Dx (AVR128DA28) device support is provided natively by
+	# avr-gcc 14.2 / avr-libc, so the Atmel Device Family Pack is no longer
+	# required. Device headers come from /usr/lib/avr/include and the linker
+	# script (avrxmega4_flmap.xn) from /usr/lib/avr/lib/ldscripts.
 	
 
 # Set up Raspberry Pi for AVR development
 setup_pi:
-	echo "Modifying /boot/config.txt to support serial console and uarts 2, 3, and 4"
-	grep -qxF 'alias complex' /boot/config.txt || printf "alias complex=\'tree -f -i -n -P *.c | grep .c | complexity -h -c --threshold=1\'\n\r" | sudo tee -a /boot/config.txt
-	grep -qxF 'enable_uart=1' /boot/config.txt || echo 'enable_uart=1' | sudo tee -a /boot/config.txt
-	grep -qxF 'dtoverlay=uart2' /boot/config.txt || echo 'dtoverlay=uart2' | sudo tee -a /boot/config.txt
-	grep -qxF 'dtoverlay=uart3' /boot/config.txt || echo 'dtoverlay=uart3' | sudo tee -a /boot/config.txt
-	grep -qxF 'dtoverlay=uart4' /boot/config.txt || echo 'dtoverlay=uart4' | sudo tee -a /boot/config.txt
+	echo "Modifying /boot/firmware/config.txt to support serial console and uarts 2, 3, and 4"
+	grep -qxF 'alias complex' /boot/firmware/config.txt || printf "alias complex=\'tree -f -i -n -P *.c | grep .c | complexity -h -c --threshold=1\'\n\r" | sudo tee -a /boot/firmware/config.txt
+	grep -qxF 'enable_uart=1' /boot/firmware/config.txt || echo 'enable_uart=1' | sudo tee -a /boot/firmware/config.txt
+	grep -qxF 'dtoverlay=uart2' /boot/firmware/config.txt || echo 'dtoverlay=uart2' | sudo tee -a /boot/firmware/config.txt
+	grep -qxF 'dtoverlay=uart3' /boot/firmware/config.txt || echo 'dtoverlay=uart3' | sudo tee -a /boot/firmware/config.txt
+	grep -qxF 'dtoverlay=uart4' /boot/firmware/config.txt || echo 'dtoverlay=uart4' | sudo tee -a /boot/firmware/config.txt
 
 # remove compiled files
 clean:
@@ -240,7 +232,7 @@ $(BUILD_DIR)$(PRJ).hex: $(BUILD_DIR)$(PRJ).elf
 
 # Static analysis report 
 $(BUILD_DIR)cppcheck_report.txt:
-	cppcheck -v --std=c99 --platform=avr8 --library=avr.cfg --max-ctu-depth=10 --cppcheck-build-dir=$(BUILD_DIR)cppcheck --language=c --output-file=$(BUILD_DIR)cppcheck_report.txt -I$(DFP)/include -I. $(INCLUDE) $(SRCS)
+	cppcheck -v --std=c99 --platform=avr8 --library=avr.cfg --max-ctu-depth=10 --cppcheck-build-dir=$(BUILD_DIR)cppcheck --language=c --output-file=$(BUILD_DIR)cppcheck_report.txt -I/usr/lib/avr/include -I. $(INCLUDE) $(SRCS)
 
 # Complexity analysis report
 $(BUILD_DIR)complexity_report.txt:
