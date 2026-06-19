@@ -1,0 +1,40 @@
+# clangd parses with mainline clang, which does NOT know the avr128da28 CPU,
+# so -mmcu=avr128da28 is rejected ("unknown target CPU"). We remove it and
+# instead hand clang the device feature macros that avr-gcc would derive from
+# -mmcu (dumped via `avr-gcc -mmcu=avr128da28 -dM -E -xc /dev/null`). Without
+# these, clang leaves __AVR_ARCH__ empty (breaks `#if __AVR_ARCH__ >= 100` in
+# <avr/common.h>) and omits __AVR_XMEGA__ (so <avr/fuse.h> picks the classic
+# fieldless __fuse_t and the FUSES{.WDTCFG=...} initializer fails to compile).
+#
+# System headers come from --query-driver=avr-gcc (see .zed/settings.json).
+# Also drop GCC-only optimization flags clang doesn't understand.
+CompileFlags:
+  Remove:
+    - -fno-ipa-icf
+    - -fno-ipa-cp-clone
+    - -fvar-tracking-assignments
+    - -funsigned-bitfields
+    - -fpack-struct
+    - -fshort-enums
+    - -mmcu=*
+  Add:
+    - --target=avr
+    - -D__AVR_AVR128DA28__=1
+    - -D__AVR_DEVICE_NAME__=avr128da28
+    - -D__AVR_ARCH__=104
+    - -D__AVR_XMEGA__=1
+    - -D__AVR_MEGA__=1
+    - -D__AVR_ENHANCED__=1
+    - -D__AVR_HAVE_16BIT_SP__=1
+    - -D__AVR_HAVE_ADIW__=1
+    - -D__AVR_HAVE_SPH__=1
+    - -D__AVR_HAVE_ELPM__=1
+    - -D__AVR_HAVE_ELPMX__=1
+    - -D__AVR_HAVE_FLMAP__=1
+    - -D__AVR_HAVE_JMP_CALL__=1
+    - -D__AVR_HAVE_LPMX__=1
+    - -D__AVR_HAVE_MOVW__=1
+    - -D__AVR_HAVE_MUL__=1
+    - -D__AVR_HAVE_RAMPZ__=1
+    - -D__AVR_SFR_OFFSET__=0x0
+    - -D__AVR_RODATA_IN_RAM__=0

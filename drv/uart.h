@@ -30,7 +30,12 @@
  * @{
  */
 
-#include "avrOS.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <avr/io.h>
+#include "queue.h"
 
 // Data Types -----------------------------------------------------------------
 typedef struct

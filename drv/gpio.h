@@ -30,7 +30,9 @@
  * @{
  */
 
-#include "avrOS.h"
+#include <stdint.h>
+#include <avr/io.h>
+#include "event.h"
 
 // Data Types -----------------------------------------------------------------
 struct GPIO_TYPE;

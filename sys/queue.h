@@ -30,6 +30,14 @@
  * @{
  */
 
+// Includes -------------------------------------------------------------------
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <util/atomic.h>
+#include "event.h"
+#include "fsm.h"
+
 // Constants ------------------------------------------------------------------
 /**
  * @brief Maximum supported queue size.

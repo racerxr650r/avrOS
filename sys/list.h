@@ -22,14 +22,15 @@
 #ifndef LIST_H_
 #define LIST_H_
 
-#include "../avrOS.h"
+#include <stdint.h>
+#include <stddef.h>
 
 // Types ----------------------------------------------------------------------
-/*typedef struct LIST_NODE
+typedef struct LIST_NODE
 {
     void *data;
     struct LIST_NODE *next;
-} listNode_t;*/
+} listNode_t;
 
 typedef struct LIST
 {

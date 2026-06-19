@@ -14,6 +14,11 @@
  * @{
  */
 
+// Includes -------------------------------------------------------------------
+#include <stdint.h>
+#include <stdio.h>
+#include <avr/io.h>
+
 // Externals ------------------------------------------------------------------
 extern uint16_t __data_start,__data_end,__heap_start, *__brkval;
 extern uint16_t _etext,__start_text_window,__stop_text_window,__stop_rodata;

@@ -1,0 +1,26 @@
+{
+  "lsp": {
+    "clangd": {
+      "binary": {
+        "arguments": [
+          "--query-driver=/usr/bin/avr-gcc",
+          "--background-index",
+          "--header-insertion=never",
+          "--clang-tidy"
+        ]
+      }
+    }
+  },
+  "dap": {
+    "avrOSdb": {
+      "binary": "/usr/local/bin/avrOSdb",
+      "args": [
+        "--dap",
+        "--port",
+        "1234",
+        "/dev/ttyAMA2",
+        "/home/john/Projects/avrOS/app/avrOS_example/build/main.elf"
+      ]
+    }
+  }
+}

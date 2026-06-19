@@ -1,0 +1,8 @@
+[
+  {
+    "label": "avrOS: hardware debug (avrOSdb --dap)",
+    "adapter": "avrOSdb",
+    "request": "launch",
+    "tcp_connection": { "host": "127.0.0.1", "port": 1234, "timeout": 30000 }
+  }
+]

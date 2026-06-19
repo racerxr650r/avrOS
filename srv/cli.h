@@ -29,7 +29,10 @@
  */
 
 // Includes -------------------------------------------------------------------
-#include "../avrOS.h"
+#include <stdio.h>
+#include <stdbool.h>
+#include "avrOSConfig.h"
+#include "uart.h"
 
 // Types ----------------------------------------------------------------------
 typedef struct cliCommand_struct cliCommand_t;

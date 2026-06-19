@@ -30,7 +30,9 @@
  * @{
  */
 
-#include "../avrOS.h"
+#include <stdio.h>
+#include "queue.h"
+#include "fsm.h"
 
 /**
  * @brief Structure to hold file I/O buffer queues.

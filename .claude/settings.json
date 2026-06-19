@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk '/^[[:space:]]*\\\\.rodata/{f=1} f{print NR\": \"$0} f&&/AT>|} >/{c++; if\\(c>=1 && /}/\\) exit}' /usr/lib/avr/lib/ldscripts/avrxmega4_flmap.x)",
+      "Bash(sed -n '75,93p' drv/gpio.h)",
+      "Bash(sed -n '40,55p' drv/gpio.c)",
+      "Bash(echo \"tracked? exit=$?\")",
+      "Bash(avr-objdump *)",
+      "Bash(avr-objdump -d build/main.elf)",
+      "Bash(awk '/<__init>:|<__ctors_end>:|\\\\.init[0-9]/{p=1} p{print} /<main>:/{exit}')",
+      "Bash(awk '/<__do_flmap_init>:|<__flmap_init_label>:/{p=1} p{print} /[0-9a-f]+ <__bss_start>:|<main>:|<__do_copy_data>:|<__do_clear_bss>:/{exit}')",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(python3 -c \"import json;d=json.load\\(open\\('/home/john/Projects/avrOS/.claude/settings.local.json'\\)\\);print\\('defaultMode =',d['permissions']['defaultMode']\\);print\\('allow rules preserved:',len\\(d['permissions']['allow']\\)\\)\")",
+      "Bash(avr-readelf -l build/main.elf)",
+      "Bash(avr-objdump -s -j .rodata build/main.elf)",
+      "Bash(avr-nm build/main.elf)",
+      "Bash(avr-gcc -mmcu=avr128da28 -E -dM -)",
+      "Read(//usr/lib/avr/include/**)",
+      "Bash(avr-gcc -mmcu=avr128da28 -E -)",
+      "Bash(awk '/<gpioInit>:/{p=1} p{print} p&&/ret$/{exit}')",
+      "Bash(avrdude -c serialupdi -P /dev/ttyAMA2 -p avr128da28 -U fuses:r:-:h)",
+      "Bash(avrdude -c serialupdi -P /dev/ttyAMA2 -p avr128da28 -U wdtcfg:r:-:h -U bodcfg:r:-:h -U osccfg:r:-:h -U syscfg0:r:-:h -U syscfg1:r:-:h -U codesize:r:-:h -U bootsize:r:-:h)",
+      "Bash(awk 'NR<=40{print} /<__ctors_end>:/{exit}')",
+      "Bash(avr-gcc -mmcu=avr128da28 -O0 -S -xc - -o -)",
+      "Bash(avr-objdump -d app/avrOS_example/build/main.elf)",
+      "Bash(awk '/^\\(void|int|bool|evntState_t\\)[[:space:]]+evntInit/{f=1} f{print NR\": \"$0} f&&/^}/{exit}' sys/event.c)"
+    ]
+  }
+}

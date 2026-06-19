@@ -24,6 +24,11 @@
 #define AVROS_H_
 
 // Toolchain/Library header files **********************************************
+// avrOS.h is an umbrella header: application/module sources include it instead
+// of the individual headers below. The IWYU export pragmas tell clangd's
+// include-cleaner to attribute the re-exported symbols to avrOS.h, so it does
+// not flag this include as "not used directly" (or suggest adding each header).
+// IWYU pragma: begin_exports
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +38,7 @@
 #include <avr/pgmspace.h>
 #include <util/atomic.h>
 #include <avr/sleep.h>
+// IWYU pragma: end_exports
 
 // Constants *******************************************************************
 #define AVRSMOS_OS
@@ -45,6 +51,7 @@
 #define ENABLE	1
 
 // avrOS System Header Files ***************************************************
+// IWYU pragma: begin_exports
 #include "avrOSConfig.h"
 #include "sys/sys.h"
 #include "sys/fsm.h"
@@ -60,6 +67,7 @@
 #include "drv/gpio.h"
 
 #include "srv/cli.h"
+// IWYU pragma: end_exports
 //#include "crtDrv.h"
 //#include "delaySrv.h"
 //#include "spiDrv.h"
