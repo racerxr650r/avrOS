@@ -19,7 +19,6 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
  * IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#include <avr/cpufunc.h>
 #include "avrOS.h"
 
 // Constants ------------------------------------------------------------------
@@ -50,40 +49,32 @@ int cpuResetCmd(int argC, char *argV[])
 // Enable or Disable the CPU/Peripheral clock output to external pin
 void cpuClockOut(bool enable)
 {
-	// Clock Output is enabled...
-	if(enable)
-		ccp_write_io((void *)&(CLKCTRL.MCLKCTRLA),CLKCTRL.MCLKCTRLA|CLKCTRL_CLKOUT_bm);
-	// Clock Output is disabled...
-	else
-		ccp_write_io((void *)&(CLKCTRL.MCLKCTRLA),CLKCTRL.MCLKCTRLA&(~CLKCTRL_CLKOUT_bm));
+	clkClockOut(enable);
 }
 
 // Set the internal high frequency oscillator as the source clock and configure
 void cpuSetOSCHF(CLKCTRL_FRQSEL_t frequency, bool prescalerEnable, CLKCTRL_PDIV_t prescaler)
 {
-	uint8_t	value;
-	
 	// Set the internal HF oscillator frequency
-	value = (uint8_t)frequency;
-	ccp_write_io((void *)&CLKCTRL.OSCHFCTRLA, value);
-	// Set the prescaler divisor
-	ccp_write_io((void *)&CLKCTRL.MCLKCTRLB, prescaler|prescalerEnable);
+	clkSetOscHFFrequency(frequency);
+	// Set the prescaler divisor and enable
+	clkSetPrescaler(prescaler, prescalerEnable);
 	// Set the internal HF oscillator as the clock source
-	ccp_write_io((void *)&CLKCTRL.MCLKCTRLA, CLKCTRL.MCLKCTRLA&(~CLKCTRL_CLKSEL_gm));
+	clkSetSource(CLKCTRL_CLKSEL_OSCHF_gc);
 }
 
 // Calculate the CPU frequency using the Clock Controller settings. Note: If an external clock is being used, this function will return 0
 uint16_t cpuGetFrequency()
 {
-	uint8_t				clkSelect = CLKCTRL.MCLKCTRLA&CLKCTRL_CLKSEL_gm; 	// Get the clock select from the Clock Control Register A
-	uint8_t				pdiv = (CLKCTRL.MCLKCTRLB&CLKCTRL_PDIV_gm)>>CLKCTRL_PDIV_gp;
+	CLKCTRL_CLKSEL_t	clkSelect = clkGetSource();					// Main clock source
+	uint8_t				pdiv = clkGetPrescaler()>>CLKCTRL_PDIV_gp;	// Prescaler division index
 	uint16_t			freq = 0;
-	
+
 	// If internal HF clock is enabled...
 	if(clkSelect == CLKCTRL_CLKSEL_OSCHF_gc)
 	{
 		// Get the frequency select value from the HF oscillator control register
-		uint8_t freqSelect = (CLKCTRL.OSCHFCTRLA&CLKCTRL_FRQSEL_gm)>>CLKCTRL_FRQSEL_gp;
+		uint8_t freqSelect = clkGetOscHFFrequency()>>CLKCTRL_FRQSEL_gp;
 		// If the frequency select value is valid...
 		if(freqSelect<=sizeof(oschfFrequency))
 			freq = oschfFrequency[freqSelect];
@@ -93,16 +84,16 @@ uint16_t cpuGetFrequency()
 	{
 		freq = 32;
 	}
-	
+
 	// Factor the prescaler divisor
-	if((CLKCTRL.MCLKCTRLB&CLKCTRL_PEN_bp) && (pdiv<=sizeof(divisor)))
+	if(clkPrescalerEnabled() && (pdiv<=sizeof(divisor)))
 		freq = freq/(uint16_t)divisor[pdiv];
-	
+
 	return(freq);
 }
 
 void cpuReset()
 {
-	// Configuration Change Protection write to the Software Reset Register
-	ccp_write_io((void *)&RSTCTRL.SWRR,RSTCTRL_SWRST_bm);
+	// Trigger a CCP-protected software reset
+	rstSoftwareReset();
 }

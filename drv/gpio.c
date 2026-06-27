@@ -55,7 +55,7 @@ ISR(PORTF_PORT_vect)
 // Port Interrupt Handler
 static void isrInput(PORT_t *port)
 {
-	uint8_t flags = port->INTFLAGS;
+	uint8_t flags = pioGetInterruptFlags(port);
 
 	// Walk the gpio table
 	gpio_t *gpio = (gpio_t *)&__start_GPIO_TABLE;
@@ -74,7 +74,7 @@ static void isrInput(PORT_t *port)
 					evntTrigger(gpio->event, gpio->eventType);
 				}
 				// Clear the interrupt flag
-				gpio->port->INTFLAGS = gpio->pin;
+				pioClearInterruptFlags(gpio->port, gpio->pin);
 			}
 		}
 	}
@@ -263,13 +263,12 @@ int gpioInit(const fsmStateMachineDescr_t *stateMachineDescr)
 
 	// If this gpio is an output...
 	if(gpioInstance->direction == GPIO_OUTPUT)
-		gpioInstance->port->DIRSET = gpioInstance->pin;
+		pioSetOutput(gpioInstance->port, gpioInstance->pin);
 	// Else this gpio is an input...
 	else
 	{
-		gpioInstance->port->DIRCLR = gpioInstance->pin;
-		gpioInstance->port->PINCONFIG = PORT_PULLUPEN_bm;
-		gpioInstance->port->PINCTRLUPD = gpioInstance->pin;
+		pioSetInput(gpioInstance->port, gpioInstance->pin);
+		pioConfigPins(gpioInstance->port, PORT_PULLUPEN_bm, gpioInstance->pin);
 	}
 
 	// If this gpio has an interrupt event...
@@ -284,8 +283,7 @@ int gpioInit(const fsmStateMachineDescr_t *stateMachineDescr)
 			case GPIO_EVENT_BOTHEDGES:
 			default:                   isc = PORT_ISC_BOTHEDGES_gc; break;
 		}
-		gpioInstance->port->PINCONFIG = PORT_PULLUPEN_bm | isc;
-		gpioInstance->port->PINCTRLUPD = gpioInstance->pin;
+		pioConfigPins(gpioInstance->port, PORT_PULLUPEN_bm | isc, gpioInstance->pin);
 	}
 	
 	return(0);
@@ -294,34 +292,34 @@ int gpioInit(const fsmStateMachineDescr_t *stateMachineDescr)
 // External functions ---------------------------------------------------------
 void gpioSetOutput(const gpio_t *gpio, uint8_t value)
 {
-	gpio->port->OUTSET = (value & gpio->pin);
+	pioSet(gpio->port, value & gpio->pin);
 }
 
 void gpioClearOutput(const gpio_t *gpio, uint8_t value)
 {
-	gpio->port->OUTCLR = (value & gpio->pin);
+	pioClear(gpio->port, value & gpio->pin);
 }
 
 void gpioToggleOutput(const gpio_t *gpio, uint8_t value)
 {
-	gpio->port->OUTTGL = (value & gpio->pin);
+	pioToggle(gpio->port, value & gpio->pin);
 }
 
 void gpioWriteOutput(const gpio_t *gpio, uint8_t value)
 {
-	uint8_t tmp = gpio->port->OUT;
+	uint8_t tmp = pioReadOutput(gpio->port);
 
 	value &= gpio->pin;
 	tmp &= ~gpio->pin;
-	gpio->port->OUT = value | tmp; 
+	pioWrite(gpio->port, value | tmp);
 }
 
 uint8_t gpioReadInput(const gpio_t *gpio)
 {
-	return(gpio->port->IN & gpio->pin);
+	return(pioRead(gpio->port) & gpio->pin);
 }
 
 uint8_t gpioReadOutput(const gpio_t *gpio)
 {
-	return(gpio->port->OUT & gpio->pin);
+	return(pioReadOutput(gpio->port) & gpio->pin);
 }

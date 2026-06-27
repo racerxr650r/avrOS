@@ -70,6 +70,20 @@ in this codebase:
    file** — it pulls libc, AVR headers, and the OS API.
 8. **Doxygen on every public symbol** in headers (`@brief`, `@param`,
    `@return`).
+9. **Manipulate peripheral registers only through the driver header.**
+   All new source code must use the inline functions in the matching
+   `drv/<periph>.h` (e.g. `tcb.h`, `tca.h`, `rtc.h`, `clk.h`, `slp.h`,
+   `rst.h`, `nvm.h`, `wdt.h`, `int.h`, `evt.h`, `vref.h`, `adc.h`,
+   `ac.h`, `zcd.h`, `dac.h`, `gpio.h`) instead of writing the
+   `PERIPH.REG` registers directly. If no driver exists for the
+   peripheral, add one following the driver pattern. Drivers themselves
+   delegate to existing drivers for shared resources (e.g. ADC/AC/DAC
+   reference selection calls `vref.h`).
+10. **Keep `doc/groups.dox` in sync with Doxygen.** When a new header
+    introduces an `@addtogroup`, add the matching
+    `@defgroup … @ingroup …` entry to
+    [doc/groups.dox](../../../doc/groups.dox); when a module's scope
+    changes, update its existing group `@brief` / description.
 
 ## Standard procedures
 
@@ -96,7 +110,10 @@ in this codebase:
    runtime introspection.
 8. Add `#ifdef MOD_STATS` fields to the status struct.
 9. Add the new header to `avrOS.h` in the correct section.
-10. Walk the checklist at the end of
+10. Add a matching `@defgroup … @ingroup …` entry to
+    [doc/groups.dox](../../../doc/groups.dox) for the header's
+    `@addtogroup`.
+11. Walk the checklist at the end of
     [doc/CODING_STANDARDS.md](../../../doc/CODING_STANDARDS.md).
 
 ### Touching ISR-shared state
@@ -149,6 +166,10 @@ Run through this list before declaring a change complete:
 - [ ] `<MOD>_STATS` and `<MOD>_CLI` gates added (or intentionally
       omitted with comment).
 - [ ] Doxygen comments on every public symbol in the header.
+- [ ] Peripheral register access goes through the `drv/<periph>.h`
+      driver — no direct `PERIPH.REG` writes in new code.
+- [ ] New/changed Doxygen `@addtogroup` has a matching `@defgroup`
+      entry in `doc/groups.dox`.
 - [ ] New module included from `avrOS.h` in the correct section.
 - [ ] Builds clean for the example app (`app/avrOS_example`).
 - [ ] CLI command produces sensible output for both forms.

@@ -44,7 +44,7 @@ ADD_EVENT(tick, sysUpdateWaitTicks);
 ISR(SYS_TICK_INT_VECT)
 {
 	// Clear the interrupt
-	(*(TCB_t*)SYS_TICK_TIMER).INTFLAGS = TCB_CAPT_bm;
+	tcbClearInterruptFlags((TCB_t *)SYS_TICK_TIMER, TCB_INT_CAPT);
 	
 	// Increment the tick counter and the pending counter
 	++sysTicks;
@@ -139,16 +139,16 @@ void sysInitTick(TCB_t *tcb, uint16_t sysTickFreq)
 	// Disable interrupts while setting up timer registers
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-		// Setup control reg A (Peripheral clock DIV 2)
-		tcb->CTRLA = clockSource;
+		// Select the peripheral clock source (DIV1 or DIV2)
+		tcbSetClock(tcb, clockSource);
 		// Set the top to tick divisor for tick freq
-		tcb->CCMP = tickDivisor;
-		// Enable the overflow interrupt
-		tcb->INTCTRL |= TCB_CAPT_bm;
-		// Setup control reg B (Periodic timer mode)
-		tcb->CTRLB = TCB_CNTMODE_INT_gc;
+		tcbSetCompare(tcb, tickDivisor);
+		// Enable the capture/timeout interrupt
+		tcbEnableInterrupt(tcb, TCB_INT_CAPT);
+		// Setup periodic timer mode
+		tcbSetMode(tcb, TCB_CNTMODE_INT_gc);
 		// Enable the clock
-		tcb->CTRLA |= TCB_ENABLE_bm;
+		tcbEnable(tcb);
 	}
 
 	evntArmSystem(&tick);
@@ -206,7 +206,7 @@ void sysSetTickFreq(uint16_t sysTickFreq)
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
 		// Set the top to divisor for tick freq
-		((TCB_t *)SYS_TICK_TIMER)->CCMP = tickDivisor;
+		tcbSetCompare((TCB_t *)SYS_TICK_TIMER, tickDivisor);
 	}
 }
 
@@ -217,9 +217,9 @@ uint16_t sysGetTickFreq()
 	uint16_t		sysTickFreq;
 
 	if(cpuFreq==1000)
-		sysTickFreq = 1000/((TCB_t *)SYS_TICK_TIMER)->CCMP;
+		sysTickFreq = 1000/tcbGetCapture((TCB_t *)SYS_TICK_TIMER);
 	else
-		sysTickFreq = cpuFreq/(2*((TCB_t *)SYS_TICK_TIMER)->CCMP);
+		sysTickFreq = cpuFreq/(2*tcbGetCapture((TCB_t *)SYS_TICK_TIMER));
 
 	return(sysTickFreq);
 }
@@ -238,7 +238,6 @@ uint32_t sysGetTickCount()
 // Put the system to sleep until the next interrupt
 void sysSleep()
 {
-	set_sleep_mode(SLEEP_MODE_IDLE);
-	sleep_mode();
+	slpSleep(SLPCTRL_SMODE_IDLE_gc);
 	return;
 }

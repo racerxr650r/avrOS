@@ -192,6 +192,289 @@ typedef struct
 				ADD_INITIALIZER(usartName,uartInit,(void *)&usartName);
 #endif
 
+// Inline Register Accessors --------------------------------------------------
+// Low-overhead `static inline` functions that manipulate the USART peripheral
+// registers directly, operating on a caller-supplied `USART_t *`. The buffered,
+// queue-based driver API below is built on top of these. Use these when adding
+// new code that touches the USART registers rather than accessing them directly.
+//
+// Interrupt safety: the configuration accessors are 8-bit read-modify-write and
+// are normally run once from `uartInit()` inside an ATOMIC_BLOCK; the data and
+// status accessors are single-register reads/writes. There is no byte-pair
+// (TEMP) hazard — the USART has no shared TEMP register.
+
+/**
+ * @brief USART interrupt-enable selector (CTRLA).
+ *
+ * Bit mask identifying which USART interrupt-enable bits to set or clear. Values
+ * may be OR'd together. The bit positions match the CTRLA register.
+ */
+typedef enum
+{
+	USART_INT_RXC = USART_RXCIE_bm,	///< Receive complete interrupt
+	USART_INT_TXC = USART_TXCIE_bm,	///< Transmit complete interrupt
+	USART_INT_DRE = USART_DREIE_bm,	///< Data register empty interrupt
+	USART_INT_RXS = USART_RXSIE_bm,	///< Receive start interrupt
+	USART_INT_ABE = USART_ABEIE_bm	///< Auto-baud error interrupt
+} usartInt_t;
+
+// Configuration --------------------------------------------------------------
+/**
+ * @brief Set the baud rate register (BAUD).
+ *
+ * Writes the 16-bit BAUD register with a pre-computed value. The baud register
+ * value is derived from the peripheral clock, oversampling, and target baud.
+ *
+ * @param usart Pointer to the USART peripheral.
+ * @param baud  Value to load into the BAUD register.
+ */
+static inline void usartSetBaud(USART_t *usart, uint16_t baud)
+{
+	usart->BAUD = baud;
+}
+
+/**
+ * @brief Set the asynchronous frame format (CTRLC).
+ *
+ * Writes CTRLC with the communication mode, parity, character size, and stop
+ * bits in a single register write.
+ *
+ * @param usart    Pointer to the USART peripheral.
+ * @param mode     Communication mode group code (`USART_CMODE_*_gc`).
+ * @param parity   Parity group code (`USART_PMODE_*_gc`).
+ * @param dataBits Character size group code (`USART_CHSIZE_*_gc`).
+ * @param stopBits Stop-bit group code (`USART_SBMODE_*_gc`).
+ */
+static inline void usartSetFrameFormat(USART_t *usart, USART_CMODE_t mode, USART_PMODE_t parity, USART_CHSIZE_t dataBits, USART_SBMODE_t stopBits)
+{
+	usart->CTRLC = mode | parity | dataBits | stopBits;
+}
+
+/**
+ * @brief Select the communication mode (CTRLC CMODE).
+ *
+ * Writes the CMODE field of CTRLC (asynchronous, synchronous, IRCOM, or
+ * SPI-host). Other CTRLC fields are preserved. Use this to change one field
+ * without rewriting the whole frame format.
+ *
+ * @param usart Pointer to the USART peripheral.
+ * @param mode  Communication mode group code (`USART_CMODE_*_gc`).
+ */
+static inline void usartSetCommMode(USART_t *usart, USART_CMODE_t mode)
+{
+	usart->CTRLC = (usart->CTRLC & ~USART_CMODE_gm) | mode;
+}
+
+/**
+ * @brief Select the parity mode (CTRLC PMODE).
+ *
+ * Writes the PMODE field of CTRLC (disabled, even, or odd). Other CTRLC fields
+ * are preserved.
+ *
+ * @param usart  Pointer to the USART peripheral.
+ * @param parity Parity group code (`USART_PMODE_*_gc`).
+ */
+static inline void usartSetParity(USART_t *usart, USART_PMODE_t parity)
+{
+	usart->CTRLC = (usart->CTRLC & ~USART_PMODE_gm) | parity;
+}
+
+/**
+ * @brief Select the character size (CTRLC CHSIZE).
+ *
+ * Writes the CHSIZE field of CTRLC (5–9 data bits). Other CTRLC fields are
+ * preserved.
+ *
+ * @param usart    Pointer to the USART peripheral.
+ * @param dataBits Character size group code (`USART_CHSIZE_*_gc`).
+ */
+static inline void usartSetDataBits(USART_t *usart, USART_CHSIZE_t dataBits)
+{
+	usart->CTRLC = (usart->CTRLC & ~USART_CHSIZE_gm) | dataBits;
+}
+
+/**
+ * @brief Select the number of stop bits (CTRLC SBMODE).
+ *
+ * Writes the SBMODE field of CTRLC (1 or 2 stop bits). Other CTRLC fields are
+ * preserved.
+ *
+ * @param usart    Pointer to the USART peripheral.
+ * @param stopBits Stop-bit group code (`USART_SBMODE_*_gc`).
+ */
+static inline void usartSetStopBits(USART_t *usart, USART_SBMODE_t stopBits)
+{
+	usart->CTRLC = (usart->CTRLC & ~USART_SBMODE_bm) | stopBits;
+}
+
+/**
+ * @brief Enable or disable the receiver (CTRLB RXEN).
+ *
+ * @param usart  Pointer to the USART peripheral.
+ * @param enable true to enable the receiver, false to disable it.
+ */
+static inline void usartEnableReceiver(USART_t *usart, bool enable)
+{
+	if(enable)
+		usart->CTRLB |= USART_RXEN_bm;
+	else
+		usart->CTRLB &= ~USART_RXEN_bm;
+}
+
+/**
+ * @brief Enable or disable the transmitter (CTRLB TXEN).
+ *
+ * @param usart  Pointer to the USART peripheral.
+ * @param enable true to enable the transmitter, false to disable it.
+ */
+static inline void usartEnableTransmitter(USART_t *usart, bool enable)
+{
+	if(enable)
+		usart->CTRLB |= USART_TXEN_bm;
+	else
+		usart->CTRLB &= ~USART_TXEN_bm;
+}
+
+/**
+ * @brief Select the receiver oversampling mode (CTRLB RXMODE).
+ *
+ * Writes the RXMODE field of CTRLB (normal 16x, double-speed 8x, ...). Other
+ * CTRLB bits — including the enable bits — are preserved.
+ *
+ * @param usart Pointer to the USART peripheral.
+ * @param mode  Receiver mode group code (`USART_RXMODE_*_gc`).
+ */
+static inline void usartSetRxMode(USART_t *usart, USART_RXMODE_t mode)
+{
+	usart->CTRLB = (usart->CTRLB & ~USART_RXMODE_gm) | mode;
+}
+
+// Interrupt control ----------------------------------------------------------
+/**
+ * @brief Enable one or more USART interrupts (CTRLA).
+ *
+ * Sets the selected interrupt-enable bits in CTRLA without disturbing other
+ * enabled interrupts.
+ *
+ * @param usart Pointer to the USART peripheral.
+ * @param mask  Interrupt(s) to enable (`usartInt_t`, may be OR'd).
+ */
+static inline void usartEnableInterrupt(USART_t *usart, usartInt_t mask)
+{
+	usart->CTRLA |= mask;
+}
+
+/**
+ * @brief Disable one or more USART interrupts (CTRLA).
+ *
+ * Clears the selected interrupt-enable bits in CTRLA.
+ *
+ * @param usart Pointer to the USART peripheral.
+ * @param mask  Interrupt(s) to disable (`usartInt_t`, may be OR'd).
+ */
+static inline void usartDisableInterrupt(USART_t *usart, usartInt_t mask)
+{
+	usart->CTRLA &= ~mask;
+}
+
+// Data transfer --------------------------------------------------------------
+/**
+ * @brief Write a byte to the transmit data register (TXDATAL).
+ *
+ * Loads a byte for transmission. Check `usartDataRegisterEmpty()` (or use the
+ * DRE interrupt) before writing to avoid overwriting unsent data.
+ *
+ * @param usart Pointer to the USART peripheral.
+ * @param data  Byte to transmit.
+ */
+static inline void usartWriteData(USART_t *usart, uint8_t data)
+{
+	usart->TXDATAL = data;
+}
+
+/**
+ * @brief Read a byte from the receive data register (RXDATAL).
+ *
+ * Reading RXDATAL pops the received byte from the receive FIFO. Read
+ * `usartReadRxStatus()` first if the frame's error flags are needed.
+ *
+ * @param usart Pointer to the USART peripheral.
+ * @return The received byte.
+ */
+static inline uint8_t usartReadData(USART_t *usart)
+{
+	return usart->RXDATAL;
+}
+
+/**
+ * @brief Read the receive status / high byte (RXDATAH).
+ *
+ * Returns RXDATAH, which holds the receive-complete flag (`USART_RXCIF_bm`), the
+ * per-frame error flags (`USART_BUFOVF_bm`, `USART_FERR_bm`, `USART_PERR_bm`),
+ * and the ninth data bit. Read this before `usartReadData()` so the flags
+ * correspond to the byte that read returns.
+ *
+ * @param usart Pointer to the USART peripheral.
+ * @return The RXDATAH register value.
+ */
+static inline uint8_t usartReadRxStatus(USART_t *usart)
+{
+	return usart->RXDATAH;
+}
+
+// Status ---------------------------------------------------------------------
+/**
+ * @brief Read the status register (STATUS).
+ *
+ * @param usart Pointer to the USART peripheral.
+ * @return The STATUS register value (`USART_*IF_bm` flags).
+ */
+static inline uint8_t usartGetStatus(const USART_t *usart)
+{
+	return usart->STATUS;
+}
+
+/**
+ * @brief Report whether a received byte is available.
+ *
+ * Reads the RXCIF flag in RXDATAH. Does not pop the FIFO (only `usartReadData()`
+ * does).
+ *
+ * @param usart Pointer to the USART peripheral.
+ * @return true if a byte has been received, false otherwise.
+ */
+static inline bool usartRxComplete(USART_t *usart)
+{
+	return (usart->RXDATAH & USART_RXCIF_bm) != 0;
+}
+
+/**
+ * @brief Report whether the transmit data register is empty.
+ *
+ * Reads the DREIF flag in STATUS, indicating TXDATAL can accept a new byte.
+ *
+ * @param usart Pointer to the USART peripheral.
+ * @return true if the transmit data register is ready, false otherwise.
+ */
+static inline bool usartDataRegisterEmpty(const USART_t *usart)
+{
+	return (usart->STATUS & USART_DREIF_bm) != 0;
+}
+
+/**
+ * @brief Report whether a transmission has completed.
+ *
+ * Reads the TXCIF flag in STATUS, set when the entire frame (including stop
+ * bits) has been shifted out and no new data is in the buffer.
+ *
+ * @param usart Pointer to the USART peripheral.
+ * @return true if transmission is complete, false otherwise.
+ */
+static inline bool usartTransmitComplete(const USART_t *usart)
+{
+	return (usart->STATUS & USART_TXCIF_bm) != 0;
+}
+
 // External Functions ---------------------------------------------------------
 /**
  * @brief Stream output callback for UART-backed FILE streams.

@@ -119,6 +119,70 @@
  */
 
 /**
+ * @defgroup clk_driver Clock Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx clock controller (drv/clk.h).
+ *
+ * Zero-overhead inline functions for the single CLKCTRL peripheral: main-clock
+ * source and prescaler, the internal HF and 32.768 kHz oscillators, the external
+ * crystal, the PLL, the clock-output pin, the configuration lock, and the
+ * oscillator-status flags. CCP-protected registers are written via the protected
+ * sequence.
+ */
+
+/**
+ * @defgroup slp_driver Sleep Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx sleep controller (drv/slp.h).
+ *
+ * Zero-overhead inline functions for the single SLPCTRL peripheral: sleep-mode
+ * selection, sleep enable, entering sleep, and the voltage-regulator
+ * performance/low-leakage options.
+ */
+
+/**
+ * @defgroup rst_driver Reset Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx reset controller (drv/rst.h).
+ *
+ * Zero-overhead inline functions for the single RSTCTRL peripheral: reading and
+ * clearing the reset-source flags and issuing a CCP-protected software reset.
+ */
+
+/**
+ * @defgroup nvm_driver NVM Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx non-volatile memory controller (drv/nvm.h).
+ *
+ * Zero-overhead inline functions for the single NVMCTRL peripheral: issuing
+ * flash/EEPROM commands (CCP SPM-protected), polling busy/ready and error
+ * status, the EEPROM-ready interrupt, and flash-to-data-space mapping.
+ */
+
+/**
+ * @defgroup wdt_driver Watchdog Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx watchdog timer (drv/wdt.h).
+ *
+ * Zero-overhead inline functions for the single WDT peripheral: setting the
+ * time-out period and optional closed window, clearing (kicking) the watchdog,
+ * and locking the configuration. The CCP-protected, clock-synchronized CTRLA
+ * writes are handled by the setters.
+ */
+
+/**
+ * @defgroup int_driver Interrupt Controller Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx CPU interrupt controller (drv/int.h).
+ *
+ * Zero-overhead inline functions for the single CPUINT peripheral: round-robin
+ * scheduling and level-0/level-1 priority assignment, the CCP-protected
+ * vectors-in-boot and compact-vector-table settings, and the read-only
+ * execution-status flags. The global interrupt enable (SREG I-bit) lives in the
+ * CPU driver.
+ */
+
+/**
  * @defgroup mem_driver Memory Driver
  * @ingroup drivers
  * @brief RAM and ROM usage reporting and stack watermarking (drv/mem.c, drv/mem.h).
@@ -134,16 +198,105 @@
  *
  * Provides interrupt-driven, queue-buffered transmit and receive for AVR-Dx
  * USART peripherals. Exposes an AVR-libc FILE stream per instance for use
- * with standard C I/O functions.
+ * with standard C I/O functions, and a set of low-overhead inline USART
+ * register accessors (`usart*`) on which the buffered driver is built.
+ */
+
+/**
+ * @defgroup spi_driver SPI Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx serial peripheral interface (drv/spi.h).
+ *
+ * Zero-overhead inline functions that configure and control any SPI instance via
+ * a caller-supplied pointer: host/client role, clock prescaler and double-speed,
+ * data order and transfer mode, slave-select and buffer modes, interrupts, the
+ * data register, and a blocking full-duplex byte transfer.
+ */
+
+/**
+ * @defgroup twi_driver TWI Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx two-wire (I2C) interface (drv/twi.h).
+ *
+ * Zero-overhead inline functions that configure and control any TWI instance via
+ * a caller-supplied pointer, covering shared timing configuration plus the
+ * independent host (master) controller (`twiHost*`) and client (slave)
+ * controller (`twiClient*`): enable, baud/address, command strobes, data
+ * registers, interrupts, and status.
+ */
+
+/**
+ * @defgroup vref_driver VREF Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx voltage reference (drv/vref.h).
+ *
+ * Zero-overhead inline functions for the single VREF peripheral: selecting the
+ * reference source/voltage and the always-on power option independently for the
+ * ADC, DAC, and analog comparator.
+ */
+
+/**
+ * @defgroup adc_driver ADC Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx analog-to-digital converter (drv/adc.h).
+ *
+ * Zero-overhead inline functions for the single ADC0 peripheral: run/resolution/
+ * mode control, prescaler and sampling timing, accumulation, input multiplexers,
+ * conversion start/stop and start-event, the window comparator, interrupts, and
+ * the result register. The reference is delegated to the VREF driver.
+ */
+
+/**
+ * @defgroup ac_driver AC Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx analog comparator (drv/ac.h).
+ *
+ * Zero-overhead inline functions that configure and control any AC instance via
+ * a caller-supplied pointer: enable, hysteresis, power profile, input
+ * multiplexers, DAC reference level, output and window options, interrupts, and
+ * status. The comparator reference is delegated to the VREF driver.
+ */
+
+/**
+ * @defgroup zcd_driver ZCD Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx zero-cross detector (drv/zcd.h).
+ *
+ * Zero-overhead inline functions that configure and control any ZCD instance via
+ * a caller-supplied pointer: enable, inversion, output pad, standby, the
+ * interrupt edge, and the crossing status/flag.
  */
 
 /**
  * @defgroup dac_driver DAC Driver
  * @ingroup drivers
- * @brief AVR-Dx 10-bit DAC peripheral initialization and output (drv/dac.c, drv/dac.h).
+ * @brief Inline accessors for the AVR-Dx 10-bit DAC (drv/dac.h).
  *
- * Initializes the DAC with a configurable voltage reference and provides a
- * simple output function used by the PCM audio service.
+ * Zero-overhead inline functions for the single DAC peripheral: voltage
+ * reference selection, output-buffer and standby control, enable/disable, and
+ * writing the conversion data register. Used by the PCM audio service.
+ */
+
+/**
+ * @defgroup pmux_driver Port Multiplexer Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx port multiplexer (drv/pmux.h).
+ *
+ * Zero-overhead inline functions for the single PORTMUX peripheral: selecting
+ * which physical pins each peripheral signal (USART, SPI, TWI, TCA/TCB/TCD, CCL,
+ * event output, AC, ZCD) is routed to.
+ */
+
+/**
+ * @defgroup pio_driver PIO Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx I/O ports (drv/pio.h).
+ *
+ * Zero-overhead inline functions that control any PORT instance via a
+ * caller-supplied pointer: pin direction, output value, and input reading via
+ * the atomic set/clear/toggle registers, pin-change interrupt flags, the
+ * slew-rate option, and per-pin configuration (sense mode, pull-up, invert).
+ * The lower-level companion to the descriptor-based GPIO driver.
  */
 
 /**
@@ -153,4 +306,51 @@
  *
  * Manages AVR-Dx port pins as named GPIO instances supporting output set,
  * clear, toggle, and write, input read, and optional pin-change callbacks.
+ */
+
+/**
+ * @defgroup evt_driver Event System Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx peripheral event system (drv/evt.h).
+ *
+ * Zero-overhead inline functions for the single EVSYS peripheral: routing
+ * generator sources onto the eight event channels, connecting peripheral event
+ * users to channels, and strobing software events. This is the hardware event
+ * router and is unrelated to the software event manager in sys/event.h.
+ */
+
+/**
+ * @defgroup tca_driver TCA Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx Timer/Counter type A (drv/tca.h).
+ *
+ * Zero-overhead inline functions that configure and control any TCA instance
+ * via a caller-supplied pointer, covering both operating modes: normal (single
+ * 16-bit timer with three compare/PWM channels, buffered period/compare
+ * registers, direction control, and a command strobe) and split (two
+ * independent 8-bit timers). Normal-mode functions are named `tca*`; split-mode
+ * functions are named `tcaSplit*`.
+ */
+
+/**
+ * @defgroup tcb_driver TCB Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx Timer/Counter type B (drv/tcb.h).
+ *
+ * Zero-overhead inline functions that configure and control any TCB instance
+ * via a caller-supplied pointer: mode and clock selection, run control, the
+ * count and compare/capture registers, interrupt and event control, pin
+ * output, and debug behavior.
+ */
+
+/**
+ * @defgroup rtc_driver RTC Driver
+ * @ingroup drivers
+ * @brief Inline accessors for the AVR-Dx Real-Time Counter (drv/rtc.h).
+ *
+ * Zero-overhead inline functions for the single RTC peripheral, covering both
+ * functional blocks: the RTC counter (clock/prescaler selection, run control,
+ * count/period/compare registers, overflow and compare-match interrupts,
+ * crystal error correction) and the PIT periodic interrupt timer. Setters
+ * that touch the synchronized count domain block on the relevant busy flag.
  */

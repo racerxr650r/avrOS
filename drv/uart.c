@@ -78,7 +78,7 @@ static void isrUsartDRE(UART_t *uart)
     // If there are more bytes in the transmit queue...
     if(queGet(uart->txQueue,(char *)&txByte))
     {
-         uart->usartRegs->TXDATAL = txByte;
+         usartWriteData(uart->usartRegs, txByte);
 #ifdef UART_STATS
         ++uart->stats->txBytes;
 #endif
@@ -87,25 +87,25 @@ static void isrUsartDRE(UART_t *uart)
     else
     {
         // Disable the tx data register empty interrupt
-        uart->usartRegs->CTRLA &= ~USART_DREIE_bm;
+        usartDisableInterrupt(uart->usartRegs, USART_INT_DRE);
     }
 }
 
 // USART Receive Complete (Rx) interrupt handler
 static void isrUsartRXC(UART_t *uart)
 {
-    uint8_t		error = uart->usartRegs->RXDATAH;
-    
+    uint8_t		error = usartReadRxStatus(uart->usartRegs);
+
     if(error == USART_RXCIF_bm)
     {
 #ifdef UART_STATS
-        bool queued = quePutByte(uart->rxQueue,uart->usartRegs->RXDATAL);
+        bool queued = quePutByte(uart->rxQueue,usartReadData(uart->usartRegs));
         if(queued)
             ++uart->stats->rxBytes;
         else
             ++uart->stats->rxQueueOverflow;
 #else
-        quePutByte(uart->rxQueue,uart->usartRegs->RXDATAL);
+        quePutByte(uart->rxQueue,usartReadData(uart->usartRegs));
 #endif
     }
 #ifdef UART_STATS
@@ -177,13 +177,13 @@ int uartInit(const fsmStateMachineDescr_t *stateMachineDescr)
     {
         // If the CPU frequency is calculable...
         if(freq)
-            usartRegs->BAUD = ((freq/uartInstance->baud*10)<<2);
+            usartSetBaud(usartRegs, ((freq/uartInstance->baud*10)<<2));
         // Else baud is the baud register value
         else
-            usartRegs->BAUD = uartInstance->baud;
+            usartSetBaud(usartRegs, uartInstance->baud);
 
         // Set the mode as async and frame format as specified
-        usartRegs->CTRLC = USART_CMODE_ASYNCHRONOUS_gc | uartInstance->parity | uartInstance->stopBits | uartInstance->dataBits;
+        usartSetFrameFormat(usartRegs, USART_CMODE_ASYNCHRONOUS_gc, uartInstance->parity, uartInstance->dataBits, uartInstance->stopBits);
 
         // Set the pin associated with Tx to output
         PORT_t *port=NULL;
@@ -207,8 +207,8 @@ int uartInit(const fsmStateMachineDescr_t *stateMachineDescr)
         }
         // If the port has been located...
         if(port != NULL)
-            // Set the port direction pin (output)
-            port->DIRSET = 0b00000001;
+            // Set the Tx pin (pin 0) direction to output
+            pioSetOutput(port, PIO_PIN0);
         // Port unknown...
         else
             // Return error
@@ -219,10 +219,12 @@ int uartInit(const fsmStateMachineDescr_t *stateMachineDescr)
         {
             // If Rx queues exist, enable Rx interrupts
             if(uartInstance->rxQueue!=NULL)
-                usartRegs->CTRLA |= USART_RXCIE_bm;
+                usartEnableInterrupt(usartRegs, USART_INT_RXC);
 
-            // Enable the Tx, Rx, and standard Rx mode (16 over samples)
-            usartRegs->CTRLB |= USART_RXEN_bm | USART_TXEN_bm | USART_RXMODE_NORMAL_gc;
+            // Standard Rx mode (16 oversamples), then enable the Tx and Rx
+            usartSetRxMode(usartRegs, USART_RXMODE_NORMAL_gc);
+            usartEnableReceiver(usartRegs, true);
+            usartEnableTransmitter(usartRegs, true);
         }
     }
     
@@ -285,12 +287,12 @@ int uartTransmit(const UART_t *uart, char *buffer, size_t byteCount)
             }
         }
         // Enable the tx data register empty interrupt
-        uart->usartRegs->CTRLA |= USART_DREIE_bm;
+        usartEnableInterrupt(uart->usartRegs, USART_INT_DRE);
     }
     // Else there is no transmit queue...
     else
     {
-        uart->usartRegs->TXDATAL = buffer[i++];
+        usartWriteData(uart->usartRegs, buffer[i++]);
 #ifdef UART_STATS
         // Increment the tx byte counter
         ++uart->stats->txBytes;
@@ -339,10 +341,10 @@ int uartReceive(const UART_t *uart, char *buffer, size_t byteCount)
         }
     }
     // Else if the UART does not have a RX queue and the Receive Complete Flag is set...
-    else if(uart->usartRegs->RXDATAH & USART_RXCIF_bm)
+    else if(usartRxComplete(uart->usartRegs))
     {
-        // Copy the 
-        buffer[0] = uart->usartRegs->RXDATAL;
+        // Copy the received byte
+        buffer[0] = usartReadData(uart->usartRegs);
         ++i;
     }
     

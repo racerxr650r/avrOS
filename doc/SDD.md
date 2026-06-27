@@ -29,6 +29,25 @@
    - 6.3 [UART Driver (uart)](#63-uart-driver-uart)
    - 6.4 [DAC Driver (dac)](#64-dac-driver-dac)
    - 6.5 [GPIO Driver (gpio)](#65-gpio-driver-gpio)
+   - 6.6 [Inline Register Drivers — Overview](#66-inline-register-drivers--overview)
+   - 6.7 [Clock Driver (clk)](#67-clock-driver-clk)
+   - 6.8 [Sleep Driver (slp)](#68-sleep-driver-slp)
+   - 6.9 [Reset Driver (rst)](#69-reset-driver-rst)
+   - 6.10 [Watchdog Driver (wdt)](#610-watchdog-driver-wdt)
+   - 6.11 [Non-Volatile Memory Driver (nvm)](#611-non-volatile-memory-driver-nvm)
+   - 6.12 [Interrupt Controller Driver (int)](#612-interrupt-controller-driver-int)
+   - 6.13 [Timer/Counter Type A Driver (tca)](#613-timercounter-type-a-driver-tca)
+   - 6.14 [Timer/Counter Type B Driver (tcb)](#614-timercounter-type-b-driver-tcb)
+   - 6.15 [Real-Time Counter Driver (rtc)](#615-real-time-counter-driver-rtc)
+   - 6.16 [Event System Driver (evt)](#616-event-system-driver-evt)
+   - 6.17 [Voltage Reference Driver (vref)](#617-voltage-reference-driver-vref)
+   - 6.18 [ADC Driver (adc)](#618-adc-driver-adc)
+   - 6.19 [Analog Comparator Driver (ac)](#619-analog-comparator-driver-ac)
+   - 6.20 [Zero-Cross Detector Driver (zcd)](#620-zero-cross-detector-driver-zcd)
+   - 6.21 [SPI Driver (spi)](#621-spi-driver-spi)
+   - 6.22 [TWI Driver (twi)](#622-twi-driver-twi)
+   - 6.23 [Port Multiplexer Driver (pmux)](#623-port-multiplexer-driver-pmux)
+   - 6.24 [I/O Port Driver (pio)](#624-io-port-driver-pio)
 7. [Configuration](#7-configuration)
 8. [Application Interface](#8-application-interface)
 9. [Verification and Testing](#9-verification-and-testing)
@@ -473,23 +492,45 @@ handler — keep it short.
 
 ---
 
-### 4.5 High Resolution Timer
+### 4.5 Precision Timer
 
 #### 4.5.1 Responsibilities
 
-- Provides a mechanism for FSM delays with high precision
-- Can delay an FSM from 1 microsecond to 1 hour and 11.5 minutes. With a resolution of 1 microsecond
-- Uses events to put the FSM on the WAIT queue
-- Provides event or interrupt call back handlers to note the event and possibly reschedule the FSM
-- The call back function can use evntTrigger to reschedule the FSM
-- The call back function can be in either the interrupt context for less jitter. Or, It can be in the event call back context which is in the system/FSM context therefore not requiring thread safety with the rest of the FSMs and events
+- Provides a mechanism for FSM delays with approximately millisecond (1024 ticks/sec) precision using a 32 bit hardware counter
+- Signal associated event when tick count reaches 0
 
 #### 4.5.2 Data Structures
 
 | Structure | Description |
 |-----------|-------------|
-| Timer_t   | RAM based collection of data describing the timer's state. This includes the original duration and remaining microseconds |
-| TimerDescr_t | Flash based descritpion of the timer including it's name, a pointer to the Timer_t state in RAM, and a pointer to the associated Event |
+| Timer_t   | RAM based collection of data describing the timer's state. This includes the original duration and remaining ticks |
+| TimerDescr_t | Flash based descritpion of the timer including it's name, a pointer to the Timer_t state in RAM, pointer to the event handler, and a pointer to the associated Event |
+
+#### 4.5.3 Key Interfaces
+
+| Function / Macro | Description |
+|-----------------|-------------|
+| `ADD_TMR(name, handler)` | Declare and statically allocate a timer |
+| `bool tmrSet(name, ticks)` | Set a timer that will trigger the associated time after given ticks |
+| `unint32_t tmrGet(name)` | Get the ticks remaining |
+| `
+
+#### 4.5.4 Design Notes
+
+- Cascades the RTC timer using the AVR events system with a 16 bit TCB timer to create a 32 bit counter
+- Uses the rtc and tcb drivers to access the hardware functionality
+- By default the RTC timer uses an internal clock source
+- Defines in avrOSConfig.h provide options for different clock sources and different frequencies
+- When the user creates a timer an associated avrOS event is created as well 
+- Uses avrOS events to restore the FSM to the Ready queue
+- Provides event or interrupt call back handlers to note the event and possibly reschedule the FSM
+- The call back function can be in either the interrupt context for less jitter. Or, It can be in the event call back context which is in the system/FSM context therefore not requiring thread safety with the rest of the FSMs and events
+- Maintains a list of the current active timers
+- The next timer to expire is used to calculate the two 16 bit compare registers (TCB and RTC) to generate an interrupt that will trigger that timer's event
+- The interrupt will be two stages. Only one comparator interrupt is enabled at a time. First the TCB compare interrupt is enabled and triggered, then the RTC compare interrupt is enabled and triggered
+- When that timer expires any remaining timer counters will be deducted the appropriate amount and the next timer to expire will be determined and the compare registers will be set
+- If a timer is added while existing timers are counting down, the ticks until the next timer expiration will be calculated and stored in the deduct value for the timer. Otherwise, the deduct value is the number of ticks from the previous interrupt
+- If a timer is added while existing timers are counting down and the new timer becomes the next timer to expire, the TCB and RTC compare registers and the deduct value for all of the timers are recalculated
 
 ---
 
@@ -722,16 +763,34 @@ handler — keep it short.
 | `bool uartRxEmpty(uart)` / `uartTxEmpty(uart)` | Queue empty status queries. |
 | `uint8_t uartRxCount(uart)` / `uartTxCount(uart)` | Current queue occupancy. |
 
+#### 6.3.5 Inline USART Register Accessors
+
+The buffered driver above is built on a layer of low-overhead `static inline`
+USART register accessors (see §6.6) that operate on a `USART_t *`. New code that
+touches the USART registers should use these rather than accessing the registers
+directly. They cover baud and frame-format configuration (`usartSetBaud`,
+`usartSetFrameFormat`, and the granular `usartSetParity` / `usartSetDataBits` /
+`usartSetStopBits` / `usartSetCommMode`), receiver/transmitter and Rx-mode
+control, the `usartInt_t` interrupt enables/disables, data transfer
+(`usartWriteData` / `usartReadData` / `usartReadRxStatus`), and status helpers
+(`usartRxComplete`, `usartDataRegisterEmpty`, `usartTransmitComplete`).
+
 ---
 
 ### 6.4 DAC Driver (dac)
 
-**Files:** [drv/dac.c](../drv/dac.c), [drv/dac.h](../drv/dac.h)
+**Files:** [drv/dac.h](../drv/dac.h)
+
+A header-only inline register driver for the AVR-Dx 10-bit DAC (see §6.6). The
+former `dac.c` and its `dacInit()` / `dacOutput()` functions were removed; the
+sample-scaling and clamping logic now lives in the PCM service (§5.3), and the
+reference selection delegates to the VREF driver (§6.17).
 
 #### 6.4.1 Responsibilities
 
-- Initialize the AVR-Dx 10-bit DAC peripheral with a configurable voltage reference.
-- Provide a simple output function used by the PCM audio service.
+- Configure and control the single `DAC0` peripheral via inline accessors.
+- Select the analog output buffer, standby behavior, and enable state.
+- Write the (left-justified) 10-bit conversion data register.
 
 #### 6.4.2 Constants
 
@@ -745,8 +804,12 @@ handler — keep it short.
 
 | Function | Description |
 |----------|-------------|
-| `void dacInit(VREF_REFSEL_t vRef, register16_t output)` | Initialize the DAC with the given voltage reference and initial output value. |
-| `void dacOutput(int value)` | Write a sample value to the DAC output register. |
+| `void dacSetReference(VREF_REFSEL_t vRef)` | Select the DAC reference (wrapper around `vrefSetReference(VREF_DAC0, …)`). |
+| `void dacOutputBufferEnable(bool enable)` | Connect/release the analog output buffer pin. |
+| `void dacEnable(void)` / `dacDisable(void)` | Enable or disable the DAC. |
+| `bool dacIsEnabled(void)` | Report the enable state. |
+| `void dacRunStandby(bool enable)` | Keep the DAC running in standby sleep. |
+| `void dacSetData(uint16_t data)` | Write the DATA register (10-bit code left-justified in bits [15:6]). |
 
 ---
 
@@ -805,6 +868,449 @@ evntWait(evntGetEvent("Button_event"), GPIO_EVENT_FALLING, buttonPressed);
 | `void gpioWriteOutput(gpio, value)` | Write masked value to port `OUT` register. |
 | `uint8_t gpioReadInput(gpio)` | Read and mask port `IN` register. |
 | `uint8_t gpioReadOutput(gpio)` | Read and mask port `OUT` register. |
+
+> The GPIO driver's register accesses are implemented on top of the I/O Port
+> driver (§6.24); it remains the higher-level, descriptor-based interface with
+> named instances and event callbacks.
+
+---
+
+### 6.6 Inline Register Drivers — Overview
+
+**Files:** [drv/clk.h](../drv/clk.h), [drv/slp.h](../drv/slp.h), [drv/rst.h](../drv/rst.h), [drv/wdt.h](../drv/wdt.h), [drv/nvm.h](../drv/nvm.h), [drv/int.h](../drv/int.h), [drv/tca.h](../drv/tca.h), [drv/tcb.h](../drv/tcb.h), [drv/rtc.h](../drv/rtc.h), [drv/evt.h](../drv/evt.h), [drv/vref.h](../drv/vref.h), [drv/adc.h](../drv/adc.h), [drv/ac.h](../drv/ac.h), [drv/zcd.h](../drv/zcd.h), [drv/spi.h](../drv/spi.h), [drv/twi.h](../drv/twi.h), [drv/pmux.h](../drv/pmux.h), [drv/pio.h](../drv/pio.h)
+
+Sections 6.7–6.24 document a family of **header-only register drivers**: each
+provides `static inline` functions that wrap the registers of one AVR-Dx
+peripheral so that application, service, and kernel code never manipulates those
+registers directly. This is a project convention — new code must use the matching
+`drv/<periph>.h` driver rather than `PERIPH.REG` accesses, and drivers delegate
+to each other for shared resources (e.g. ADC/AC/DAC reference selection calls the
+VREF driver).
+
+Common design rules across these drivers:
+
+- **Zero overhead.** Functions are `static inline` register pokes; at the
+  optimization levels used they compile to the same instructions as direct
+  register access.
+- **Instance handling.** Multi-instance peripherals (TCA, TCB, AC, ZCD, SPI,
+  TWI, PORT) take a caller-supplied pointer (`TCB_t *`, `PORT_t *`, …). Singleton
+  peripherals (RTC, EVSYS, CPUINT, VREF, ADC, DAC, CLKCTRL, SLPCTRL, RSTCTRL,
+  WDT, NVMCTRL, PORTMUX) operate directly on the global peripheral.
+- **Field setters preserve neighbors.** Setters for one field perform a
+  read-modify-write that leaves the other fields in the register unchanged;
+  dedicated set/clear/toggle/strobe registers are used where the hardware
+  provides them (PORT, TCA CTRLE).
+- **Interrupt-flag selectors.** Where a peripheral has multiple interrupt
+  sources, an enum mask type (`tcbInt_t`, `adcInt_t`, …) drives uniform
+  enable/disable/get/clear functions.
+- **Configuration Change Protection (CCP).** Drivers for CCP-protected
+  registers (CLKCTRL, RSTCTRL, WDT, NVMCTRL, CPUINT vector table) perform the
+  protected write internally via `ccp_write_io()` / `ccp_write_spm()`.
+- **Clock-domain synchronization.** Drivers whose registers cross a clock domain
+  (RTC, WDT) expose busy/sync helpers and block in their setters until a prior
+  write has synchronized.
+- **Interrupt-safety contract.** Each header documents an "Interrupt safety"
+  section: configuration setters are not interrupt-safe (8-bit read-modify-write)
+  and should be serialized with `ATOMIC_BLOCK` if shared with an ISR; 16-bit
+  count/result registers accessed through a shared `TEMP` register additionally
+  provide atomic read variants (e.g. `tcbGetCountAtomic`, `adcGetResultAtomic`).
+
+Per-function documentation lives in the Doxygen comments in each header; the
+sections below summarize each driver's scope and principal interfaces.
+
+---
+
+### 6.7 Clock Driver (clk)
+
+**Files:** [drv/clk.h](../drv/clk.h) — singleton (`CLKCTRL`)
+
+#### 6.7.1 Responsibilities
+
+- Select the main clock source and prescaler.
+- Configure the internal HF oscillator (frequency, auto-tune, run-standby), the
+  internal/external 32.768 kHz oscillators, and the PLL.
+- Control the clock-output pin, the configuration lock, and read oscillator
+  status. CCP-protected registers are written through the protected sequence.
+
+#### 6.7.2 Key Interfaces
+
+| Group | Functions |
+|-------|-----------|
+| Main clock | `clkSetSource`, `clkGetSource`, `clkSetPrescaler`, `clkPrescalerEnabled`, `clkGetPrescaler`, `clkClockOut` |
+| HF oscillator | `clkSetOscHFFrequency`, `clkGetOscHFFrequency`, `clkOscHFAutotune`, `clkOscHFRunStandby` |
+| 32 kHz / PLL | `clkOsc32kRunStandby`, `clkXosc32kEnable`, `clkXosc32kExternalClock`, `clkPllSetMultiplier`, `clkPllRunStandby` |
+| Lock / status | `clkLock`, `clkIsLocked`, `clkGetStatus`, `clkStatusReady` (`clkStatus_t`) |
+
+The CPU driver (§6.1) is implemented on top of this driver.
+
+---
+
+### 6.8 Sleep Driver (slp)
+
+**Files:** [drv/slp.h](../drv/slp.h) — singleton (`SLPCTRL`)
+
+#### 6.8.1 Responsibilities
+
+- Select the sleep mode, enable sleep, and execute the `sleep` instruction.
+- Configure the voltage-regulator performance and high-temperature low-leakage
+  options.
+
+#### 6.8.2 Key Interfaces
+
+| Function | Description |
+|----------|-------------|
+| `slpSetMode` / `slpGetMode` | Select / read the sleep mode (`SLPCTRL_SMODE_*_gc`). |
+| `slpEnable` / `slpEnter` | Arm sleep / execute the `sleep` instruction. |
+| `slpSleep(mode)` | Combined enable → sleep → disable cycle (used by `sysSleep()`). |
+| `slpSetPerformanceMode` / `slpHighTempLowLeakage` | Voltage-regulator options. |
+
+---
+
+### 6.9 Reset Driver (rst)
+
+**Files:** [drv/rst.h](../drv/rst.h) — singleton (`RSTCTRL`)
+
+#### 6.9.1 Responsibilities
+
+- Read and clear the reset-source flags that record the cause of the last reset.
+- Issue a CCP-protected software reset.
+
+#### 6.9.2 Key Interfaces
+
+| Function | Description |
+|----------|-------------|
+| `rstGetFlags` / `rstClearFlags` | Read / clear reset-source flags (`rstFlag_t`). |
+| `rstSoftwareReset` | Trigger a software reset (CCP-protected). Used by `cpuReset()`. |
+
+---
+
+### 6.10 Watchdog Driver (wdt)
+
+**Files:** [drv/wdt.h](../drv/wdt.h) — singleton (`WDT`)
+
+#### 6.10.1 Responsibilities
+
+- Set the time-out period and optional closed window, clear (kick) the watchdog,
+  and lock the configuration. CTRLA is CCP-protected and clock-synchronized.
+
+#### 6.10.2 Key Interfaces
+
+| Function | Description |
+|----------|-------------|
+| `wdtReset` | Clear the watchdog (`wdr` instruction); safe in any context. |
+| `wdtSetPeriod` / `wdtSetWindow` / `wdtEnable` / `wdtDisable` | Period / window configuration (blocking on sync, CCP-protected). |
+| `wdtSyncBusy` / `wdtWaitSync` | Synchronization helpers. |
+| `wdtLock` / `wdtIsLocked` | Lock the configuration until reset. |
+
+---
+
+### 6.11 Non-Volatile Memory Driver (nvm)
+
+**Files:** [drv/nvm.h](../drv/nvm.h) — singleton (`NVMCTRL`)
+
+#### 6.11.1 Responsibilities
+
+- Issue flash/EEPROM commands (CCP SPM-protected), poll busy/ready and error
+  status, control the EEPROM-ready interrupt, and configure flash-to-data-space
+  mapping. The page-buffer writes themselves are the caller's responsibility.
+
+#### 6.11.2 Key Interfaces
+
+| Function | Description |
+|----------|-------------|
+| `nvmCommand` / `nvmClearCommand` | Issue / clear an NVM command (`NVMCTRL_CMD_*_gc`, CCP SPM-protected). |
+| `nvmWaitReady` / `nvmFlashBusy` / `nvmEepromBusy` / `nvmGetStatus` | Busy/ready status (`nvmBusy_t`). |
+| `nvmGetError` / `nvmEepromReady` | Error code and EEPROM-ready flag. |
+| `nvmEnableEepromReadyInterrupt` | EEPROM-ready interrupt enable. |
+| `nvmSetFlashMap` / `nvmLockFlashMap` | Flash-section data-space mapping. |
+
+---
+
+### 6.12 Interrupt Controller Driver (int)
+
+**Files:** [drv/int.h](../drv/int.h) — singleton (`CPUINT`)
+
+#### 6.12.1 Responsibilities
+
+- Configure interrupt priority scheduling (round-robin, the round-robin/low
+  vector, and the single level-1 high-priority vector), the CCP-protected
+  vector-table options, and read the execution-status flags. The global interrupt
+  enable (SREG I-bit) remains in the CPU driver (§6.1).
+
+#### 6.12.2 Key Interfaces
+
+| Function | Description |
+|----------|-------------|
+| `intRoundRobinEnable` / `intSetRoundRobinPriority` / `intSetHighPriorityVector` | Priority scheduling. |
+| `intVectorsInBoot` / `intCompactVectorTableEnable` | CCP-protected vector-table configuration. |
+| `intGetStatus` / `intLevel0Executing` / `intLevel1Executing` / `intNMIExecuting` | Execution status (`intStatus_t`). |
+
+---
+
+### 6.13 Timer/Counter Type A Driver (tca)
+
+**Files:** [drv/tca.h](../drv/tca.h) — multi-instance (`TCA_t *`)
+
+#### 6.13.1 Responsibilities
+
+- Configure and control a TCA in both operating modes: **normal** (single 16-bit
+  timer with three compare/PWM channels, buffered period/compare registers,
+  direction control, and a command strobe) and **split** (two independent 8-bit
+  timers). Normal-mode functions are `tca*`; split-mode functions are `tcaSplit*`.
+
+#### 6.13.2 Data Types
+
+| Type | Description |
+|------|-------------|
+| `tcaChannel_t` | Compare channel selector (`TCA_CHANNEL0`–`2`). |
+| `tcaSplitTimer_t` | Split-mode half selector (`TCA_SPLIT_LOW` / `HIGH`). |
+| `tcaInt_t` / `tcaSplitInt_t` | Normal / split interrupt-source masks. |
+
+#### 6.13.3 Key Interfaces
+
+| Group | Functions |
+|-------|-----------|
+| Mode / run | `tcaSetSplitMode`, `tcaEnable`, `tcaDisable`, `tcaSetClock`, `tcaSetMode`, `tcaRunStandby` |
+| Count / compare | `tcaSetCount`/`Get`/`GetAtomic`, `tcaSetPeriod`/`Buffer`, `tcaSetCompare`/`Buffer`/`Get`/`GetAtomic`, `tcaEnableCompare` |
+| Control | `tcaSetCountDirection`, `tcaCommand`, `tcaLockUpdate`, `tcaSetAutoLockUpdate` |
+| Interrupts / events / debug | `tcaEnableInterrupt`/`Disable`/`GetFlags`/`ClearFlags`, `tcaEnableEventCountA/B`, `tcaSetEventActionA/B`, `tcaDebugRun` |
+| Split mode | `tcaSplitEnable`/`Disable`/`SetClock`, `tcaSplitSetCount`/`Period`/`Compare`, `tcaSplitEnableCompare`, `tcaSplitCommand`, `tcaSplit*Interrupt*` |
+
+---
+
+### 6.14 Timer/Counter Type B Driver (tcb)
+
+**Files:** [drv/tcb.h](../drv/tcb.h) — multi-instance (`TCB_t *`)
+
+#### 6.14.1 Responsibilities
+
+- Configure a TCB's counter mode and clock, run control, the 16-bit count and
+  compare/capture registers, interrupt and event control, the pin output, and
+  debug behavior. The system tick (§4.1) is built on a TCB using this driver.
+
+#### 6.14.2 Key Interfaces
+
+| Group | Functions |
+|-------|-----------|
+| Mode / run | `tcbSetMode`, `tcbSetClock`, `tcbEnable`, `tcbDisable`, `tcbRunStandby`, `tcbIsRunning` |
+| Count / compare | `tcbSetCount`/`Get`/`GetAtomic`, `tcbSetCompare`/`GetCapture`/`GetCaptureAtomic` |
+| Interrupts / event | `tcbEnableInterrupt`/`Disable`/`GetFlags`/`ClearFlags` (`tcbInt_t`), `tcbEventInputEnable`, `tcbEventEdge`, `tcbEventFilter` |
+| Output / debug | `tcbOutputEnable`, `tcbDebugRun` |
+
+---
+
+### 6.15 Real-Time Counter Driver (rtc)
+
+**Files:** [drv/rtc.h](../drv/rtc.h) — singleton (`RTC`)
+
+#### 6.15.1 Responsibilities
+
+- Drive both functional blocks of the RTC: the **RTC counter** (clock/prescaler,
+  run control, count/period/compare, overflow and compare-match interrupts,
+  crystal error correction) and the **PIT** periodic interrupt timer. The RTC is
+  in a separate clock domain, so count-domain setters block on the relevant busy
+  flag.
+
+#### 6.15.2 Key Interfaces
+
+| Group | Functions |
+|-------|-----------|
+| Sync | `rtcSyncBusy`, `rtcWaitSync` (`rtcSync_t`) |
+| Counter | `rtcSetClock`, `rtcSetPrescaler`, `rtcEnable`/`Disable`/`IsEnabled`, `rtcRunStandby`, `rtcSetCount`/`Get`/`GetAtomic`, `rtcSetPeriod`/`GetAtomic`, `rtcSetCompare`/`GetAtomic` |
+| Interrupts / correction | `rtcEnableInterrupt`/`Disable`/`GetFlags`/`ClearFlags` (`rtcInt_t`), `rtcEnableCorrection`, `rtcSetCalibration`, `rtcDebugRun` |
+| PIT | `rtcPitSetPeriod`, `rtcPitEnable`/`Disable`/`IsEnabled`, `rtcPitEnableInterrupt`, `rtcPitGetInterruptFlag`/`ClearInterruptFlag`, `rtcPitSyncBusy`/`WaitSync`, `rtcPitDebugRun` |
+
+---
+
+### 6.16 Event System Driver (evt)
+
+**Files:** [drv/evt.h](../drv/evt.h) — singleton (`EVSYS`)
+
+#### 6.16.1 Responsibilities
+
+- Route hardware event generators to event users through the eight multiplexer
+  channels and strobe software events. This is the *hardware* event router and
+  is unrelated to the software event manager (§4.3).
+
+#### 6.16.2 Key Interfaces
+
+| Function | Description |
+|----------|-------------|
+| `evtSetChannelGenerator` / `evtGetChannelGenerator` / `evtDisableChannel` | Route a generator onto a channel (`evtChannel_t`). |
+| `evtSetUser` / `evtClearUser` / `evtGetUser` | Connect an event user register to a channel. |
+| `evtSoftwareEvent` | Strobe a software event onto a channel. |
+
+---
+
+### 6.17 Voltage Reference Driver (vref)
+
+**Files:** [drv/vref.h](../drv/vref.h) — singleton (`VREF`)
+
+#### 6.17.1 Responsibilities
+
+- Select the reference source/voltage and the always-on power option
+  independently for the ADC, DAC, and analog comparator. The DAC, ADC, and AC
+  drivers delegate their reference selection here.
+
+#### 6.17.2 Key Interfaces
+
+| Function | Description |
+|----------|-------------|
+| `vrefSetReference` / `vrefGetReference` | Select / read a peripheral's reference (`vrefPeripheral_t`, `VREF_REFSEL_*_gc`). |
+| `vrefAlwaysOn` | Force a reference always on (trade start-up latency vs. power). |
+
+---
+
+### 6.18 ADC Driver (adc)
+
+**Files:** [drv/adc.h](../drv/adc.h) — singleton (`ADC0`)
+
+#### 6.18.1 Responsibilities
+
+- Configure and run the ADC: resolution/justification/mode, prescaler and
+  sampling timing, sample accumulation, input multiplexers, conversion
+  start/stop and start-event, the window comparator, interrupts, and the result
+  register. The reference is delegated to the VREF driver (§6.17).
+
+#### 6.18.2 Key Interfaces
+
+| Group | Functions |
+|-------|-----------|
+| Run / format | `adcEnable`/`Disable`, `adcFreeRun`, `adcSetResolution`, `adcLeftAdjust`, `adcSetConversionMode`, `adcRunStandby`, `adcSetReference` |
+| Timing | `adcSetAccumulation`, `adcSetPrescaler`, `adcSetInitDelay`, `adcSetSampleDelay`, `adcSetSampleLength` |
+| Inputs / conversion | `adcSetPositiveInput`, `adcSetNegativeInput`, `adcStartConversion`, `adcStopConversion`, `adcEnableStartEvent` |
+| Window / interrupts / result | `adcSetWindowMode`, `adcSetWindowLow`/`High`, `adcEnableInterrupt`/`Disable`/`GetFlags`/`ClearFlags` (`adcInt_t`), `adcResultReady`, `adcGetResult`/`GetResultAtomic`, `adcDebugRun` |
+
+---
+
+### 6.19 Analog Comparator Driver (ac)
+
+**Files:** [drv/ac.h](../drv/ac.h) — multi-instance (`AC_t *`)
+
+#### 6.19.1 Responsibilities
+
+- Configure and control an analog comparator: enable, hysteresis, power profile,
+  output/standby, window mode, input multiplexers, DAC reference level, output
+  invert, interrupts, and comparator/window status. The shared comparator
+  reference is delegated to the VREF driver (§6.17) via `acSetReference()`.
+
+#### 6.19.2 Key Interfaces
+
+| Group | Functions |
+|-------|-----------|
+| Run / config | `acEnable`/`Disable`, `acSetHysteresis`, `acSetPowerProfile`, `acOutputEnable`, `acRunStandby`, `acSetWindowMode` |
+| Inputs / reference | `acSetPositiveInput`, `acSetNegativeInput`, `acInvertOutput`, `acSetReference`, `acSetDacRef` |
+| Interrupts / status | `acEnableInterrupt`, `acSetInterruptMode`, `acGetInterruptFlag`/`ClearInterruptFlag`, `acGetState`, `acGetWindowState` |
+
+---
+
+### 6.20 Zero-Cross Detector Driver (zcd)
+
+**Files:** [drv/zcd.h](../drv/zcd.h) — multi-instance (`ZCD_t *`)
+
+#### 6.20.1 Responsibilities
+
+- Enable a zero-cross detector and configure inversion, the output pad, standby
+  behavior, the interrupt edge, and read the crossing flag and output state.
+
+#### 6.20.2 Key Interfaces
+
+| Function | Description |
+|----------|-------------|
+| `zcdEnable` / `zcdDisable` | Enable / disable the detector. |
+| `zcdInvert` / `zcdOutputEnable` / `zcdRunStandby` | Polarity, output pad, standby. |
+| `zcdSetInterruptMode` | Select the crossing edge (`ZCD_INTMODE_*_gc`). |
+| `zcdGetInterruptFlag` / `zcdClearInterruptFlag` / `zcdGetState` | Flag and state. |
+
+---
+
+### 6.21 SPI Driver (spi)
+
+**Files:** [drv/spi.h](../drv/spi.h) — multi-instance (`SPI_t *`)
+
+#### 6.21.1 Responsibilities
+
+- Configure host/client role, clock prescaler and double-speed, data order and
+  transfer mode, slave-select and buffer modes, interrupts, and the data
+  register; plus a blocking full-duplex byte transfer for normal host mode.
+
+#### 6.21.2 Key Interfaces
+
+| Group | Functions |
+|-------|-----------|
+| Config | `spiEnable`/`Disable`, `spiHostMode`, `spiSetPrescaler`, `spiDoubleSpeed`, `spiDataOrder`, `spiSetMode`, `spiSlaveSelectDisable`, `spiBufferEnable` |
+| Interrupts | `spiEnableInterrupt`/`Disable` (`spiInt_t`), `spiGetInterruptFlags`/`ClearInterruptFlags` |
+| Data | `spiWriteData`, `spiReadData`, `spiTransferByte` |
+
+---
+
+### 6.22 TWI Driver (twi)
+
+**Files:** [drv/twi.h](../drv/twi.h) — multi-instance (`TWI_t *`)
+
+#### 6.22.1 Responsibilities
+
+- Configure the shared pin/timing settings and drive the independent host
+  (master) and client (slave) controllers: enable, baud/address, command
+  strobes, data registers, interrupts, and status. Host functions are
+  `twiHost*`; client functions are `twiClient*`.
+
+#### 6.22.2 Key Interfaces
+
+| Group | Functions |
+|-------|-----------|
+| General | `twiSetSdaHold`, `twiSetSdaSetup`, `twiFastModePlus`, `twiSetInputLevel`, `twiDualModeEnable`, `twiDebugRun` |
+| Host | `twiHostEnable`, `twiHostSmartMode`, `twiHostSetTimeout`, `twiHostQuickCommand`, `twiHostEnableRead/WriteInterrupt`, `twiHostCommand`, `twiHostAckAction`, `twiHostFlush`, `twiHostSetBaud`, `twiHostSetAddress`, `twiHostWrite/ReadData`, `twiHostGetStatus`, `twiHostBusState`, `twiHostSetBusState`, `twiHostGotAck`, `twiHostClearFlags` |
+| Client | `twiClientEnable`, `twiClientSmartMode`, `twiClientEnableData/Address/StopInterrupt`, `twiClientCommand`, `twiClientAckAction`, `twiClientSetAddress`, `twiClientSetAddressMask`, `twiClientWrite/ReadData`, `twiClientGetStatus`, `twiClientIsRead`, `twiClientGotAck`, `twiClientClearFlags` |
+
+---
+
+### 6.23 Port Multiplexer Driver (pmux)
+
+**Files:** [drv/pmux.h](../drv/pmux.h) — singleton (`PORTMUX`)
+
+#### 6.23.1 Responsibilities
+
+- Select which physical pins each peripheral signal is routed to. One setter per
+  routable signal performs a read-modify-write of its field in the route
+  register.
+
+#### 6.23.2 Key Interfaces
+
+| Group | Functions |
+|-------|-----------|
+| Serial | `pmuxUsart0`/`1`/`2`, `pmuxSpi0`/`1`, `pmuxTwi0` |
+| Timers | `pmuxTca0`, `pmuxTcb0`/`1`/`2`, `pmuxTcd0` |
+| Logic / events / analog | `pmuxCclLut0`–`3`, `pmuxEvOutA`/`C`/`D`, `pmuxAc0`–`2`, `pmuxZcd0` |
+
+---
+
+### 6.24 I/O Port Driver (pio)
+
+**Files:** [drv/pio.h](../drv/pio.h) — multi-instance (`PORT_t *`)
+
+#### 6.24.1 Responsibilities
+
+- Provide low-level PORT register access: pin direction, output value, and input
+  reading via the atomic set/clear/toggle registers; pin-change interrupt flags;
+  the slew-rate option; and per-pin configuration (sense mode, pull-up, invert).
+  The GPIO driver (§6.5) is the higher-level descriptor-based interface built on
+  this driver.
+
+#### 6.24.2 Data Types
+
+| Type | Description |
+|------|-------------|
+| `pioPin_t` | Pin bit-mask selector (`PIO_PIN0`–`7`, `PIO_PIN_ALL`) for bulk operations. Per-pin configuration takes a 0–7 index. |
+
+#### 6.24.3 Key Interfaces
+
+| Group | Functions |
+|-------|-----------|
+| Direction | `pioSetOutput`, `pioSetInput`, `pioToggleDirection`, `pioWriteDirection`, `pioGetDirection` |
+| Output / input | `pioSet`, `pioClear`, `pioToggle`, `pioWrite`, `pioReadOutput`, `pioRead` |
+| Interrupt flags / control | `pioGetInterruptFlags`, `pioClearInterruptFlags`, `pioSlewRateLimit` |
+| Per-pin config | `pioSetPinConfig`/`GetPinConfig`, `pioSetInputSense`, `pioPullup`, `pioInvert`, `pioConfigPins` |
 
 ---
 
@@ -942,3 +1448,4 @@ Reachable with a Raspberry Pi as build host and programmer:
 |---------|------|--------|-------------|
 | 1.0 | 2026-02-24 | John Anderson | Initial outline |
 | 1.1 | 2026-05-17 | (consolidation) | Add §3.4 Memory Layout, §3.5 Linker Sections, expanded §4.2 priority detail, §4.3.4 event sub-type contract, §9 Verification & Testing. |
+| 1.2 | 2026-06-27 | John Anderson | Add §6.6 inline register driver overview and §6.7–6.24 sections for the new peripheral drivers (clk, slp, rst, wdt, nvm, int, tca, tcb, rtc, evt, vref, adc, ac, zcd, spi, twi, pmux, pio); update §6.3 (UART inline accessors) and §6.4 (DAC converted to header-only inline). |
