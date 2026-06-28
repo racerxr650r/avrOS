@@ -161,13 +161,26 @@ static int cliEscSequence(volatile fsmStateMachine_t *stateMachine)
 		key = KEYCODE_UP;
 		fsmSetNextState(stateMachine, cliConsumeKey);
 	}
+	else if(key == 'B')
+	{
+		// Down arrow - not yet implemented, ignore and continue
+		fsmSetNextState(stateMachine, cliGetKey);
+	}
+	else if(key == 'C')
+	{
+		key = KEYCODE_RIGHT;
+		fsmSetNextState(stateMachine, cliConsumeKey);
+	}
 	else if(key == 'D')
 	{
 		key = KEYCODE_LEFT;
 		fsmSetNextState(stateMachine, cliConsumeKey);
 	}
 	else
-		fioWaitInput(stdin, cliGetKey);
+	{
+		// Unrecognized escape sequence - transition back to normal key handling
+		fsmSetNextState(stateMachine, cliGetKey);
+	}
 
 	return(0);
 }
