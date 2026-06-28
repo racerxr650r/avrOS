@@ -83,7 +83,7 @@ static void isrInput(PORT_t *port)
 // Command Line Interface -----------------------------------------------------
 #ifdef GPIO_CLI
 ADD_COMMAND("gpio",gpioCmd,true);
-static int gpioCmd(int argc, char *argv[])
+static osStatus_t gpioCmd(int argc, char *argv[])
 {
 	int ret = -1;
 
@@ -115,7 +115,7 @@ static int gpioCmd(int argc, char *argv[])
 }
 
 ADD_COMMAND("gpioSet",gpioSetCmd);
-static int gpioSetCmd(int argc, char *argv[])
+static osStatus_t gpioSetCmd(int argc, char *argv[])
 {
 	int ret = -1;
 
@@ -137,7 +137,7 @@ static int gpioSetCmd(int argc, char *argv[])
 }
 
 ADD_COMMAND("gpioClr",gpioClrCmd);
-static int gpioClrCmd(int argc, char *argv[])
+static osStatus_t gpioClrCmd(int argc, char *argv[])
 {
 	int ret = -1;
 
@@ -159,7 +159,7 @@ static int gpioClrCmd(int argc, char *argv[])
 }
 
 ADD_COMMAND("gpioTgl",gpioTglCmd);
-static int gpioTglCmd(int argc, char *argv[])
+static osStatus_t gpioTglCmd(int argc, char *argv[])
 {
 	int ret = -1;
 
@@ -181,7 +181,7 @@ static int gpioTglCmd(int argc, char *argv[])
 }
 
 ADD_COMMAND("gpioWrOut",gpioWrCmd);
-static int gpioWrCmd(int argc, char *argv[])
+static osStatus_t gpioWrCmd(int argc, char *argv[])
 {
 	int ret = -1;
 
@@ -203,7 +203,7 @@ static int gpioWrCmd(int argc, char *argv[])
 }
 
 ADD_COMMAND("gpioRdIn",gpioRdInCmd,true);
-static int gpioRdInCmd(int argc, char *argv[])
+static osStatus_t gpioRdInCmd(int argc, char *argv[])
 {
 	int ret = -1;
 
@@ -225,7 +225,7 @@ static int gpioRdInCmd(int argc, char *argv[])
 }
 
 ADD_COMMAND("gpioRdOut",gpioRdOutCmd);
-static int gpioRdOutCmd(int argc, char *argv[])
+static osStatus_t gpioRdOutCmd(int argc, char *argv[])
 {
 	int ret = -1;
 

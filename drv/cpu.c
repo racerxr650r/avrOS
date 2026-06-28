@@ -32,7 +32,7 @@ static const uint16_t oschfFrequency[] = {1000,2000,3000,4000,0,8000,12000,16000
 ADD_COMMAND("reset",cpuResetCmd);
 #endif // CPU_CLI
 
-int cpuResetCmd(int argC, char *argV[])
+osStatus_t cpuResetCmd(int argC, char *argV[])
 {
 	// The UNUSED macro prevents the compiler from warning about unused variables
 	// Include these only if the function does not use the argC and argV parameters

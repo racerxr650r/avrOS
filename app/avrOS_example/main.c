@@ -41,7 +41,7 @@ FUSES =
 LOCKBITS = (uint8_t)LOCKBITS_DEFAULT;
 
 // Internal function prototypes -----------------------------------------------
-int btnHandler(volatile event_t *event);
+osStatus_t btnHandler(volatile event_t *event);
 
 // Logger Configuration -------------------------------------------------------
 #if LOG_FORMAT > 0 && LOG_LEVEL > 0
@@ -144,10 +144,10 @@ int main(void)
     }
 }
 
-int btnHandler(volatile event_t *event)
+osStatus_t btnHandler(volatile event_t *event)
 {
 	UNUSED(event);
 	INFO("Button status %d",gpioReadInput(&Button)>>2);
-	return(0);
+	return(OS_OK);
 }
 

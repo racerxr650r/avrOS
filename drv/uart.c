@@ -123,7 +123,7 @@ static void isrUsartRXC(UART_t *uart)
 ADD_COMMAND("uart",uartCmd,true);
 #endif
 
-int uartCmd(int argc, char *argv[])
+osStatus_t uartCmd(int argc, char *argv[])
 {
     UART_t  *uart = (UART_t *)&__start_UART_TABLE;
     int     ret = -1;

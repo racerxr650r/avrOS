@@ -68,7 +68,7 @@ ADD_COMMAND("?",cliHelp);
 ADD_COMMAND("clear",cliClear);
 #endif // CLI_CLI
 
-int cliHelp(int argC, char *argV[])
+osStatus_t cliHelp(int argC, char *argV[])
 {
 	// The UNUSED macro prevents the compiler from warning about unused variables
 	// Include these only if the function does not use the argC and argV parameters
@@ -82,7 +82,7 @@ int cliHelp(int argC, char *argV[])
 	return(0);
 }
 
-int cliClear(int argC, char *argV[])
+osStatus_t cliClear(int argC, char *argV[])
 {
 	// The UNUSED macro prevents the compiler from warning about unused variables
 	// Include these only if the function does not use the argC and argV parameters

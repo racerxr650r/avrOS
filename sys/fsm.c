@@ -35,8 +35,8 @@ static char initString[] = {"Init"};
 
 // Internal functions ---------------------------------------------------------
 static volatile fsmStateMachine_t* fsmGetStateMachine(const char *name);
-static int fsmLstAdd(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm);
-static int fsmLstRemove(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm);
+static osStatus_t fsmLstAdd(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm);
+static osStatus_t fsmLstRemove(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm);
 static bool fsmListFind(volatile fsmStateMachine_t *list, volatile fsmStateMachine_t *sm);
 static void fsmLstPrint(FILE *file, volatile fsmStateMachine_t *list);
 static void initTablePrint(FILE *file);

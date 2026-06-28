@@ -26,7 +26,7 @@ static volatile uint32_t	sysTicks = 0;
 static volatile uint32_t	sysTicksPending = 0;
 
 // Internal Function Prototypes ----------------------------------------------
-static int sysUpdateWaitTicks(volatile event_t *event);
+static osStatus_t sysUpdateWaitTicks(volatile event_t *event);
 
 // Event for system timer ticks to update the waiting state machines.
 // Self-arming: the handler re-arms the event at the end of each tick.
@@ -60,26 +60,26 @@ ADD_COMMAND("tick",tickCmd,true);
 ADD_COMMAND("tickFreq",tickFreqCmd);
 #endif
 
-int tickCmd(int argc, char *argv[])
+osStatus_t tickCmd(int argc, char *argv[])
 {
 	UNUSED(argc);
 	UNUSED(argv);
-	
+
 	uint32_t ticks = sysGetTickCount();
 	uint32_t secs = ticks/1000;
-	
+
 	printf(BOLD FG_BLUE "  Tick Timer: " RESET "%s\n\r",SYS_TICK_TIMER==SYS_TIMER_TCB0?"TCB0":SYS_TICK_TIMER==SYS_TIMER_TCB1?"TCB1":SYS_TICK_TIMER==SYS_TIMER_TCB2?"TCB2":"N/A");
 	printf(BOLD FG_BLUE "    CPU Freq: " RESET "%10u MHz\n\r",cpuGetFrequency()/1000);
 	printf(BOLD FG_BLUE "   Tick Freq: " RESET "%10u kHz\n\r",sysGetTickFreq());
 	printf(BOLD FG_BLUE " System Tick: " RESET "%10lu secs\n\r",secs);
 	printf(BOLD FG_BLUE " System Tick: " RESET "%10lu cnt\n\r",ticks);
 
-	return(0);
+	return(OS_OK);
 }
 
-int tickFreqCmd(int argc, char *argv[])
+osStatus_t tickFreqCmd(int argc, char *argv[])
 {
-	int ret = -1;
+	osStatus_t ret = OS_INVALID;
 
 	if(argc == 2)
 	{
@@ -88,7 +88,7 @@ int tickFreqCmd(int argc, char *argv[])
 		if(freq >= 1000)
 		{
 			sysSetTickFreq(freq);
-			ret = 0;
+			ret = OS_OK;
 		}
 	}
 
@@ -100,7 +100,7 @@ int tickFreqCmd(int argc, char *argv[])
 // and re-arm the tick event for the next ISR trigger.
 // Drains sysTicksPending so that ticks missed while the main loop was busy
 // (e.g. during UART I/O) are applied before re-arming.
-static int sysUpdateWaitTicks(volatile event_t *event)
+static osStatus_t sysUpdateWaitTicks(volatile event_t *event)
 {
 	uint32_t pending;
 
@@ -114,7 +114,7 @@ static int sysUpdateWaitTicks(volatile event_t *event)
 		fsmUpdateWaitTicks();
 
 	evntArmSystem(event);
-	return(0);
+	return(OS_OK);
 }
 
 void sysInitTick(TCB_t *tcb, uint16_t sysTickFreq)

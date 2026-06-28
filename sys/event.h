@@ -105,9 +105,9 @@ typedef struct EVENT_TYPE
  * to TRIGGERED.  The default implementation is evntHandler().
  *
  * @param event  Pointer to the triggered event.
- * @return 0 on success, negative on error.
+ * @return OS_OK on success, negative osStatus_t on error.
  */
-typedef int (*evntHandler_t)(volatile event_t *event);
+typedef osStatus_t (*evntHandler_t)(volatile event_t *event);
 
 /**
  * @brief Flash-resident event descriptor (one per ADD_EVENT instance).

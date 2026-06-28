@@ -28,7 +28,7 @@ static uint8_t fillPattern[] = {0xde,0xad,0xbe,0xef};
 // CLI Commands ---------------------------------------------------------------
 #ifdef MEM_CLI
 ADD_COMMAND("ram",ramCmd,true);
-int ramCmd(int argc, char *argv[])
+osStatus_t ramCmd(int argc, char *argv[])
 {
 	UNUSED(argc);
 	UNUSED(argv);
@@ -39,7 +39,7 @@ int ramCmd(int argc, char *argv[])
 }
 
 ADD_COMMAND("rom",romCmd,true);
-int romCmd(int argc, char *argv[])
+osStatus_t romCmd(int argc, char *argv[])
 {
 	UNUSED(argc);
 	UNUSED(argv);

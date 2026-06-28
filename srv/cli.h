@@ -74,11 +74,11 @@ struct cliCommand_struct
         ADD_STATE_MACHINE(cliName ## _SM,cliInit,FSM_SRV | 0x3f, (void *)&cliName);
 
 // This macro adds a command string and a function to the cli table
-#define ADD_COMMAND(name,function,...)	static int function(int argc, char *argv[]); \
+#define ADD_COMMAND(name,function,...)	static osStatus_t function(int argc, char *argv[]); \
                                         const static cliCommand_t SECTION(CLI_CMDS) CONCAT(function,__COUNTER__) = { .commandStr = name, .funcPtr = &function, .repeatable = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,false), .rootCommand = NULL};
 
 // This macro adds a command string and a function to the cli table
-#define ADD_SUBCOMMAND(name,function,root,...)	static int function(int argc, char *argv[]); \
+#define ADD_SUBCOMMAND(name,function,root,...)	static osStatus_t function(int argc, char *argv[]); \
                                                 const static cliCommand_t SECTION(CLI_CMDS) CONCAT(function,__COUNTER__) = { .commandStr = name, .funcPtr = &function, .repeatable = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,false), .rootCommand = &root};
 
 // Constants ------------------------------------------------------------------
