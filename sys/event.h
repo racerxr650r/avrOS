@@ -265,9 +265,9 @@ evntState_t evntWait(volatile event_t *event, int eventType, fsmHandler_t fsmSta
  * Assign a custom handler via ADD_EVENT to override this behaviour.
  *
  * @param event  Pointer to the triggered event.
- * @return 0 if the state machine was woken, -1 if the sub-types did not match.
+ * @return OS_OK if the state machine was woken, OS_ERROR if the event sub-types did not match.
  */
-int evntHandler(volatile event_t *event);
+osStatus_t evntHandler(volatile event_t *event);
 
 /**
  * @brief Initialize the event manager.

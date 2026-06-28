@@ -237,23 +237,24 @@ extern uint16_t queGetSize(volatile queue_t *que);
  * @brief Get an element from the queue.
  *
  * Retrieves an element from the head of the queue.  If the queue
- * is empty, the function returns false and the element is not modified.
+ * is empty, the function returns OS_EMPTY and the element is not modified.
  *
  * @param que Pointer to the queue.
- * @param element Pointer to the location where the retrieved element 
+ * @param element Pointer to the location where the retrieved element
  *                should be stored.
- * @return True if an element was successfully retrieved, false otherwise.
+ * @return OS_OK if an element was successfully retrieved, OS_EMPTY if queue is empty,
+ *         OS_INVALID if que or element is NULL.
  */
-extern bool queGet(volatile queue_t *que, void *element);
+extern osStatus_t queGet(volatile queue_t *que, void *element);
 
 /**
  * @brief Get a byte from the queue.
  *
  * @param que Pointer to the queue.
  * @param byte Pointer to destination byte.
- * @return True if a byte was retrieved, false otherwise.
+ * @return OS_OK if a byte was retrieved, OS_EMPTY if queue is empty, OS_INVALID if arguments invalid.
  */
-static inline bool queGetByte(volatile queue_t *que, uint8_t *byte)
+static inline osStatus_t queGetByte(volatile queue_t *que, uint8_t *byte)
 {
 	return(queGet(que, byte));
 }
@@ -263,24 +264,25 @@ static inline bool queGetByte(volatile queue_t *que, uint8_t *byte)
  *
  * @param que Pointer to the queue.
  * @param word Pointer to destination word.
- * @return True if a word was retrieved, false otherwise.
+ * @return OS_OK if a word was retrieved, OS_EMPTY if queue is empty, OS_INVALID if arguments invalid.
  */
-static inline bool queGetWord(volatile queue_t *que, uint16_t *word)
+static inline osStatus_t queGetWord(volatile queue_t *que, uint16_t *word)
 {
 	return(queGet(que, word));
 }
 /**
  * @brief Get a pointer from the queue.
- * 
- * This is a convenience macro to retrieve a pointer from the queue. 
+ *
+ * This is a convenience macro to retrieve a pointer from the queue.
  * It uses queGet() internally.
  *
  * @param que Pointer to the queue.
- * @param ptr A pointer to a pointer variable where the retrieved 
+ * @param ptr A pointer to a pointer variable where the retrieved
  *            pointer will be stored.
- * @return True if a pointer was successfully retrieved, false otherwise.
+ * @return OS_OK if a pointer was successfully retrieved, OS_EMPTY if queue is empty,
+ *         OS_INVALID if arguments invalid.
  */
-static inline bool queGetPtr(volatile queue_t *que, void **ptr)
+static inline osStatus_t queGetPtr(volatile queue_t *que, void **ptr)
 {
 	return(queGetWord(que,(uint16_t *)ptr));
 }
@@ -288,14 +290,15 @@ static inline bool queGetPtr(volatile queue_t *que, void **ptr)
 /**
  * @brief Put an element into the queue.
  *
- * Adds an element to the tail of the queue. If the queue is full, 
- * the function returns false and the element is not added.
+ * Adds an element to the tail of the queue. If the queue is full,
+ * the function returns OS_FULL and the element is not added.
  *
  * @param que Pointer to the queue.
  * @param element Pointer to the element to be added.
- * @return True if the element was successfully added, false otherwise.
+ * @return OS_OK if the element was successfully added, OS_FULL if queue is full,
+ *         OS_INVALID if que or element is NULL.
  */
-extern bool quePut(volatile queue_t *que, void *element);
+extern osStatus_t quePut(volatile queue_t *que, void *element);
 
 /**
  * @brief Put a byte into the queue.
@@ -353,7 +356,7 @@ static inline bool quePutPtr(volatile queue_t *que, void *ptr)
  * @param eventType The queue condition to wait for (@ref queueEvents_t).
  * @return 0 on success.
  */
-int queWait(volatile queue_t *que, queueEvents_t eventType, fsmHandler_t stateHandler);
+osStatus_t queWait(volatile queue_t *que, queueEvents_t eventType, fsmHandler_t stateHandler);
 
 /** @} */ // end of queue_manager
 

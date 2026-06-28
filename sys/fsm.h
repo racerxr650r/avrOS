@@ -285,8 +285,8 @@ fsmHandler_t fsmGetPreviousState(volatile fsmStateMachine_t *stateMachine);
  * @param handler		[in] Pointer to function implementing the next state
  * @return 0 on success, non-zero on failure
  */
-int fsmSetNextStateBasic(volatile fsmStateMachine_t *stateMachine,
-						fsmHandler_t handler);
+osStatus_t fsmSetNextStateBasic(volatile fsmStateMachine_t *stateMachine,
+								fsmHandler_t handler);
 /**
  * @brief Set the next state of the given state machine (verbose)
  *
@@ -299,9 +299,9 @@ int fsmSetNextStateBasic(volatile fsmStateMachine_t *stateMachine,
  * @param name			[in] String containing the name of the next state
  * @return 0 on success, non-zero on failure
  */
-int fsmSetNextStateVerbose(volatile fsmStateMachine_t *stateMachine,
-							fsmHandler_t handler,
-							const char *name);
+osStatus_t fsmSetNextStateVerbose(volatile fsmStateMachine_t *stateMachine,
+								fsmHandler_t handler,
+								const char *name);
 /**
  * @brief Initialize the Finite State Manager
  *
@@ -320,7 +320,7 @@ void fsmInit();
  * @param stateMachine	[in] Pointer to state machine
  * @return 0 on success, non-zero on failure
  */
-int	fsmReady(volatile fsmStateMachine_t *stateMachine);
+osStatus_t	fsmReady(volatile fsmStateMachine_t *stateMachine);
 /**
  * @brief Move the given state machine to the wait queue
  *
@@ -331,7 +331,7 @@ int	fsmReady(volatile fsmStateMachine_t *stateMachine);
  * @param stateMachine	[in] Pointer to state machine
  * @return 0 on success, non-zero on failure
  */
-int	fsmWait(volatile fsmStateMachine_t *stateMachine);
+osStatus_t	fsmWait(volatile fsmStateMachine_t *stateMachine);
 /**
  * @brief Move the given state machine to the stopped queue
  *
@@ -343,7 +343,7 @@ int	fsmWait(volatile fsmStateMachine_t *stateMachine);
  * @param stateMachine	[in] Pointer to state machine
  * @return 0 on success, non-zero on failure
  */
-int	fsmStop(volatile fsmStateMachine_t *stateMachine);
+osStatus_t	fsmStop(volatile fsmStateMachine_t *stateMachine);
 /**
  * @brief Update the state machines in the wait queue waiting on the system timer
  */

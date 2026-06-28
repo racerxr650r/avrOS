@@ -250,6 +250,71 @@ Rules:
 
 ---
 
+## 3.6 Error Handling and Return Codes
+
+### Overview
+
+All avrOS subsystems use a unified, negative-valued error code enumeration `osStatus_t`
+to report success/failure. This design coexists with functions that return counts or
+state values by leveraging the invariant: **all errors are negative, all data is
+non-negative**. Existing code that tests `if (ret < 0)` or `if (ret != 0)` continues to
+work unchanged, allowing migration to happen incrementally.
+
+### Return Code Semantics
+
+**`osStatus_t` enumeration (defined in [avrOS.h](../avrOS.h)):**
+
+| Code | Name | Meaning |
+|------|------|---------|
+| 0 | `OS_OK` | Success |
+| -1 | `OS_ERROR` | Generic or unspecified failure |
+| -2 | `OS_INVALID` | Invalid argument: NULL pointer, out-of-range value, bad enum |
+| -3 | `OS_NOTFOUND` | Named object, handle, or device not found |
+| -4 | `OS_STATE` | Operation not valid in the current state |
+| -5 | `OS_BUSY` | Resource busy / would block (spinlock, full descriptor table) |
+| -6 | `OS_EMPTY` | No data available (queue empty, buffer empty, no event) |
+| -7 | `OS_FULL` | No space available (queue full, buffer full, descriptor table full) |
+| -8 | `OS_TIMEOUT` | Operation timed out waiting for a condition |
+| -9 | `OS_NORESOURCE` | Out of memory, out of handles, out of descriptors |
+| -10 | `OS_IO` | Hardware error, peripheral I/O error, or I/O timeout |
+| -11 | `OS_UNSUPPORTED` | Operation not implemented or unsupported |
+
+### Function Return Patterns
+
+**Pattern 1: Pure success/failure** — return `osStatus_t` directly.
+```c
+osStatus_t fsmReady(volatile fsmStateMachine_t *fsm) {
+    if (fsm == NULL) return OS_INVALID;
+    // ... transition to ready queue ...
+    return OS_OK;
+}
+```
+
+**Pattern 2: Count/value with error fallthrough** — return non-negative count on
+success, negative `osStatus_t` on error.
+```c
+int uartTransmit(const uart_t *uart, const void *buf, size_t n) {
+    if (uart == NULL || buf == NULL) return OS_INVALID;  // negative
+    // ... write to FIFO ...
+    return bytes_written;  // non-negative
+}
+```
+Callers test with `if (ret < 0)` or `OS_FAILED(ret)`.
+
+**Pattern 3: Domain-specific state enum** — some operations return a state enum
+(e.g., `evntState_t`) to convey both state and error. These remain distinct from
+`osStatus_t` but align error values: `-1` in `evntState_t` (EVENT_ERROR) corresponds
+conceptually to `OS_ERROR`.
+
+### Helper Macros
+
+| Macro | Purpose |
+|-------|---------|
+| `OS_FAILED(s)` | True if `s < 0` |
+| `OS_SUCCEEDED(s)` | True if `s >= 0` |
+
+---
+
 ## 4. System Modules
 
 ### 4.1 System Kernel (sys)
@@ -496,7 +561,8 @@ handler — keep it short.
 
 #### 4.5.1 Responsibilities
 
-- Provides a mechanism for FSM delays with approximately millisecond (1024 ticks/sec) precision using a 32 bit hardware counter
+- Provides a mechanism for FSM delays with approximately millisecond (1024 ticks/sec) precision by default using a 32 bit hardware counter
+- Selectable precision determined by he RTC divider
 - Signal associated event when tick count reaches 0
 
 #### 4.5.2 Data Structures
@@ -519,10 +585,10 @@ handler — keep it short.
 
 - Cascades the RTC timer using the AVR events system with a 16 bit TCB timer to create a 32 bit counter
 - Uses the rtc and tcb drivers to access the hardware functionality
-- By default the RTC timer uses an internal clock source
+- By default the RTC timer uses an internal clock source providing 1024 ticks/second
 - Defines in avrOSConfig.h provide options for different clock sources and different frequencies
 - When the user creates a timer an associated avrOS event is created as well 
-- Uses avrOS events to restore the FSM to the Ready queue
+- Uses avrOS events to restore the FSM to the Ready queue when the timwer expires
 - Provides event or interrupt call back handlers to note the event and possibly reschedule the FSM
 - The call back function can be in either the interrupt context for less jitter. Or, It can be in the event call back context which is in the system/FSM context therefore not requiring thread safety with the rest of the FSMs and events
 - Maintains a list of the current active timers

@@ -30,7 +30,7 @@ extern void *__start_QUE_TABLE,*__stop_QUE_TABLE;
 // Command line interface -----------------------------------------------------
 #ifdef QUE_CLI
 ADD_COMMAND("que",queCmd,true);
-static int queCmd(int argc, char *argv[])
+static osStatus_t queCmd(int argc, char *argv[])
 {
 	// Walk the table of queues
 	queDescriptor_t *descr = (queDescriptor_t *)&__start_QUE_TABLE;
@@ -69,11 +69,14 @@ uint16_t queGetSize(volatile queue_t *que)
 	return(ret);	
 }
 
-bool queGet(volatile queue_t *que, void *element)
+osStatus_t queGet(volatile queue_t *que, void *element)
 {
+	if(que == NULL || element == NULL)
+		return OS_INVALID;
+
 	const queDescriptor_t *descr = que->descr;
-	bool			ret = false;
-	
+	osStatus_t ret = OS_EMPTY;
+
 	// Start of critical section
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
@@ -93,7 +96,7 @@ bool queGet(volatile queue_t *que, void *element)
 				que->tail = que->head;
 				evntTrigger(descr->event,QUE_EVENT_NOT_FULL);
 			}
-			
+
 			// Increment the head pointer and wrap if needed
 			if(++que->head == descr->capacity)
 				que->head = 0;
@@ -106,17 +109,20 @@ bool queGet(volatile queue_t *que, void *element)
 				evntTrigger(descr->event,QUE_EVENT_EMPTY);
 			}
 
-			ret = true;
+			ret = OS_OK;
 		}
 	} // End of critical section
 	return(ret);
 }
 
-bool quePut(volatile queue_t *que, void *element)
+osStatus_t quePut(volatile queue_t *que, void *element)
 {
+	if(que == NULL || element == NULL)
+		return OS_INVALID;
+
 	const queDescriptor_t *descr = que->descr;
-	bool			ret = false;
-	
+	osStatus_t ret = OS_FULL;
+
 	// Start of critical section
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
@@ -131,7 +137,7 @@ bool quePut(volatile queue_t *que, void *element)
 				//que->buffer[queue->tail] = ch;
 #ifdef QUE_STATS
 				++descr->queue->stats.in;
-#endif			
+#endif
 				// If the buffer was previously empty...
 				if(que->head == descr->capacity)
 				{
@@ -142,21 +148,21 @@ bool quePut(volatile queue_t *que, void *element)
 				// Increment the tail pointer and wrap
 				if(++que->tail==descr->capacity)
 					que->tail = 0;
-			
-				// Is the queue now full...	
+
+				// Is the queue now full...
 				if(que->tail == que->head)
 				{
 					// Point the tail beyond the buffer
 					que->tail = descr->capacity;
 					evntTrigger(descr->event, QUE_EVENT_FULL);
 				}
-				
+
 				// If the current capacity of queueue exceeds the previous max, update the max
 				uint16_t	size = queGetSize(que);
 				if(size>descr->queue->max)
 					descr->queue->max = size;
-				
-				ret = true;
+
+				ret = OS_OK;
 			}
 		}
 #ifdef QUE_STATS
@@ -167,9 +173,9 @@ bool quePut(volatile queue_t *que, void *element)
 	return(ret);
 }
 
-int queWait(volatile queue_t *que, queueEvents_t eventType, fsmHandler_t stateHandler)
+osStatus_t queWait(volatile queue_t *que, queueEvents_t eventType, fsmHandler_t stateHandler)
 {
 	evntWait(que->descr->event, (int)eventType, stateHandler);
-	return(0);
+	return OS_OK;
 }
 

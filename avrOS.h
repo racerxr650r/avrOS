@@ -44,11 +44,42 @@
 #define AVRSMOS_OS
 
 // General definitions *********************************************************
-#define OK		0
-#define ERR		1
-
 #define DISABLE 0
 #define ENABLE	1
+
+// Error codes *****************************************************************
+/**
+ * @brief Global status codes returned by avrOS functions.
+ *
+ * Functions that report only success/failure return osStatus_t directly.
+ * Functions that return a count or value (e.g., bytes transferred) return a
+ * non-negative count on success and a negative osStatus_t on error.
+ * In both cases, the sign test `if (ret < 0)` works uniformly.
+ *
+ * Negative values are intentional to avoid collision with counts and to align
+ * with historical avrOS convention (-1 for error). Existing code that tests
+ * `if (ret < 0)` or `if (ret != 0)` will continue to work unchanged.
+ */
+typedef enum
+{
+	OS_OK          =   0,  ///< Success
+	OS_ERROR       =  -1,  ///< Generic / unspecified failure
+	OS_INVALID     =  -2,  ///< Invalid argument: NULL pointer, out-of-range
+	OS_NOTFOUND    =  -3,  ///< Named object / handle not found
+	OS_STATE       =  -4,  ///< Operation not valid in the current state
+	OS_BUSY        =  -5,  ///< Resource busy / would block
+	OS_EMPTY       =  -6,  ///< No data available (queue / buffer empty)
+	OS_FULL        =  -7,  ///< No space available (queue / buffer full)
+	OS_TIMEOUT     =  -8,  ///< Operation timed out
+	OS_NORESOURCE  =  -9,  ///< Out of memory / handles / descriptors
+	OS_IO          = -10,  ///< Hardware / peripheral / I/O error
+	OS_UNSUPPORTED = -11,  ///< Not implemented / unsupported operation
+} osStatus_t;
+
+/// True if an osStatus_t indicates error.
+#define OS_FAILED(s)    ((s) < 0)
+/// True for OS_OK or a non-negative count.
+#define OS_SUCCEEDED(s) ((s) >= 0)
 
 // avrOS System Header Files ***************************************************
 // IWYU pragma: begin_exports

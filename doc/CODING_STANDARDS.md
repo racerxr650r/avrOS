@@ -435,9 +435,41 @@ highest. Use the class that matches the directory the module lives in.
 
 ## 9. Error handling and logging
 
-- Functions return `int` with `0` for success and `-1` (or a negative
-  error class) for failure. Some kernel calls return a typed enum
-  (`evntState_t`, `bool`).
+### Return codes
+
+All avrOS functions use `osStatus_t` for reporting success/failure:
+
+```c
+typedef enum {
+    OS_OK          =   0,  // Success
+    OS_ERROR       =  -1,  // Generic / unspecified failure
+    OS_INVALID     =  -2,  // Invalid argument: NULL pointer, out-of-range
+    OS_NOTFOUND    =  -3,  // Named object / handle not found
+    OS_STATE       =  -4,  // Operation not valid in current state
+    OS_BUSY        =  -5,  // Resource busy / would block
+    OS_EMPTY       =  -6,  // No data available (queue / buffer empty)
+    OS_FULL        =  -7,  // No space available (queue / buffer full)
+    OS_TIMEOUT     =  -8,  // Operation timed out
+    OS_NORESOURCE  =  -9,  // Out of memory / handles / descriptors
+    OS_IO          = -10,  // Hardware / peripheral / I/O error
+    OS_UNSUPPORTED = -11,  // Not implemented / unsupported operation
+} osStatus_t;
+```
+
+- Functions that return only success/failure have signature `osStatus_t func(...)`.
+  Return `OS_OK` for success, the appropriate negative code for failure.
+  Test with `if (ret < 0)` or use the `OS_FAILED(ret)` / `OS_SUCCEEDED(ret)` macros.
+
+- Functions that return a count or value on success (e.g., `uartTransmit` returning
+  byte count) return a non-negative count on success and a negative `osStatus_t` on
+  error. The caller tests `if (ret < 0)` to detect errors.
+
+- Domain-specific state enums (e.g., `evntState_t` for event lifecycle) remain
+  separate; their error values (e.g., `EVENT_ERROR = -1`) align with `osStatus_t`
+  for consistency.
+
+### Logging
+
 - Use the logger macros from `srv/log.h` for diagnostic output:
   `INFO`, `WARN`, `ERROR`, `CRITICAL`. The macros are compiled away
   when `LOG_LEVEL` or `LOG_FORMAT` is `0`.

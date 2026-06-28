@@ -35,10 +35,10 @@ evntList_t	evntListTriggered = { .head = NULL, .tail = NULL, .size = 0 };
 ADD_COMMAND("evnt",evntCmd,true);
 #endif
 
-static int evntCmd(int argc, char *argv[])
+static osStatus_t evntCmd(int argc, char *argv[])
 {
 	evntDescriptor_t    *descr = (evntDescriptor_t *)&__start_EVNT_TABLE;
-	int                 ret = -1;
+	osStatus_t          ret = OS_ERROR;
 
 	// Walk the table of events
 	for(; descr < (evntDescriptor_t *)&__stop_EVNT_TABLE; ++descr)
@@ -321,9 +321,9 @@ evntState_t evntWait(volatile event_t *event,
 }
 
 // Default event handler for events without a user defined handler
-int evntHandler(volatile event_t *event)
+osStatus_t evntHandler(volatile event_t *event)
 {
-	int	ret = -1;
+	osStatus_t ret = OS_ERROR;
 
 	// If the event trigger type matches the current event type...
 	if(event->type == event->triggerType)
@@ -334,7 +334,7 @@ int evntHandler(volatile event_t *event)
 			// Move the state machine associated with the event to the ready queue
 			fsmReady(event->stateMachine);
 		}
-		ret = 0;
+		ret = OS_OK;
 	}
 
 	return(ret);

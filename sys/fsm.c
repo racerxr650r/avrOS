@@ -44,9 +44,9 @@ static void initTablePrint(FILE *file);
 // CLI Commands ---------------------------------------------------------------
 #ifdef FSM_CLI
 ADD_COMMAND("fsm",fsmCmd,true);
-static int fsmCmd(int argc, char *argv[])
+static osStatus_t fsmCmd(int argc, char *argv[])
 {
-	int ret = 0;
+	osStatus_t ret = OS_OK;
 
 	if(argc == 1)
 	{
@@ -83,14 +83,14 @@ static int fsmCmd(int argc, char *argv[])
 			printf("\n\r");
 		}
 		else
-			ret = -1;
+			ret = OS_NOTFOUND;
 	}
 
 	return(ret);
 }
 
 ADD_COMMAND("fsmStop",fsmStopCmd);
-static int fsmStopCmd(int argc, char *argv[])
+static osStatus_t fsmStopCmd(int argc, char *argv[])
 {
 	// If command line includes a name of a state machine...
 	if((argc == 2) && (argv[1] != NULL))
@@ -100,11 +100,11 @@ static int fsmStopCmd(int argc, char *argv[])
 		if(stateMachine!=NULL)
 			return(fsmStop(stateMachine));
 	}
-	return(-1);
+	return(OS_INVALID);
 }
 
 ADD_COMMAND("fsmStart",fsmStartCmd);
-static int fsmStartCmd(int argc, char *argv[])
+static osStatus_t fsmStartCmd(int argc, char *argv[])
 {
   // If command line includes a name of a state machine...
   if((argc == 2) && (argv[1] != NULL))
@@ -118,7 +118,7 @@ static int fsmStartCmd(int argc, char *argv[])
 }
 
 ADD_COMMAND("fsmReset",fsmResetCmd);
-static int fsmResetCmd(int argc, char *argv[])
+static osStatus_t fsmResetCmd(int argc, char *argv[])
 {
   // If command line includes a name of a state machine...
   if((argc == 2) && (argv[1] != NULL))
@@ -136,10 +136,10 @@ static int fsmResetCmd(int argc, char *argv[])
 #endif // FSM_CLI
 
 // Internal Functions ----------------------------------------------------------
-static int fsmLstAdd(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm)
+static osStatus_t fsmLstAdd(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm)
 {
-	int ret = 0;
-	
+	osStatus_t ret = OS_OK;
+
 	// If sm is valid...
 	if(sm != NULL)
 	{
@@ -188,15 +188,15 @@ static int fsmLstAdd(volatile fsmStateMachine_t **list, volatile fsmStateMachine
 	}
 	// Else sm is not valid...
 	else
-		ret = -1;
-	
+		ret = OS_INVALID;
+
 	return(ret);
 }
 
-static int fsmLstRemove(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm)
+static osStatus_t fsmLstRemove(volatile fsmStateMachine_t **list, volatile fsmStateMachine_t *sm)
 {
-	int ret = 0;
-	
+	osStatus_t ret = OS_OK;
+
 	// If the state machine is valid...
 	if(sm != NULL)
 	{
@@ -221,19 +221,19 @@ static int fsmLstRemove(volatile fsmStateMachine_t **list, volatile fsmStateMach
 				}
 				curr->next = NULL;
 			}
-				
+
 			// Step to the next element
 			prev = curr;
 			curr = curr->next;
 		}
 		// If reached the end of the list without finding the element...
 		if(curr == NULL)
-			ret = -1;
+			ret = OS_NOTFOUND;
 	}
 	// Else the state machine is not valid...
 	else
-		ret = false;
-		
+		ret = OS_INVALID;
+
 	return(ret);
 }
 
@@ -385,69 +385,63 @@ fsmHandler_t fsmGetPreviousState(volatile fsmStateMachine_t *stateMachine)
 }
 
 // Set the next state of the given state machine
-int fsmSetNextStateBasic(volatile fsmStateMachine_t *stateMachine,
-						fsmHandler_t handler)
+osStatus_t fsmSetNextStateBasic(volatile fsmStateMachine_t *stateMachine,
+								fsmHandler_t handler)
 {
-	if(stateMachine)
-		stateMachine->nextState = handler;
-	else
-		return(-1);
-
-	return(0);
+	if(stateMachine == NULL)
+		return OS_INVALID;
+	stateMachine->nextState = handler;
+	return OS_OK;
 }
 
 // Set the next state of the given state machine
-int fsmSetNextStateVerbose(volatile fsmStateMachine_t *stateMachine,
-							fsmHandler_t handler,
-							const char *name)
+osStatus_t fsmSetNextStateVerbose(volatile fsmStateMachine_t *stateMachine,
+								fsmHandler_t handler,
+								const char *name)
 {
-	if(stateMachine)
-	{
-		stateMachine->nextState = handler;
-		stateMachine->nextStateName = name;
-	}
-	else
-		return(-1);
-
-	return(0);
+	if(stateMachine == NULL)
+		return OS_INVALID;
+	stateMachine->nextState = handler;
+	stateMachine->nextStateName = name;
+	return OS_OK;
 }
 
 // Stop the given state machine
-int fsmStop(volatile fsmStateMachine_t *stateMachine)
+osStatus_t fsmStop(volatile fsmStateMachine_t *stateMachine)
 {
-	int ret;
-	
+	osStatus_t ret;
+
 	// Start critical section of code
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-		if(!(ret = fsmLstRemove(&Ready,stateMachine)))
-			fsmLstAdd(&Stopped,stateMachine);
-		else if(!(ret = fsmLstRemove(&Wait,stateMachine)))
-			fsmLstAdd(&Stopped,stateMachine);
+		if(!(ret = fsmLstRemove(&Ready, stateMachine)))
+			fsmLstAdd(&Stopped, stateMachine);
+		else if(!(ret = fsmLstRemove(&Wait, stateMachine)))
+			fsmLstAdd(&Stopped, stateMachine);
 	} // End critical section
-		
+
 	return(ret);
 }
 
 // Put the given state machine on the wait list
-int fsmWait(volatile fsmStateMachine_t *stateMachine)
+osStatus_t fsmWait(volatile fsmStateMachine_t *stateMachine)
 {
-	int ret;
-	
+	osStatus_t ret;
+
 	// Start critical section of code
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{
-		if(!(ret = fsmLstRemove(&Ready,stateMachine)))
-			fsmLstAdd(&Wait,stateMachine);
+		if(!(ret = fsmLstRemove(&Ready, stateMachine)))
+			fsmLstAdd(&Wait, stateMachine);
 	} // End critical section
-	
+
 	return(ret);
 }
 
 // Put the given state machine on the ready list
-int fsmReady(volatile fsmStateMachine_t *stateMachine)
+osStatus_t fsmReady(volatile fsmStateMachine_t *stateMachine)
 {
-	int ret;
+	osStatus_t ret;
 	
 	// Start critical section of code
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)

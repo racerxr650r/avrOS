@@ -36,7 +36,7 @@
 
 // Types ----------------------------------------------------------------------
 typedef struct cliCommand_struct cliCommand_t;
-typedef int (*commandHandler_t)(int argc, char *argv[]);
+typedef osStatus_t (*commandHandler_t)(int argc, char *argv[]);
 
 typedef struct
 {
