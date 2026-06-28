@@ -74,9 +74,9 @@ ISR(USART2_RXC_vect)
 static void isrUsartDRE(UART_t *uart)
 {
     uint8_t		txByte;
-    
+
     // If there are more bytes in the transmit queue...
-    if(queGet(uart->txQueue,(char *)&txByte))
+    if(queGet(uart->txQueue,(char *)&txByte) == OS_OK)
     {
          usartWriteData(uart->usartRegs, txByte);
 #ifdef UART_STATS
@@ -99,8 +99,8 @@ static void isrUsartRXC(UART_t *uart)
     if(error == USART_RXCIF_bm)
     {
 #ifdef UART_STATS
-        bool queued = quePutByte(uart->rxQueue,usartReadData(uart->usartRegs));
-        if(queued)
+        osStatus_t queued = quePutByte(uart->rxQueue,usartReadData(uart->usartRegs));
+        if(queued == OS_OK)
             ++uart->stats->rxBytes;
         else
             ++uart->stats->rxQueueOverflow;
@@ -276,12 +276,12 @@ int uartTransmit(const UART_t *uart, char *buffer, size_t byteCount)
         for(;i<byteCount;++i)
         {
             // If the buffer is full...
-            if(!quePutByte(uart->txQueue,buffer[i]))
+            if(OS_FAILED(quePutByte(uart->txQueue,buffer[i])))
             {
 #ifdef UART_STATS
                 // Increment the buffer overflow counter
                 ++uart->stats->txQueueOverflow;
-#endif				
+#endif
                 ERROR("UART xmit buffer full");
                 break;
             }
@@ -329,9 +329,9 @@ int uartReceive(const UART_t *uart, char *buffer, size_t byteCount)
         for(;i<byteCount;++i)
         {
             char ch;
-            
+
             // If there is a byte in the queue...
-            if(queGet(uart->rxQueue,&ch))
+            if(queGet(uart->rxQueue,&ch) == OS_OK)
                 // Copy the byte to the next buffer location
                 buffer[i] = ch;
             // Else no more bytes in the queue...
