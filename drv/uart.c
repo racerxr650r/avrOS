@@ -276,7 +276,7 @@ int uartTransmit(const UART_t *uart, char *buffer, size_t byteCount)
         for(;i<byteCount;++i)
         {
             // If the buffer is full...
-            if(OS_FAILED(quePutByte(uart->txQueue,buffer[i])))
+            if(quePutByte(uart->txQueue,buffer[i]) != OS_OK)
             {
 #ifdef UART_STATS
                 // Increment the buffer overflow counter
