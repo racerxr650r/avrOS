@@ -1,5 +1,13 @@
 {
   "permissions": {
+    "deny": [
+      "Read(./util/avrOS-debug/**)",
+      "Edit(./util/avrOS-debug/**)",
+      "Skill(tracer)",
+      "Skill(application-debug)",
+      "Skill(ai-tmp-cleanup)",
+      "Skill(util/avrOS-debug:*)"
+    ],
     "allow": [
       "Bash(awk '/^[[:space:]]*\\\\.rodata/{f=1} f{print NR\": \"$0} f&&/AT>|} >/{c++; if\\(c>=1 && /}/\\) exit}' /usr/lib/avr/lib/ldscripts/avrxmega4_flmap.x)",
       "Bash(sed -n '75,93p' drv/gpio.h)",
