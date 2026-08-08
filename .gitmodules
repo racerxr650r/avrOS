@@ -1,0 +1,4 @@
+[submodule "util/avrOS-debug"]
+	path = util/avrOS-debug
+	url = https://github.com/racerxr650r/avrOS-debug
+	branch = develop
