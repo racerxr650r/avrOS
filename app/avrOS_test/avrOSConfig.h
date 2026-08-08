@@ -1,7 +1,7 @@
 /*
  * avrOSConfig.h
  *
- * Configuration of the avrOS resources
+ * Configuration of the avrOS resources for the avrOS unit test project
  *
  * Created: 4/25/2021 1:36:42 PM
  * Author : john anderson
@@ -69,7 +69,9 @@
 #define LOG_STOP_BITS		USART_SBMODE_1BIT_gc	// USART_SBMODE_1BIT_gc = 1 stop bit
 													// USART_SBMODE_2BIT_gc = 2 stop bits
 // Logger output level and format (STDERR)
-#define LOG_LEVEL	4	// Enable log messages by level of severity
+#define LOG_LEVEL	0	// Enable log messages by level of severity
+						// The unit test runner never enters the FSM dispatch loop
+						// that drains the log queue, so logging is disabled here
 						// 0 = no messages
 						// 1 = critical messages
 						// 2 = error and critical messages
@@ -104,10 +106,9 @@
 											  // USART_SBMODE_2BIT_gc = 2 stop bits
 
 // Unit Test Service ----------------------------------------------------------
-// Settings for the report UART used by utsRun(). This application does not run
-// unit tests -- they live in their own project (see app/avrOS_test), whose
-// main() calls utsRun() instead of fsmDispatch(). These settings only take
-// effect in a project that calls utsRun().
+// Settings for the report UART used by utsRun(). This project's main() calls
+// utsRun() instead of entering the FSM dispatch loop, so these settings
+// determine where the test report is written.
 #define UTS_USART     CLI_USART       // Report UART (same peripheral as the CLI)
 #define UTS_BAUDRATE  CLI_BAUDRATE    // Report UART baud rate
 #define UTS_PARITY    CLI_PARITY      // Report UART parity
@@ -116,7 +117,9 @@
 #define UTS_MAX_TESTS 32              // Max registered tests (size of the results array)
 
 // Global CLI enable
-#define CLI
+// Left undefined: the CLI shares its USART with the unit test report output
+// and requires the FSM dispatch loop, which utsRun() never enters
+//#define CLI
 // Enable Driver/Service CLI command(s)
 #ifdef CLI
 #define UART_CLI	// Uart driver CLI commands

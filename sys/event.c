@@ -262,6 +262,24 @@ evntState_t evntTrigger(volatile event_t *event, int triggerType)
 {
 	evntState_t   ret;
 
+	// Direct ISR-context handler (registered with ADD_EVENT_ISR): run it
+	// immediately in the caller's (interrupt) context and do NOT queue the
+	// event for evntDispatch(). The handler is the whole behaviour, so this
+	// fires whether or not an FSM has armed the event and leaves the event's
+	// list membership untouched (it stays on the disarmed list).
+	if(event->descr->isrHandler != NULL)
+	{
+		event->triggerType = triggerType;
+#ifdef EVNT_STATS
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+		{
+			++event->stats.triggered;
+		}
+#endif
+		event->descr->isrHandler(event);
+		return(EVENT_TRIGGERED);
+	}
+
 	// Start critical section of code
 	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 	{

@@ -24,6 +24,7 @@ avrOS is organized into 7 directories counting the root directory; ./, ./app,
 avrOS
 +-- app
 |   +-- avrOS_example
+|   +-- avrOS_test
 +-- doc
 |   +-- images
 +-- drv
@@ -38,6 +39,11 @@ avrOS
 files. The avrOSConfig.h file selects the components to be included in the
 build. The avrOS.x file is a linker script. The main.c file contains the main()
 entry point and the user application state machine and system objects.
+
+***avrOS/app/avrOS_test*** contains the same four files, but builds an image that
+runs the avrOS unit tests rather than an application. Its main() calls
+`utsRun()` in place of the state machine dispatch loop. See
+[Testing](#testing).
 
 ***avrOS/doc*** contains relavent documents and graphic files. This includes the document
 you are reading now and the avrOS logo graphic files.
@@ -542,9 +548,136 @@ static int sysUpdateWaitTicks(volatile event_t *event)
 }
 ```
 
+#### Interrupt-context handlers
+
+A dispatch-context handler (`ADD_EVENT`) is convenient but only runs on the
+next pass through the main loop, so it carries the scheduler's latency and
+jitter. When you need the callback to run the instant the event fires — for
+example a precision-timer expiry that toggles a pin — register an
+**interrupt-context** handler with `ADD_EVENT_ISR`:
+
+```C
+// Runs directly inside the producer's ISR the moment evntTrigger() is called.
+void myIsrHandler(volatile event_t *event);
+ADD_EVENT_ISR(MyIsrEvent, myIsrHandler);
+```
+
+The two forms are mutually exclusive — an event has either a dispatch handler
+or an ISR handler:
+
+| Macro | Runs from | Context | Returns | Use when |
+|-------|-----------|---------|---------|----------|
+| `ADD_EVENT(name[, handler])` | `evntDispatch()` | Main loop (cooperative) | `osStatus_t` | Waking an FSM, or any work that can wait for the next scan |
+| `ADD_EVENT_ISR(name, handler)` | `evntTrigger()` | Interrupt | `void` | Least-jitter callbacks that must run immediately |
+
+An ISR handler runs with interrupts disabled, is **not** queued for dispatch,
+and must be short. Because it does not go through the FSM wake path, keep it to
+quick work (set a flag, toggle a pin, push to a queue). No caller consumes its
+result, so its signature returns `void`.
+
 Use the CLI `evnt` command at runtime to inspect every registered event's
 state and (when built with `EVNT_STATS`) its armed/triggered/disarmed/error
 counters — see [Runtime Debugging](#runtime-debugging).
+
+### Precision Timers
+
+A *precision timer* schedules a delay with ~1024 ticks/second resolution and a
+wide 32-bit range (a single delay may run up to about 24 days at the default
+rate). Each timer owns an avrOS
+event, so on expiry it can wake a waiting state machine, run a dispatch-context
+callback, or run an interrupt-context callback — you choose per timer.
+
+Under the hood the module cascades the RTC (low 16 bits, clocked at 1024 Hz by
+default) with a TCB (high 16 bits) through the peripheral event system to form
+one 32-bit counter, and programs a two-stage compare interrupt for whichever
+timer expires next. This is independent of the coarser 1 ms *system tick* used
+by `fsmWaitMilliseconds()`; the two run on separate hardware. Hardware
+selection lives in `avrOSConfig.h` (see
+[avrOSConfig.h Reference](#avrosconfigh-reference)).
+
+#### Declaring a timer
+
+`ADD_TMR` creates the timer and its associated event in one declaration:
+
+```C
+// Wakes blink_evnt on expiry; an FSM can tmrWait() on it.
+ADD_TMR(blink);
+
+// Dispatch-context callback (runs from evntDispatch(), main-loop context).
+osStatus_t beatHandler(volatile event_t *event);
+ADD_TMR(beat, beatHandler);
+
+// Interrupt-context callback (runs in the expiry ISR — least jitter).
+void pulseHandler(volatile event_t *event);
+ADD_TMR_ISR(pulse, pulseHandler);
+```
+
+#### Timer API
+
+| Macro | Description |
+|-------|-------------|
+| `tmrSet(name, ticks)` | Arm (or re-arm) the timer to expire after `ticks` ticks (1024/sec by default). |
+| `tmrGet(name)` | Ticks remaining before expiry (0 if idle/expired). |
+| `tmrCancel(name)` | Cancel a running timer and disarm its event. |
+| `tmrWait(name, resumeState)` | Suspend the calling FSM until the timer expires, resuming in `resumeState`. |
+
+#### Delaying a state machine
+
+The most common use is to sleep an FSM for a precise interval. Arm the timer,
+then `tmrWait()` on it — the FSM leaves the ready queue and the scheduler
+resumes it in the given state when the timer fires:
+
+```C
+ADD_STATE_MACHINE(Blink_sm, blinkInit, FSM_APP | 20);
+ADD_TMR(blink);
+
+int blinkInit(volatile fsmStateMachine_t *sm)
+{
+    fsmSetNextState(sm, blinkOn);
+    return(0);
+}
+
+int blinkOn(volatile fsmStateMachine_t *sm)
+{
+    gpioSet(Led);
+    tmrSet(blink, 512);            // ~0.5 s at 1024 ticks/sec
+    tmrWait(blink, blinkOff);      // sleep until the timer expires
+    return(0);
+}
+
+int blinkOff(volatile fsmStateMachine_t *sm)
+{
+    gpioClear(Led);
+    tmrSet(blink, 512);
+    tmrWait(blink, blinkOn);
+    return(0);
+}
+```
+
+#### Least-jitter callbacks
+
+For work that must happen the instant the timer expires, use `ADD_TMR_ISR`. The
+handler runs in the timer interrupt rather than waiting for the next scheduler
+pass:
+
+```C
+// Toggle a pin exactly on expiry, then re-arm for a periodic square wave.
+ADD_TMR_ISR(pulse, pulseHandler);
+
+void pulseHandler(volatile event_t *event)
+{
+    (void)event;
+    gpioToggle(Pulse);
+    tmrSet(pulse, 1);              // re-arm for the next tick
+}
+```
+
+Keep ISR-context handlers short (see
+[Interrupt-context handlers](#interrupt-context-handlers)). The timer's event
+sub-type is `TMR_EVENT_EXPIRED`; `tmrWait()` supplies it for you.
+
+Use the CLI `tmr` command to list every timer's duration and remaining ticks —
+see [Runtime Debugging](#runtime-debugging).
 
 ### Queues
 
@@ -645,6 +778,98 @@ evntQue              Capacity:        4 Max:       4
 
 ### Testing
 
+avrOS includes an on-target unit test runner, the Unit Test Service (`uts`). It
+runs your tests on the microcontroller itself and reports the results over a
+UART, so the code under test runs against real hardware rather than a host
+simulation.
+
+Unit tests are **not** built into an application. They live in their own project
+directory under `.../avrOS/app`, parallel to the application projects, whose
+`main()` calls `utsRun()` instead of entering the `fsmDispatch()` loop. avrOS
+ships with a reference test project in `.../avrOS/app/avrOS_test`. Add your
+tests there, or create your own test project with `make project` (see
+[Create a New Application Project Directory](#create-a-new-application-project-directory))
+and give it a `main()` of the same shape.
+
+#### Writing a test
+
+A test is an ordinary function that takes no arguments and returns `OS_OK` on
+success or a negative `osStatus_t` code on failure. Register it with `ADD_TEST`,
+giving it the name that appears in the report. Write both in the test project's
+`main.c`.
+
+```c
+ADD_TEST("queue put/get", testQueuePutGet);
+osStatus_t testQueuePutGet(void)
+{
+	if(queuePut(&testQueue, &value) != OS_OK)	return(OS_ERROR);
+	if(queueGet(&testQueue, &result) != OS_OK)	return(OS_ERROR);
+	if(result != value)							return(OS_ERROR);
+	return(OS_OK);
+}
+```
+
+Returning a specific `osStatus_t` rather than a plain `OS_ERROR` makes the
+report more useful — the runner prints the code's description next to the
+failure. Tests run in the order the linker places them in the `TEST_TABLE`
+section.
+
+#### The test entry point
+
+```c
+int main(void)
+{
+	sysInit();
+	utsRun();	// runs every registered test, reports, and halts
+}
+```
+
+`utsRun()` never returns. It brings up the report UART itself using blocking,
+polled writes, so it does not need the state machine dispatcher running to drain
+a transmit queue.
+
+#### Building and running
+
+Build and flash a test project exactly like an application:
+
+```console
+cd .../avrOS/app/avrOS_test
+make flash
+```
+
+Connect a terminal to the report UART (`UTS_USART`, by default the same USART
+and baud rate the example application gives the CLI) and reset the target. The
+report looks like this:
+
+```
+*** avrOS Unit Tests ***
+osStatus macros .......... [PASS] Success
+percent helpers .......... [PASS] Success
+Test Group [PASSED]
+```
+
+`PASS`/`PASSED` are green and `FAIL` is red on an ANSI terminal. After the
+summary the runner halts in an infinite loop, so the report stays on screen and
+the target does not run on into undefined state.
+
+For automated runs, the runner also publishes the outcome to the global
+`utsGroupResult`: `0` if the tests never ran, `1` if all passed, `-1` if any
+failed. A debugger or board-in-the-loop harness can break at the halt loop and
+read that one symbol instead of parsing the UART text.
+
+#### Configuring a test project
+
+A test project's `avrOSConfig.h` differs from an application's in two ways:
+
+- **The CLI is left undefined.** It shares the report USART and needs the
+  dispatch loop that `utsRun()` never enters.
+- **`LOG_LEVEL` is `0`.** The logger queues its output for the dispatch loop to
+  drain, which likewise never runs.
+
+The report UART is configured with `UTS_USART`, `UTS_BAUDRATE`, `UTS_PARITY`,
+`UTS_DATA_BITS`, and `UTS_STOP_BITS`. `UTS_MAX_TESTS` sizes the results array
+and must be at least the number of registered tests.
+
 ### Modbus
 ***Future Feature***
 
@@ -744,6 +969,15 @@ per-module feature gates. Reference copy:
 | `SYS_TICK_TIMER` | `SYS_TIMER_TCB{0,1,2}` | `TCB0` | Which TCB drives the `sys.c` tick ISR. |
 | `SYS_TICK_FREQ` | Hz | `1000` | Tick frequency; affects `fsmWaitTicks`, `fsmWaitMilliseconds`. |
 
+### Precision timer (`sys/tmr.c`)
+
+| Macro | Type | Default | Notes |
+|-------|------|---------|-------|
+| `TMR_TCB` | `SYS_TIMER_TCB{0,1,2}` | `TCB1` | TCB forming the cascade high word. **Must differ from `SYS_TICK_TIMER`.** |
+| `TMR_RTC_CLK` | `RTC_CLKSEL_*_gc` | `OSC32K_gc` | RTC clock source (OSC32K / OSC1K / XOSC32K / EXTCLK). |
+| `TMR_RTC_PRESCALER` | `RTC_PRESCALER_*_gc` | `DIV32_gc` | Divider setting the tick rate: 32768/32 = 1024 ticks/sec (use `DIV1_gc` with `OSC1K`). |
+| `TMR_EVT_CHANNEL` | `EVT_CHANNEL{0..7}` | `EVT_CHANNEL0` | EVSYS channel routing RTC overflow to the cascade TCB. |
+
 ### Logger (`srv/log.c`)
 
 | Macro | Default | Effect |
@@ -794,6 +1028,7 @@ also be independently enabled / disabled.
 | `MEM_CLI`  | `drv/mem.c` | `ram`, `rom` |
 | `EVNT_CLI` | `sys/event.c` | `evnt` |
 | `GPIO_CLI` | `drv/gpio.c` | `gpio` |
+| `TMR_CLI`  | `sys/tmr.c` | `tmr` |
 
 | `<MOD>_STATS` | Adds |
 |---------------|------|
@@ -866,6 +1101,8 @@ machine starved — check priority).
 | `fsmReset <name>` | " | Reset to initial state |
 | `evnt` | `sys/event.c` | List all events with arm / disarm / trigger counts |
 | `que` | `sys/queue.c` | Per-queue capacity, max, in / out / overflow |
+| `tmr` | `sys/tmr.c` | Per-timer active state, duration, and ticks remaining |
+| `tmr <name>` | " | Inspect one timer |
 | `gpio` | `drv/gpio.c` | Per-GPIO port / pin / direction / event status |
 | `uart` | `drv/uart.c` | Per-UART byte counters, queue overflows, frame / parity errors |
 | `cpu` | `drv/cpu.c` | Clock source / frequency |

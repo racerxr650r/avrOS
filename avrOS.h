@@ -88,6 +88,7 @@ typedef enum
 #include "sys/fsm.h"
 #include "sys/event.h"
 #include "sys/queue.h"
+#include "sys/tmr.h"
 #include "srv/log.h"
 #include "sys/fio.h"
 
@@ -116,6 +117,7 @@ typedef enum
 #include "drv/evt.h"
 
 #include "srv/cli.h"
+#include "srv/uts.h"
 // IWYU pragma: end_exports
 //#include "crtDrv.h"
 //#include "delaySrv.h"

@@ -18,11 +18,13 @@
    - 4.2 [Finite State Machine Manager (fsm)](#42-finite-state-machine-manager-fsm)
    - 4.3 [Event Manager (event)](#43-event-manager-event)
    - 4.4 [Queue Manager (queue)](#44-queue-manager-queue)
-   - 4.5 [File I/O Abstraction (fio)](#45-file-io-abstraction-fio)
+   - 4.5 [Precision Timer](#45-precision-timer)
+   - 4.6 [File I/O Abstraction (fio)](#46-file-io-abstraction-fio)
 5. [Services](#5-services)
    - 5.1 [Command Line Interface (cli)](#51-command-line-interface-cli)
    - 5.2 [Logging Service (log)](#52-logging-service-log)
    - 5.3 [PCM Audio Service (pcm)](#53-pcm-audio-service-pcm)
+   - 5.4 [Unit Test Service (uts)](#54-unit-test-service-uts)
 6. [Drivers](#6-drivers)
    - 6.1 [CPU Driver (cpu)](#61-cpu-driver-cpu)
    - 6.2 [Memory Driver (mem)](#62-memory-driver-mem)
@@ -81,6 +83,7 @@ avrOS provides a finite-state-machine-based cooperative scheduler, an event syst
 | ROM  | Read-Only Memory (Flash) |
 | FIO  | File I/O |
 | TMR  | Timer |
+| UTS  | Unit Test Service |
 
 ### 1.4 References
 
@@ -213,7 +216,8 @@ section so the OS can iterate them at runtime:
 | `CLI_CMDS`    | `ADD_COMMAND`        | `srv/cli.c` |
 | `FSM_TABLE`   | `ADD_STATE_MACHINE`, `ADD_INITIALIZER` | `sys/fsm.c`, `sys/sys.c` |
 | `QUE_TABLE`   | `ADD_QUEUE`          | `sys/queue.c` |
-| `TMR_TABLE`   | (reserved for future timers) | — |
+| `TMR_TABLE`   | `ADD_TMR`, `ADD_TMR_ISR` | `sys/tmr.c` |
+| `TEST_TABLE`  | `ADD_TEST`           | `srv/uts.c` |
 | `EVNT_TABLE`  | `ADD_EVENT`          | `sys/event.c` |
 | `GPIO_TABLE`  | `ADD_GPIO`           | `drv/gpio.c` |
 | `UART_TABLE`  | `ADD_UART_RW`, `ADD_UART_WO`, `ADD_UART_RO` | `drv/uart.c` |
@@ -458,7 +462,8 @@ Anti-patterns:
 
 | Function / Macro | Description |
 |------------------|-------------|
-| `ADD_EVENT(name [, handler])` | Define an event object + flash descriptor; binds an optional custom handler (defaults to `evntHandler`). |
+| `ADD_EVENT(name [, handler])` | Define an event object + flash descriptor; binds an optional dispatch-context handler (defaults to `evntHandler`). |
+| `ADD_EVENT_ISR(name, isrHandler)` | Define an event object + flash descriptor bound to a direct **interrupt-context** handler (`evntIsrHandler_t`, returns `void`). Runs from `evntTrigger` in the producer's ISR, not from `evntDispatch`. |
 | `evntArm(event)` | Move an event from the disarmed list to the armed list. The event's `stateMachine`/`fsmState` are set by the caller (typically `evntWait`). |
 | `evntArmSystem(event)` | Arm a system-wide event with no associated state machine. Used by self-arming events (e.g. system tick) whose handler runs directly from `evntDispatch`. |
 | `evntDisarm(event)` | Move an event from the armed list back to the disarmed list. |
@@ -471,9 +476,9 @@ Anti-patterns:
 #### 4.3.3 Design Notes
 
 - **Three global lists.** The event manager owns three intrusive linked lists threaded through `event_t.next`: `evntListDisarmed`, `evntListArmed`, `evntListTriggered`. Every event is on exactly one list at any moment. Lifecycle: `disarmed → armed → triggered → disarmed`.
-- **Descriptor / status split.** `evntDescriptor_t` lives in flash (`EVNT_TABLE`) and carries the event name and handler pointer. `event_t` is the RAM status object that carries list linkage, current state, the resume handler `fsmState`, and the `type`/`triggerType` sub-type pair. `ADD_EVENT(name)` emits both and links them.
+- **Descriptor / status split.** `evntDescriptor_t` lives in flash (`EVNT_TABLE`) and carries the event name, the dispatch-context `handler` pointer, and the interrupt-context `isrHandler` pointer (exactly one is set; the other is `NULL`). `event_t` is the RAM status object that carries list linkage, current state, the resume handler `fsmState`, and the `type`/`triggerType` sub-type pair. `ADD_EVENT(name)` emits both and links them.
 - **Handler binding.** The handler pointer is in the descriptor (read-only) and selected at compile time by `ADD_EVENT`. The 1-arg form (`ADD_EVENT(name)`) binds the default `evntHandler`, which — when `type == triggerType` — sets the waiting FSM's next state to `event->fsmState` (via `fsmSetNextState`) and moves it to the ready queue (via `fsmReady`). The 2-arg form (`ADD_EVENT(name, fn)`) binds a custom handler with signature `int (*)(volatile event_t *)`.
-- **ISR contract.** ISRs call only `evntTrigger(event, triggerType)`. The handler runs from `evntDispatch()` in main-loop (cooperative) context, never in ISR context.
+- **ISR contract.** ISRs call only `evntTrigger(event, triggerType)`. For an event defined with `ADD_EVENT`, the handler runs from `evntDispatch()` in main-loop (cooperative) context, never in ISR context. For an event defined with `ADD_EVENT_ISR`, `evntTrigger` instead invokes the `evntIsrHandler_t` immediately in the caller's (interrupt) context and does not queue the event for dispatch — used by the precision timer for least-jitter expiry callbacks. Such a handler must be short and returns `void`.
 - **Self-arming pattern.** A system event whose handler runs directly from `evntDispatch` (no FSM is waiting) uses `evntArmSystem` to re-arm itself at the end of the handler. `evntDispatch` recognizes `event->stateMachine == NULL` as a system event and skips its auto-disarm-and-sister-scan path so the re-arm is preserved. Reference implementation: `sysUpdateWaitTicks()` in [sys/sys.c](../sys/sys.c).
 - **Wakeup semantics for FSM-bound events.** When an FSM-bound event's handler returns, `evntDispatch` also disarms any other events armed for the same `stateMachine`. This implements "wait on any one of N events" — only the first to trigger fires; the others are silently disarmed.
 
@@ -559,27 +564,31 @@ handler — keep it short.
 
 ### 4.5 Precision Timer
 
+**Files:** [sys/tmr.h](../sys/tmr.h), [sys/tmr.c](../sys/tmr.c)
+
 #### 4.5.1 Responsibilities
 
 - Provides a mechanism for FSM delays with approximately millisecond (1024 ticks/sec) precision by default using a 32 bit hardware counter
-- Selectable precision determined by he RTC divider
+- Selectable precision determined by the RTC divider
 - Signal associated event when tick count reaches 0
 
 #### 4.5.2 Data Structures
 
 | Structure | Description |
 |-----------|-------------|
-| Timer_t   | RAM based collection of data describing the timer's state. This includes the original duration and remaining ticks |
-| TimerDescr_t | Flash based descritpion of the timer including it's name, a pointer to the Timer_t state in RAM, pointer to the event handler, and a pointer to the associated Event |
+| `timer_t`   | RAM based collection of data describing the timer's state. This includes the original duration and (via the module tick clock) the ticks remaining |
+| `timerDescr_t` | Flash based description of the timer including its name, a pointer to the `timer_t` state in RAM, and a pointer to the associated Event |
 
 #### 4.5.3 Key Interfaces
 
 | Function / Macro | Description |
 |-----------------|-------------|
-| `ADD_TMR(name, handler)` | Declare and statically allocate a timer |
-| `bool tmrSet(name, ticks)` | Set a timer that will trigger the associated time after given ticks |
-| `unint32_t tmrGet(name)` | Get the ticks remaining |
-| `
+| `ADD_TMR(name, [handler])` | Declare and statically allocate a timer; auto-creates its event with an optional dispatch-context handler |
+| `ADD_TMR_ISR(name, handler)` | Declare a timer whose expiry callback runs in interrupt context (least jitter) |
+| `bool tmrSet(name, ticks)` | Arm the timer to trigger its associated event after the given ticks |
+| `uint32_t tmrGet(name)` | Get the ticks remaining |
+| `bool tmrCancel(name)` | Cancel a running timer and disarm its event |
+| `evntState_t tmrWait(name, resumeState)` | Suspend the calling FSM until the timer expires, resuming at `resumeState` |
 
 #### 4.5.4 Design Notes
 
@@ -587,10 +596,11 @@ handler — keep it short.
 - Uses the rtc and tcb drivers to access the hardware functionality
 - By default the RTC timer uses an internal clock source providing 1024 ticks/second
 - Defines in avrOSConfig.h provide options for different clock sources and different frequencies
-- When the user creates a timer an associated avrOS event is created as well 
-- Uses avrOS events to restore the FSM to the Ready queue when the timwer expires
+- When the user creates a timer an associated avrOS event is created as well
+- Uses avrOS events to restore the FSM to the Ready queue when the timer expires
 - Provides event or interrupt call back handlers to note the event and possibly reschedule the FSM
 - The call back function can be in either the interrupt context for less jitter. Or, It can be in the event call back context which is in the system/FSM context therefore not requiring thread safety with the rest of the FSMs and events
+- The callback context is chosen by the associated event: `ADD_TMR` registers a dispatch-context handler (via `ADD_EVENT`), while `ADD_TMR_ISR` registers an interrupt-context handler (via `ADD_EVENT_ISR`, see §4.3)
 - Maintains a list of the current active timers
 - The next timer to expire is used to calculate the two 16 bit compare registers (TCB and RTC) to generate an interrupt that will trigger that timer's event
 - The interrupt will be two stages. Only one comparator interrupt is enabled at a time. First the TCB compare interrupt is enabled and triggered, then the RTC compare interrupt is enabled and triggered
@@ -600,23 +610,23 @@ handler — keep it short.
 
 ---
 
-### 4.5 File I/O Abstraction (fio)
+### 4.6 File I/O Abstraction (fio)
 
 **Files:** [sys/fio.h](../sys/fio.h)
 
-#### 4.5.1 Responsibilities
+#### 4.6.1 Responsibilities
 
 - Bridge AVR-libc `FILE` streams to avrOS queues.
 - Allow standard C I/O functions (`fprintf`, `fgetc`, etc.) to work with UART and other buffered peripherals.
 - Provide blocking wait helpers that use the event system.
 
-#### 4.5.2 Data Structures
+#### 4.6.2 Data Structures
 
 | Structure | Description |
 |-----------|-------------|
 | `fioBuffers_t` | Holds pointers to input and output `queue_t` instances for a `FILE` stream. |
 
-#### 4.5.3 Key Interfaces
+#### 4.6.3 Key Interfaces
 
 | Macro / Function | Description |
 |-----------------|-------------|
@@ -728,6 +738,175 @@ handler — keep it short.
 
 - This module works in conjunction with the DAC driver ([Section 6.4](#64-dac-driver-dac)).
 - Audio data can be converted from WAV or sound files using the `wav2c` and `snd2c` utilities in [util/](../util/).
+
+---
+
+### 5.4 Unit Test Service (uts)
+
+**Files:** [srv/uts.c](../srv/uts.c), [srv/uts.h](../srv/uts.h)
+
+#### 5.4.1 Responsibilities
+
+- Provide a lightweight, self-contained unit-test runner for on-target (or
+  simulator) verification that does **not** depend on the FSM scheduler.
+- Collect developer-registered test functions from a flash-resident table and
+  run them in sequence directly from the `main()` of a unit test project.
+- Report each test's name, pass/fail result (color-coded), and a short
+  description of the returned `osStatus_t` code over the same UART used by the
+  CLI in the example application.
+- Summarize the run as a single "Test Group" pass/fail line, publish the group
+  result to a well-known global variable, and then halt in an infinite loop so
+  the result can be observed by a human, a debugger, or an automated harness.
+
+Because the runner takes over the main thread and never returns, a firmware
+image runs *either* an application (FSM main loop) *or* the unit-test service —
+not both at once. The two are separated by **project**, not by a compile-time
+switch: unit tests live in their own application directory alongside the example
+application (see [Configuration](#544-configuration)). An application project
+such as `app/avrOS_example` never calls `utsRun()`; a unit test project such as
+`app/avrOS_test` calls `utsRun()` in place of the `fsmDispatch()` loop.
+
+#### 5.4.2 Data Structures
+
+The service source defines the descriptor that `ADD_TEST` places in the
+`TEST_TABLE` linker section. Conceptually the set of descriptors forms a global
+array of `test_t` that the runner walks.
+
+| Structure / Type | Description |
+|------------------|-------------|
+| `utsTest_t` | Test function pointer type: `typedef osStatus_t (*utsTest_t)(void);`. A test returns `OS_OK` on success or a negative `osStatus_t` on failure. |
+| `test_t` | Flash-resident descriptor for one unit test. Contains the test's string `name` and a `func` pointer of type `utsTest_t`. Placed in `TEST_TABLE`. |
+
+```c
+typedef osStatus_t (*utsTest_t)(void);   // a unit test: no args, osStatus_t result
+
+typedef struct TEST_TYPE
+{
+    const char  *name;   // human-readable test name shown in the report
+    utsTest_t    func;   // the test function to invoke
+} test_t;
+```
+
+Runtime state owned by the service:
+
+| Variable | Description |
+|----------|-------------|
+| `osStatus_t utsResults[UTS_MAX_TESTS]` | Return code recorded for each test, in table order. |
+| `volatile int8_t utsGroupResult` | Group result, **initialized to `0`**. Set to `1` if every test returned `OS_OK`, or `-1` if any test failed. Exported so a debugger/harness can read the outcome at the halt loop. |
+
+#### 5.4.3 Registration Macro
+
+`ADD_TEST` follows the same pattern as the other `ADD_*` macros (see
+[Section 3.5](#35-linker-sections-and-descriptor-tables)): it emits a `const`
+`test_t` descriptor into the `TEST_TABLE` section, marked with
+`SECTION(TEST_TABLE)` so `--gc-sections` does not discard it. The tests
+themselves are ordinary functions written in the unit test project's `main`
+source file.
+
+| Macro | Description |
+|-------|-------------|
+| `ADD_TEST(name, func)` | Register a unit test. `name` is a string literal shown in the report; `func` is the `utsTest_t` test function. |
+
+```c
+// In the unit test project's main source file (same file as main()):
+ADD_TEST("queue put/get", testQueuePutGet);
+ADD_TEST("timer expiry",  testTimerExpiry);
+
+osStatus_t testQueuePutGet(void)
+{
+    // ... exercise the code under test ...
+    return (ok ? OS_OK : OS_ERROR);
+}
+```
+
+#### 5.4.4 Key Interfaces
+
+| Function / Variable | Description |
+|---------------------|-------------|
+| `void utsRun(void)` | Entry point, called directly from a unit test project's `main()` in place of the `fsmDispatch()` loop. Walks `TEST_TABLE`, runs and reports every test, prints the group summary, sets `utsGroupResult`, then enters an infinite `while(1)` loop. Marked `__attribute__((noreturn))`; it never returns. |
+| `const char* utsStatusDescription(osStatus_t status)` | Map an `osStatus_t` value to the short human-readable description taken from the `osStatus_t` typedef comments in [avrOS.h](../avrOS.h) (e.g. `OS_INVALID` → "Invalid argument: NULL pointer, out-of-range value, bad enum"). Used when printing each test result. |
+| `volatile int8_t utsGroupResult` | Global group result (see [Data Structures](#542-data-structures)). |
+
+Runner algorithm:
+
+1. Initialize the shared UART (the CLI UART) for blocking, polled output.
+2. Walk `TEST_TABLE` from `__start_TEST_TABLE` to `__stop_TEST_TABLE`. For each
+   descriptor:
+   1. Call `descr->func()` and store the returned `osStatus_t` in
+      `utsResults[i]`.
+   2. Print a line with the test `name` and the result — the word `PASS`
+      in green (ANSI) when the code is `OS_OK`, or `FAIL` in red otherwise —
+      followed by the short description from `utsStatusDescription()`.
+3. After the last test, walk `utsResults[]`. If every entry is `OS_OK`, print
+   `Test Group [PASSED]` with `PASSED` in green and set `utsGroupResult = 1`.
+   Otherwise print `Test Group [FAIL]` with `FAIL` in red and set
+   `utsGroupResult = -1`.
+4. Enter `while(1);` and never return.
+
+#### 5.4.5 Configuration
+
+There is no compile-time enable for the service. A project runs unit tests by
+calling `utsRun()` from its `main()`; a project that does not call it links no
+part of the runner, because `--gc-sections` discards the unreferenced code and
+its `utsResults[]` array.
+
+Unit tests are therefore built as their own project directory under `app/`,
+parallel to the example application, created with the makefile's `project`
+target. The reference unit test project is `app/avrOS_test`:
+
+| File | Content |
+|------|---------|
+| `main.c` | The `ADD_TEST` registrations, the test functions, and a `main()` that calls `sysInit()` then `utsRun()` — no `fsmDispatch()` loop. |
+| `avrOSConfig.h` | As the example application, except the CLI is left undefined and `LOG_LEVEL` is `0` — both need the dispatch loop the runner never enters, and the CLI shares the report USART. |
+| `avrOS.x` | Unchanged from the example; it already reserves `TEST_TABLE`. |
+| `makefile` | Unchanged from the example. |
+
+Report UART settings, selected in the project's `avrOSConfig.h` and mirroring
+the CLI/logger configuration style:
+
+| Macro | Default | Effect |
+|-------|---------|--------|
+| `UTS_USART` | `CLI_USART` | USART peripheral used for report output — the same UART the example application gives the CLI. |
+| `UTS_BAUDRATE` / `UTS_PARITY` / `UTS_DATA_BITS` / `UTS_STOP_BITS` | same as CLI | Serial framing for the report UART. |
+| `UTS_MAX_TESTS` | `32` | Size of the `utsResults[]` array; must be ≥ the number of registered tests. |
+
+#### 5.4.6 Report Format
+
+```
+queue put/get .......... [PASS] Success
+timer expiry ........... [FAIL] Invalid argument: NULL pointer, out-of-range value, bad enum
+Test Group [PASSED]
+```
+
+`PASS`/`PASSED` render in green and `FAIL` in red on an ANSI terminal, reusing
+the color macros already defined for the CLI/logger.
+
+#### 5.4.7 Design Notes
+
+- **No FSM dependency.** `utsRun()` runs on the bare main thread before (in
+  place of) the scheduler. It therefore emits output with **blocking, polled**
+  UART writes via the [UART driver](#63-uart-driver-uart), bypassing the
+  queue/`fio`/FSM-drained path the CLI normally uses — there is no dispatch loop
+  running to drain a TX queue.
+- **Separated by project, not by `#ifdef`.** The runner is selected by which
+  `main()` calls it, so an application project carries no test scaffolding and a
+  test project carries no application. Nothing in `main()` is gated on a
+  compile-time switch, and application code never calls `utsRun()`.
+- **Shared UART, mutually exclusive with the CLI.** The test report and the CLI
+  use the same USART, and the runner never yields to the dispatch loop the CLI
+  needs. A unit test project therefore leaves the CLI (and the logger)
+  unconfigured.
+- **Table-driven, order-preserving.** Tests run in the order the linker places
+  their descriptors in `TEST_TABLE` (see [Section 3.5](#35-linker-sections-and-descriptor-tables)).
+  No test count is hard-coded in the runner; it is derived from the
+  `__start_TEST_TABLE` / `__stop_TEST_TABLE` boundary symbols.
+- **Machine-readable outcome.** `utsGroupResult` starts at `0` (never ran) and
+  becomes `1` (all passed) or `-1` (one or more failed). A simulator or debugger
+  can break at the halt loop and read this symbol to score the run without
+  parsing UART text.
+- **Halt-on-completion.** The terminal `while(1);` keeps the final report and
+  `utsGroupResult` stable and prevents the device from running undefined
+  application state after the tests complete.
 
 ---
 
@@ -1505,6 +1684,20 @@ Reachable with a Raspberry Pi as build host and programmer:
 2. `make all flash` from CI on every push to `develop`.
 3. A smoke-test Python script issues a fixed CLI command sequence over
    the CLI USART and asserts on the output.
+
+### 9.6 On-target unit tests (uts)
+
+The [Unit Test Service (uts)](#54-unit-test-service-uts) provides an on-target
+(or simulator) unit-test runner that complements the host-side approach in §9.4.
+Tests live in their own project under `app/`, parallel to the example
+application (`app/avrOS_test`). They are ordinary `osStatus_t` functions in that
+project's `main` source file, registered with `ADD_TEST`, and executed by
+`utsRun()` directly from its `main()` — in place of the FSM dispatch loop, and
+without the FSM scheduler. The runner prints a color-coded pass/fail
+line and description per test, a `Test Group [PASSED]`/`[FAIL]` summary, and
+publishes the outcome to `utsGroupResult` (`1` = all passed, `-1` = failure)
+before halting — so a debugger or board-in-the-loop harness (§9.5) can score the
+run by reading a single symbol rather than parsing UART text.
 
 ---
 

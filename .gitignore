@@ -72,9 +72,14 @@ gh_token.txt
 # Build directory
 **/build
 
-# Apps directory (ignore all except avrOS_example directory
-/app/
+# Apps directory (ignore all except the avrOS_example and avrOS_test directories)
+# Note: /app/* (not /app/) so git still descends into app/ and the negations below
+# can re-include specific project directories
+/app/*
 !/app/avrOS_example/
+!/app/avrOS_test/
+# Per-developer editor configuration inside those project directories
+/app/*/.vscode/
 
 # Cache directory
 .cache/

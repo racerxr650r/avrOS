@@ -99,7 +99,7 @@ typedef struct EVENT_TYPE
 }event_t;
 
 /**
- * @brief Event handler callback type.
+ * @brief Event handler callback type (dispatch context).
  *
  * Called by evntDispatch() in main-loop context when an event transitions
  * to TRIGGERED.  The default implementation is evntHandler().
@@ -108,6 +108,23 @@ typedef struct EVENT_TYPE
  * @return OS_OK on success, negative osStatus_t on error.
  */
 typedef osStatus_t (*evntHandler_t)(volatile event_t *event);
+
+/**
+ * @brief Event interrupt-handler callback type (ISR context).
+ *
+ * Called directly from evntTrigger() in the caller's (interrupt) context when
+ * the event is signaled — used by producers such as the precision timer expiry
+ * ISR that need least-jitter callbacks.  Unlike @ref evntHandler_t (dispatch
+ * context), this handler runs before returning from the ISR, is NOT queued to
+ * the triggered list, and therefore returns @c void: no caller consumes a
+ * status.  Because it runs in interrupt context it must be short and must not
+ * assume the FSM/event lists are quiescent.
+ *
+ * Register with @ref ADD_EVENT_ISR.
+ *
+ * @param event  Pointer to the triggered event.
+ */
+typedef void (*evntIsrHandler_t)(volatile event_t *event);
 
 /**
  * @brief Flash-resident event descriptor (one per ADD_EVENT instance).
@@ -119,7 +136,8 @@ typedef struct EVENT_DESCR_TYPE
 {
 	char    		*name;    /**< Human-readable name used by the CLI. */
 	volatile event_t	*status;  /**< Pointer to the RAM-resident event_t. */
-	evntHandler_t	handler;  /**< Callback invoked by evntDispatch() on trigger. */
+	evntHandler_t	handler;  /**< Dispatch-context callback invoked by evntDispatch() on trigger, or NULL. */
+	evntIsrHandler_t	isrHandler; /**< ISR-context callback invoked directly by evntTrigger() on trigger, or NULL. */
 }evntDescriptor_t;
 
 /**
@@ -317,6 +335,39 @@ int evntDispatch(void);
 #define ADD_EVENT(evntName, ...)	\
 		static volatile event_t	evntName; \
 		const static evntDescriptor_t SECTION(EVNT_TABLE) CONCAT(evntName,_descr) = {.name = #evntName, .status = &evntName, .handler = DEFAULT_OR_ARG(,##__VA_ARGS__,__VA_ARGS__,evntHandler)}; \
+		static volatile event_t	evntName = {.state = EVENT_DISARMED, .stateMachine = NULL, .descr = &CONCAT(evntName,_descr)};
+#endif
+
+/**
+ * @brief Declare, register, and initialize an event with an ISR-context handler.
+ *
+ * Identical to @ref ADD_EVENT but installs @p isrHandler (type
+ * @ref evntIsrHandler_t) as a direct interrupt-context callback instead of a
+ * dispatch-context handler.  When such an event is signaled, evntTrigger()
+ * calls @p isrHandler immediately in the producer's (interrupt) context and
+ * does NOT queue the event for evntDispatch().  The dispatch @c handler field
+ * is left NULL.
+ *
+ * This is a single self-contained declaration — no second macro is needed to
+ * attach the handler.
+ *
+ * Usage:
+ * @code
+ *   ADD_EVENT_ISR(myEvent, myIsrCallback);
+ * @endcode
+ *
+ * @param evntName    Token used as the C variable name for the event_t.
+ * @param isrHandler  ISR-context @ref evntIsrHandler_t callback.
+ */
+#ifdef EVNT_STATS
+#define ADD_EVENT_ISR(evntName, isrFunc)	\
+		static volatile event_t	evntName; \
+		const static evntDescriptor_t SECTION(EVNT_TABLE) CONCAT(evntName,_descr) = {.name = #evntName, .status = &evntName, .handler = NULL, .isrHandler = isrFunc}; \
+		static volatile event_t	evntName = {.state = EVENT_DISARMED, .stateMachine = NULL, .descr = &CONCAT(evntName,_descr), .stats.armed = 0, .stats.disarmed = 0, .stats.triggered = 0, .stats.error = 0};
+#else
+#define ADD_EVENT_ISR(evntName, isrFunc)	\
+		static volatile event_t	evntName; \
+		const static evntDescriptor_t SECTION(EVNT_TABLE) CONCAT(evntName,_descr) = {.name = #evntName, .status = &evntName, .handler = NULL, .isrHandler = isrFunc}; \
 		static volatile event_t	evntName = {.state = EVENT_DISARMED, .stateMachine = NULL, .descr = &CONCAT(evntName,_descr)};
 #endif
 
